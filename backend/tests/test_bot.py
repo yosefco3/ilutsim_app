@@ -1,0 +1,145 @@
+"""
+Tests for the Telegram bot package (Step 06).
+"""
+
+import pytest
+from unittest.mock import AsyncMock, MagicMock, patch
+
+from aiogram.types import User as TgUser, Chat
+
+
+# ── bot_instance ──────────────────────────────────────────
+
+class TestBotInstance:
+    """Tests for bot_instance singleton."""
+
+    def test_get_bot_no_token_raises(self):
+        """get_bot should raise if no token configured."""
+        with patch("app.bot.bot_instance.settings") as mock_settings:
+            mock_settings.TELEGRAM_BOT_TOKEN = ""
+            # Reset singleton
+            import app.bot.bot_instance as mod
+            mod._bot = None
+            with pytest.raises(ValueError, match="TELEGRAM_BOT_TOKEN"):
+                mod.get_bot()
+
+    def test_get_bot_creates_singleton(self):
+        """get_bot should return same Bot instance on repeated calls."""
+        with patch("app.bot.bot_instance.settings") as mock_settings:
+            mock_settings.TELEGRAM_BOT_TOKEN = "test-token-123"
+            import app.bot.bot_instance as mod
+            mod._bot = None
+
+            bot1 = mod.get_bot()
+            bot2 = mod.get_bot()
+            assert bot1 is bot2
+
+
+# ── keyboards ─────────────────────────────────────────────
+
+class TestKeyboards:
+    """Tests for inline keyboard builders."""
+
+    def test_submission_keyboard(self):
+        from app.bot.keyboards.inline_kb import submission_keyboard
+        kb = submission_keyboard("w-uuid")
+        assert kb is not None
+        assert kb.inline_keyboard is not None
+        # Should have at least one row with a button
+        assert len(kb.inline_keyboard) > 0
+
+    def test_back_to_main_keyboard(self):
+        from app.bot.keyboards.inline_kb import back_to_main_keyboard
+        kb = back_to_main_keyboard()
+        assert kb is not None
+
+
+# ── notifications ──────────────────────────────────────────
+
+class TestNotifications:
+    """Tests for notification helpers."""
+
+    @pytest.mark.asyncio
+    async def test_send_notification_no_bot(self):
+        """send_notification should gracefully handle missing bot."""
+        with patch("app.bot.notifications.get_bot", side_effect=Exception("no bot")):
+            from app.bot.notifications import send_notification
+            # Should not raise
+            await send_notification(12345, "test message")
+
+    @pytest.mark.asyncio
+    async def test_broadcast_notifications(self):
+        """broadcast_notifications should iterate over IDs."""
+        with patch("app.bot.notifications.send_notification", new_callable=AsyncMock) as mock_send:
+            from app.bot.notifications import broadcast_notifications
+            await broadcast_notifications([111, 222], "hello")
+            assert mock_send.call_count == 2
+
+
+# ── cron ──────────────────────────────────────────────────
+
+class TestCron:
+    """Tests for cron job setup."""
+
+    def test_setup_cron_jobs(self):
+        """setup_cron_jobs should add jobs to scheduler."""
+        from app.bot.cron import scheduler, setup_cron_jobs
+        with patch.object(scheduler, "add_job") as mock_add:
+            setup_cron_jobs()
+            mock_add.assert_called_once()
+            call_kwargs = mock_add.call_args
+            assert call_kwargs[1]["id"] == "closing_reminder"
+
+
+# ── bot_router ────────────────────────────────────────────
+
+class TestBotRouter:
+    """Tests for bot_router lifecycle functions."""
+
+    @pytest.mark.asyncio
+    async def test_get_dispatcher_creates_singleton(self):
+        """get_dispatcher should return same Dispatcher instance."""
+        import app.bot.bot_router as mod
+        mod._dispatcher = None
+
+        with patch("app.bot.bot_router.get_bot"):
+            dp1 = mod.get_dispatcher()
+            dp2 = mod.get_dispatcher()
+            assert dp1 is dp2
+            # Reset for other tests
+            mod._dispatcher = None
+
+    @pytest.mark.asyncio
+    async def test_start_bot(self):
+        """start_bot should start polling as background task."""
+        mock_bot = AsyncMock()
+        mock_dp = AsyncMock()
+
+        with patch("app.bot.bot_router.get_bot", return_value=mock_bot), \
+             patch("app.bot.bot_router.get_dispatcher", return_value=mock_dp):
+            import app.bot.bot_router as mod
+
+            await mod.start_bot()
+            mock_bot.delete_webhook.assert_called_once()
+
+
+# ── middlewares ───────────────────────────────────────────
+
+class TestAuthMiddleware:
+    """Tests for auth middleware."""
+
+    @pytest.mark.asyncio
+    async def test_middleware_passes_known_user(self):
+        """AuthMiddleware should pass through known users."""
+        from app.bot.middlewares.auth import AuthMiddleware
+
+        mw = AuthMiddleware()
+        handler = AsyncMock()
+        event = MagicMock()
+        event.from_user = MagicMock()
+        event.from_user.id = 12345
+        data = {}
+
+        with patch.object(mw, "_resolve_user", new_callable=AsyncMock, return_value={"id": "user-uuid"}):
+            await mw(handler, event, data)
+            handler.assert_called_once()

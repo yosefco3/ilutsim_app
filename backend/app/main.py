@@ -38,7 +38,33 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     setup_logging(settings.LOG_LEVEL, settings.ENVIRONMENT)
     logger = logging.getLogger("ilutzim")
     logger.info("Application starting", extra={"extra_data": {"environment": settings.ENVIRONMENT}})
+
+    # Start Telegram bot (only if token is configured)
+    bot_started = False
+    if settings.TELEGRAM_BOT_TOKEN:
+        try:
+            from app.bot import start_bot, setup_cron_jobs, scheduler
+            await start_bot()
+            setup_cron_jobs()
+            scheduler.start()
+            bot_started = True
+            logger.info("Telegram bot and cron jobs started")
+        except Exception as exc:
+            logger.warning("Failed to start Telegram bot: %s", exc)
+    else:
+        logger.info("TELEGRAM_BOT_TOKEN not set – bot disabled")
+
     yield
+
+    # Shutdown
+    if bot_started:
+        try:
+            from app.bot import stop_bot, scheduler
+            scheduler.shutdown(wait=False)
+            await stop_bot()
+        except Exception as exc:
+            logger.warning("Error stopping bot: %s", exc)
+
     logger.info("Application shutting down")
 
 
