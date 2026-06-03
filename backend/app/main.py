@@ -11,6 +11,17 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import get_settings
+from app.controllers import (
+    auth_router,
+    submission_router,
+    admin_users_router,
+    admin_weeks_router,
+    admin_events_router,
+    admin_notifications_router,
+    admin_export_router,
+    admin_settings_router,
+    admin_admins_router,
+)
 from app.exceptions import (
     AppBaseException,
     app_exception_handler,
@@ -55,6 +66,17 @@ def create_app() -> FastAPI:
     app.add_exception_handler(AppBaseException, app_exception_handler)  # type: ignore[arg-type]
     app.add_exception_handler(RequestValidationError, validation_exception_handler)  # type: ignore[arg-type]
     app.add_exception_handler(Exception, generic_exception_handler)  # type: ignore[arg-type]
+
+    # Register routers
+    app.include_router(auth_router)
+    app.include_router(submission_router)
+    app.include_router(admin_users_router)
+    app.include_router(admin_weeks_router)
+    app.include_router(admin_events_router)
+    app.include_router(admin_notifications_router)
+    app.include_router(admin_export_router)
+    app.include_router(admin_settings_router)
+    app.include_router(admin_admins_router)
 
     # Health check endpoint
     @app.get("/health")

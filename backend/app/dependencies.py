@@ -1,20 +1,171 @@
 """
-Dependency injection for FastAPI routes.
+FastAPI dependency injection providers.
+
+Provides service instances and authentication guards via Depends().
 """
 
-from typing import AsyncGenerator
+import logging
+import uuid
 
-from sqlalchemy.ext.asyncio import AsyncSession
+from fastapi import Depends, HTTPException, status
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
-from app.database import get_db_session
+from app.config import Settings, get_settings
+from app.constants import AdminRole
+from app.database import get_pool
+from app.repositories.admin_repository import AdminRepository
+from app.repositories.schedule_event_repository import ScheduleEventRepository
+from app.repositories.schedule_week_repository import ScheduleWeekRepository
+from app.repositories.submission_repository import SubmissionRepository
+from app.repositories.system_settings_repository import SystemSettingsRepository
+from app.repositories.user_repository import UserRepository
+from app.services.admin_service import AdminService
+from app.services.auth_service import AuthService
+from app.services.event_service import EventService
+from app.services.excel_export_service import ExcelExportService
+from app.services.settings_service import SettingsService
+from app.services.submission_service import SubmissionService
+from app.services.user_service import UserService
+from app.services.week_service import WeekService
+
+logger = logging.getLogger("ilutzim")
+
+_bearer_scheme = HTTPBearer()
 
 
-async def get_db() -> AsyncGenerator[AsyncSession, None]:
-    """Yield an async database session for route handlers."""
-    async for session in get_db_session():
-        yield session
+# ── Repository providers ─────────────────────────────────────────────────────
+
+async def _get_user_repo() -> UserRepository:
+    pool = await get_pool()
+    return UserRepository(pool)
 
 
-async def get_current_user() -> None:
-    """Placeholder — will be implemented in Step 5 (Controllers)."""
-    return None
+async def _get_week_repo() -> ScheduleWeekRepository:
+    pool = await get_pool()
+    return ScheduleWeekRepository(pool)
+
+
+async def _get_submission_repo() -> SubmissionRepository:
+    pool = await get_pool()
+    return SubmissionRepository(pool)
+
+
+async def _get_event_repo() -> ScheduleEventRepository:
+    pool = await get_pool()
+    return ScheduleEventRepository(pool)
+
+
+async def _get_admin_repo() -> AdminRepository:
+    pool = await get_pool()
+    return AdminRepository(pool)
+
+
+async def _get_settings_repo() -> SystemSettingsRepository:
+    pool = await get_pool()
+    return SystemSettingsRepository(pool)
+
+
+# ── Service providers ────────────────────────────────────────────────────────
+
+async def get_auth_service(
+    admin_repo: AdminRepository = Depends(_get_admin_repo),
+    settings: Settings = Depends(get_settings),
+) -> AuthService:
+    return AuthService(admin_repo, settings)
+
+
+async def get_user_service(
+    user_repo: UserRepository = Depends(_get_user_repo),
+) -> UserService:
+    return UserService(user_repo)
+
+
+async def get_week_service(
+    week_repo: ScheduleWeekRepository = Depends(_get_week_repo),
+) -> WeekService:
+    return WeekService(week_repo)
+
+
+async def get_submission_service(
+    submission_repo: SubmissionRepository = Depends(_get_submission_repo),
+    user_repo: UserRepository = Depends(_get_user_repo),
+    week_repo: ScheduleWeekRepository = Depends(_get_week_repo),
+) -> SubmissionService:
+    from app.services.deviation_service import DeviationService
+    deviation_service = DeviationService()
+    return SubmissionService(submission_repo, user_repo, week_repo, deviation_service)
+
+
+async def get_event_service(
+    event_repo: ScheduleEventRepository = Depends(_get_event_repo),
+    user_repo: UserRepository = Depends(_get_user_repo),
+) -> EventService:
+    return EventService(event_repo, user_repo)
+
+
+async def get_admin_service(
+    admin_repo: AdminRepository = Depends(_get_admin_repo),
+    auth_service: AuthService = Depends(get_auth_service),
+) -> AdminService:
+    return AdminService(admin_repo, auth_service)
+
+
+async def get_settings_service(
+    settings_repo: SystemSettingsRepository = Depends(_get_settings_repo),
+) -> SettingsService:
+    return SettingsService(settings_repo)
+
+
+async def get_excel_export_service(
+    submission_repo: SubmissionRepository = Depends(_get_submission_repo),
+    user_repo: UserRepository = Depends(_get_user_repo),
+    week_repo: ScheduleWeekRepository = Depends(_get_week_repo),
+) -> ExcelExportService:
+    return ExcelExportService(submission_repo, user_repo, week_repo)
+
+
+# ── Auth guards ──────────────────────────────────────────────────────────────
+
+async def get_current_admin(
+    credentials: HTTPAuthorizationCredentials = Depends(_bearer_scheme),
+    auth_service: AuthService = Depends(get_auth_service),
+) -> dict:
+    """
+    Validate Bearer token and return the decoded payload.
+    Raises 401 if token is invalid.
+    """
+    try:
+        payload = auth_service.verify_token(credentials.credentials)
+        return payload
+    except Exception:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or expired token",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+
+async def require_admin_role(
+    admin: dict = Depends(get_current_admin),
+) -> dict:
+    """Require admin or super_admin role."""
+    role = admin.get("role")
+    if role not in (AdminRole.ADMIN, AdminRole.SUPER_ADMIN):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Admin access required",
+        )
+    return admin
+
+
+async def require_super_admin(
+    admin: dict = Depends(get_current_admin),
+) -> dict:
+    """Require super_admin role."""
+    role = admin.get("role")
+    if role != AdminRole.SUPER_ADMIN:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Super admin access required",
+        )
+    return admin
