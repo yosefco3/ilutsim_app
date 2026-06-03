@@ -74,3 +74,16 @@ def setup_logging(log_level: str, environment: str) -> None:
     logging.getLogger("uvicorn").setLevel(logging.INFO)
     logging.getLogger("sqlalchemy").setLevel(logging.WARNING)
     logging.getLogger("aiogram").setLevel(logging.INFO)
+
+
+def get_logger(name: str | None = None) -> logging.Logger:
+    """Return a child logger under the 'ilutzim' namespace.
+
+    Usage::
+
+        from app.logging_config import get_logger
+        logger = get_logger(__name__)   # → ilutzim.app.repositories.user_repository
+    """
+    base = "ilutzim"
+    full_name = f"{base}.{name}" if name else base
+    return logging.getLogger(full_name)

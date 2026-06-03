@@ -1,0 +1,39 @@
+# Cline Custom Rules - ilutzim_app Project
+
+## Code Review Graph — Mandatory Workflow
+
+### After Every Coding Mission (when code files were created or modified):
+1. **Commit changes first** — `git add -A && git commit -m "descriptive message"`
+2. **Update the code graph** — Run the CLI command:
+   ```
+   /home/yosef/.local/bin/code-review-graph update
+   ```
+   This performs an incremental update (only changed files) and is fast.
+3. Only skip graph update if NO source code files (.py, .js, .ts, etc.) were touched.
+
+### When Starting a New Coding Task:
+1. **Get minimal context first** — Use `get_minimal_context_tool` to understand the current graph state.
+2. **Before reading files manually**, try these graph tools to locate code faster:
+   - `semantic_search_nodes_tool` — Find functions/classes by name or description
+   - `query_graph_tool` — Trace relationships (callers_of, callees_of, imports_of, importers_of, children_of)
+   - `query_graph_tool` with pattern `file_summary` — Get all nodes in a file without reading it
+   - `get_impact_radius_tool` — Understand blast radius before making changes
+   - `list_flows_tool` / `get_flow_tool` — Understand execution paths
+   - `list_communities_tool` — Understand code organization
+
+### When Doing Code Review:
+- Use `detect_changes_tool` for risk-scored change analysis
+- Use `get_affected_flows_tool` to see which execution paths are impacted
+- Use `get_review_context_tool` for comprehensive review context
+
+### Preferred Search Pattern:
+Instead of `search_files` → `read_file` chains, prefer:
+1. `semantic_search_nodes_tool` to find the target
+2. `query_graph_tool` to understand relationships
+3. Only then `read_file` if you need the full source
+
+### Graph CLI Reference:
+- **Full rebuild:** `/home/yosef/.local/bin/code-review-graph build`
+- **Incremental update:** `/home/yosef/.local/bin/code-review-graph update`
+- **Post-process only:** `/home/yosef/.local/bin/code-review-graph postprocess`
+- **Status check:** `/home/yosef/.local/bin/code-review-graph status`

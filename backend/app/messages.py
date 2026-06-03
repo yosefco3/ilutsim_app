@@ -54,3 +54,12 @@ class Messages:
     STATUS_SUBMITTED_VARIANCE: str = "הוגש עם חריגה"
     STATUS_PENDING: str = "ממתין להגשה"
     STATUS_AUTO_ABSENCE: str = "העדרות אוטומטית"
+
+    # ── Validation messages ─────────────────────────────────────────────
+    VAL_INVALID_PHONE: str = "מספר טלפון לא תקין — חייב להתחיל ב-05 עם 10 ספרות או +972 עם 9 ספרות"
+    VAL_DATE_RANGE: str = "תאריך סיום חייב להיות אחרי תאריך התחלה"
+    VAL_DATE_RANGE_SAME_OK: str = "תאריך סיום חייב להיות מאוחר או שווה לתאריך התחלה"
+    VAL_SAME_START_END: str = "שעת התחלה וסיום לא יכולות להיות זהות"
+    VAL_UNAVAILABLE_WITH_SHIFTS: str = "יום לא זמין לא יכול להכיל משמרות"
+    VAL_AVAILABLE_NO_SHIFTS: str = "יום זמין חייב להכיל לפחות משמרת אחת"
+    VAL_EMPTY_DAYS: str = "חובה להגיש לפחות יום אחד"
