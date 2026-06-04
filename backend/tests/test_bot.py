@@ -26,8 +26,9 @@ class TestBotInstance:
 
     def test_get_bot_creates_singleton(self):
         """get_bot should return same Bot instance on repeated calls."""
+        # aiogram validates token format (digits:alphanum), so use a valid-looking one
         mock_settings = MagicMock()
-        mock_settings.TELEGRAM_BOT_TOKEN = "test-token-123"
+        mock_settings.TELEGRAM_BOT_TOKEN = "1234567890:AAHtesttokenvalidformat1234567890"
         with patch("app.bot.bot_instance.get_settings", return_value=mock_settings):
             import app.bot.bot_instance as mod
             mod._bot = None
@@ -43,18 +44,20 @@ class TestBotInstance:
 class TestKeyboards:
     """Tests for inline keyboard builders."""
 
-    def test_submission_keyboard(self):
-        from app.bot.keyboards.inline_kb import submission_keyboard
-        kb = submission_keyboard("w-uuid")
+    def test_weekday_keyboard(self):
+        from app.bot.keyboards.inline_kb import weekday_kb
+        kb = weekday_kb("w-uuid")
         assert kb is not None
         assert kb.inline_keyboard is not None
-        # Should have at least one row with a button
-        assert len(kb.inline_keyboard) > 0
+        # 7 days + finish + back = 9 rows
+        assert len(kb.inline_keyboard) == 9
 
-    def test_back_to_main_keyboard(self):
-        from app.bot.keyboards.inline_kb import back_to_main_keyboard
-        kb = back_to_main_keyboard()
+    def test_main_menu_keyboard(self):
+        from app.bot.keyboards.inline_kb import main_menu_kb
+        kb = main_menu_kb()
         assert kb is not None
+        # submit, status, help = 3 rows
+        assert len(kb.inline_keyboard) == 3
 
 
 # ── notifications ──────────────────────────────────────────
@@ -87,7 +90,10 @@ class TestCron:
     def test_setup_cron_jobs(self):
         """setup_cron_jobs should add jobs to scheduler."""
         from app.bot.cron import scheduler, setup_cron_jobs
-        with patch.object(scheduler, "add_job") as mock_add:
+        mock_settings = MagicMock()
+        mock_settings.REMINDER_HOUR = 18
+        with patch("app.bot.cron.settings", mock_settings), \
+             patch.object(scheduler, "add_job") as mock_add:
             setup_cron_jobs()
             mock_add.assert_called_once()
             call_kwargs = mock_add.call_args
@@ -143,6 +149,10 @@ class TestAuthMiddleware:
         event.from_user.id = 12345
         data = {}
 
-        with patch.object(mw, "_resolve_user", new_callable=AsyncMock, return_value={"id": "user-uuid"}):
+        mock_pool = MagicMock()
+        mock_user_svc = MagicMock()
+        mock_user_svc.get_by_telegram_id = AsyncMock(return_value={"id": "user-uuid", "is_active": True})
+        with patch("app.database.get_pool", return_value=mock_pool), \
+             patch("app.services.user_service.UserService", return_value=mock_user_svc):
             await mw(handler, event, data)
             handler.assert_called_once()

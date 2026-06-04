@@ -127,9 +127,10 @@ class AdminResponse(BaseModel):
 
 
 class LoginRequest(BaseModel):
-    """Schema for admin login."""
-    email: str
-    password: str
+    """Schema for login requests (telegram and admin)."""
+    init_data: str | None = None
+    username: str | None = None
+    password: str | None = None
 
 
 class TokenResponse(BaseModel):

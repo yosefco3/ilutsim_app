@@ -41,6 +41,12 @@ class Settings(BaseSettings):
     # Cron / Scheduling
     CRON_WEEKLY_OPEN_DAY: str = "sunday"
     CRON_WEEKLY_OPEN_HOUR: str = "09:00"
+    REMINDER_HOUR: int = 18
+
+    @property
+    def reminder_hour(self) -> int:
+        """Hour for closing reminder cron (alias for REMINDER_HOUR)."""
+        return self.REMINDER_HOUR
 
     model_config = {
         "env_file": ".env",
@@ -53,3 +59,6 @@ class Settings(BaseSettings):
 def get_settings() -> Settings:
     """Return cached Settings singleton."""
     return Settings()
+
+
+settings = get_settings()
