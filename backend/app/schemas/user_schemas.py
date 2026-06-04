@@ -87,3 +87,53 @@ class UserListResponse(BaseModel):
     """Paginated list of users."""
     users: list[UserResponse]
     count: int
+
+
+# ── Admin schemas ────────────────────────────────────────────────────────────
+
+from app.constants import AdminRole
+
+
+class AdminCreate(BaseModel):
+    """Schema for creating a new admin."""
+    email: str
+    password: str
+    full_name: str
+    role: AdminRole = AdminRole.ADMIN
+
+
+class AdminUpdate(BaseModel):
+    """Schema for updating an admin."""
+    email: str | None = None
+    full_name: str | None = None
+    role: AdminRole | None = None
+    is_active: bool | None = None
+    password: str | None = None
+
+
+class AdminResponse(BaseModel):
+    """Schema for admin data in API responses."""
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    email: str
+    full_name: str
+    role: AdminRole
+    is_active: bool
+    created_at: datetime
+
+
+# ── Auth schemas ──────────────────────────────────────────────────────────────
+
+
+class LoginRequest(BaseModel):
+    """Schema for admin login."""
+    email: str
+    password: str
+
+
+class TokenResponse(BaseModel):
+    """Schema for JWT token response."""
+    access_token: str
+    token_type: str = "bearer"
+    user: AdminResponse

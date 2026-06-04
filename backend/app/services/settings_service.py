@@ -7,7 +7,7 @@ from typing import Any, Optional
 
 from app.exceptions import ValidationException
 from app.messages import Messages
-from app.models.system_settings import SystemSettings
+from app.models.system_setting import SystemSetting
 from app.repositories.system_settings_repository import SystemSettingsRepository
 from app.schemas.common_schemas import SettingsResponse
 

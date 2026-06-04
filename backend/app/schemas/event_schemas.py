@@ -34,8 +34,20 @@ class ScheduleEventResponse(BaseModel):
     end_date: date
 
 
+class EventUpdate(BaseModel):
+    """Schema for updating a schedule event."""
+    event_type: EventType | None = None
+    start_date: date | None = None
+    end_date: date | None = None
+
+
 class BlockedDateInfo(BaseModel):
     """Info about a blocked date for a user."""
     date: date
     event_type: EventType
     label: str
+
+
+# Aliases used by services/controllers
+EventCreate = ScheduleEventCreate
+EventResponse = ScheduleEventResponse

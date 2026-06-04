@@ -8,11 +8,17 @@ from app.config import get_settings
 
 settings = get_settings()
 
+_engine_kwargs: dict = {
+    "echo": settings.ENVIRONMENT == "dev",
+}
+# pool_size / max_overflow are not valid for SQLite (tests)
+if settings.DATABASE_URL.startswith("postgresql"):
+    _engine_kwargs["pool_size"] = 5
+    _engine_kwargs["max_overflow"] = 10
+
 async_engine = create_async_engine(
     settings.DATABASE_URL,
-    echo=settings.ENVIRONMENT == "dev",
-    pool_size=5,
-    max_overflow=10,
+    **_engine_kwargs,
 )
 
 async_session_factory = async_sessionmaker(
@@ -22,7 +28,11 @@ async_session_factory = async_sessionmaker(
 )
 
 
-async def get_db_session() -> AsyncSession:  # type: ignore[misc]
-    """Yield an async database session."""
+async def get_pool() -> AsyncSession:  # type: ignore[misc]
+    """Yield an async database session (alias used by dependency injection)."""
     async with async_session_factory() as session:
         yield session
+
+
+# Keep backward-compatible alias
+get_db_session = get_pool

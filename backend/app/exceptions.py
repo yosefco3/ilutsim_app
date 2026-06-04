@@ -67,6 +67,11 @@ class AdminNotFoundException(AppBaseException):
     message = Messages.ERR_USER_NOT_FOUND
 
 
+class AuthenticationFailedException(AppBaseException):
+    """Raised when Telegram authentication fails."""
+    status_code = 401
+
+
 class InvalidCredentialsException(AppBaseException):
     status_code = 401
     message = Messages.ERR_AUTH_FAILED

@@ -15,8 +15,9 @@ class TestBotInstance:
 
     def test_get_bot_no_token_raises(self):
         """get_bot should raise if no token configured."""
-        with patch("app.bot.bot_instance.settings") as mock_settings:
-            mock_settings.TELEGRAM_BOT_TOKEN = ""
+        mock_settings = MagicMock()
+        mock_settings.TELEGRAM_BOT_TOKEN = ""
+        with patch("app.bot.bot_instance.get_settings", return_value=mock_settings):
             # Reset singleton
             import app.bot.bot_instance as mod
             mod._bot = None
@@ -25,14 +26,16 @@ class TestBotInstance:
 
     def test_get_bot_creates_singleton(self):
         """get_bot should return same Bot instance on repeated calls."""
-        with patch("app.bot.bot_instance.settings") as mock_settings:
-            mock_settings.TELEGRAM_BOT_TOKEN = "test-token-123"
+        mock_settings = MagicMock()
+        mock_settings.TELEGRAM_BOT_TOKEN = "test-token-123"
+        with patch("app.bot.bot_instance.get_settings", return_value=mock_settings):
             import app.bot.bot_instance as mod
             mod._bot = None
 
             bot1 = mod.get_bot()
             bot2 = mod.get_bot()
             assert bot1 is bot2
+            mod._bot = None
 
 
 # ── keyboards ─────────────────────────────────────────────

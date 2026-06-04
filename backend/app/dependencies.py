@@ -35,34 +35,28 @@ _bearer_scheme = HTTPBearer()
 
 # ── Repository providers ─────────────────────────────────────────────────────
 
-async def _get_user_repo() -> UserRepository:
-    pool = await get_pool()
-    return UserRepository(pool)
+async def _get_user_repo(session=Depends(get_pool)) -> UserRepository:
+    return UserRepository(session)
 
 
-async def _get_week_repo() -> ScheduleWeekRepository:
-    pool = await get_pool()
-    return ScheduleWeekRepository(pool)
+async def _get_week_repo(session=Depends(get_pool)) -> ScheduleWeekRepository:
+    return ScheduleWeekRepository(session)
 
 
-async def _get_submission_repo() -> SubmissionRepository:
-    pool = await get_pool()
-    return SubmissionRepository(pool)
+async def _get_submission_repo(session=Depends(get_pool)) -> SubmissionRepository:
+    return SubmissionRepository(session)
 
 
-async def _get_event_repo() -> ScheduleEventRepository:
-    pool = await get_pool()
-    return ScheduleEventRepository(pool)
+async def _get_event_repo(session=Depends(get_pool)) -> ScheduleEventRepository:
+    return ScheduleEventRepository(session)
 
 
-async def _get_admin_repo() -> AdminRepository:
-    pool = await get_pool()
-    return AdminRepository(pool)
+async def _get_admin_repo(session=Depends(get_pool)) -> AdminRepository:
+    return AdminRepository(session)
 
 
-async def _get_settings_repo() -> SystemSettingsRepository:
-    pool = await get_pool()
-    return SystemSettingsRepository(pool)
+async def _get_settings_repo(session=Depends(get_pool)) -> SystemSettingsRepository:
+    return SystemSettingsRepository(session)
 
 
 # ── Service providers ────────────────────────────────────────────────────────
