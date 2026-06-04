@@ -1,0 +1,31 @@
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import Navbar from './components/Navbar';
+import ProtectedRoute from './components/ProtectedRoute';
+import LoginPage from './pages/LoginPage';
+import GuardsPage from './pages/GuardsPage';
+import WeeksPage from './pages/WeeksPage';
+import EventsPage from './pages/EventsPage';
+import SubmissionsPage from './pages/SubmissionsPage';
+import SettingsPage from './pages/SettingsPage';
+import ExportPage from './pages/ExportPage';
+import './styles/admin.css';
+
+export default function App() {
+  return (
+    <BrowserRouter>
+      <Navbar />
+      <main className="main-content">
+        <Routes>
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/guards" element={<ProtectedRoute><GuardsPage /></ProtectedRoute>} />
+          <Route path="/weeks" element={<ProtectedRoute><WeeksPage /></ProtectedRoute>} />
+          <Route path="/events" element={<ProtectedRoute><EventsPage /></ProtectedRoute>} />
+          <Route path="/submissions" element={<ProtectedRoute><SubmissionsPage /></ProtectedRoute>} />
+          <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
+          <Route path="/export" element={<ProtectedRoute><ExportPage /></ProtectedRoute>} />
+          <Route path="*" element={<Navigate to="/guards" replace />} />
+        </Routes>
+      </main>
+    </BrowserRouter>
+  );
+}
