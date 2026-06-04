@@ -12,7 +12,11 @@ venv/
 
 # Environment
 .env
+!.env.docker
 *.log
+
+# Docker
+postgres-data/
 
 # IDE
 .vscode/
