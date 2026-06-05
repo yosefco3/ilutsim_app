@@ -3,19 +3,15 @@ import messages from '../utils/messages';
 
 export default function GuardForm({ onSave, onCancel }) {
   const ROLES = [
-    { value: 'ahmash', label: messages.guards.roleAhmash },
-    { value: 'basic_course', label: messages.guards.roleBasicCourse },
-    { value: 'level_b', label: messages.guards.roleLevelB },
-    { value: '9_hours', label: messages.guards.role9Hours },
-    { value: 'unarmed', label: messages.guards.roleUnarmed },
-    { value: 'checker', label: messages.guards.roleChecker },
+    { value: 'guard', label: messages.guards.roleGuard || 'שומר' },
+    { value: 'shift_lead', label: messages.guards.roleShiftLead || 'ראש צוות' },
+    { value: 'scanner', label: messages.guards.roleScanner || 'סורק' },
   ];
 
   const [form, setForm] = useState({
     full_name: '',
     phone_number: '',
-    role: 'ahmash',
-    is_active: true,
+    role: 'guard',
   });
 
   const handleChange = (e) => {
@@ -46,12 +42,6 @@ export default function GuardForm({ onSave, onCancel }) {
             <option key={r.value} value={r.value}>{r.label}</option>
           ))}
         </select>
-      </div>
-      <div className="form-group checkbox">
-        <label>
-          <input type="checkbox" name="is_active" checked={form.is_active} onChange={handleChange} />
-          {messages.guards.active}
-        </label>
       </div>
       <div className="form-actions">
         <button type="submit" className="btn btn-primary">{messages.common.save}</button>

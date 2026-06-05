@@ -19,7 +19,7 @@ export default function GuardTable({ guards, onEdit, onToggle, onDelete }) {
         {guards.map((g) => (
           <tr key={g.id}>
             <td>{g.full_name}</td>
-            <td>{g.phone || '—'}</td>
+            <td>{g.phone_number || '—'}</td>
             <td>
               <span className={`badge ${g.is_active ? 'badge-success' : 'badge-secondary'}`}>
                 {g.is_active ? messages.common.yes : messages.common.no}
