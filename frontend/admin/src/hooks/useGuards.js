@@ -38,5 +38,11 @@ export function useGuards() {
     setGuards((prev) => prev.filter((g) => g.id !== id));
   };
 
-  return { guards, loading, error, reload: load, addGuard: add, updateGuard: update, deleteGuard: remove };
+  const toggle = async (id, isActive) => {
+    const updated = await updateGuard(id, { is_active: isActive });
+    setGuards((prev) => prev.map((g) => (g.id === id ? updated : g)));
+    return updated;
+  };
+
+  return { guards, loading, error, reload: load, createGuard: add, updateGuard: update, deleteGuard: remove, toggleGuard: toggle };
 }

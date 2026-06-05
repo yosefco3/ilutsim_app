@@ -11,14 +11,23 @@ export default function GuardsPage() {
   const [editing, setEditing] = useState(null);
   const [confirmDelete, setConfirmDelete] = useState(null);
 
+  const [saving, setSaving] = useState(false);
+
   const handleSave = async (data) => {
-    if (editing) {
-      await updateGuard(editing.id, data);
-    } else {
-      await createGuard(data);
+    try {
+      setSaving(true);
+      if (editing) {
+        await updateGuard(editing.id, data);
+      } else {
+        await createGuard(data);
+      }
+      setShowForm(false);
+      setEditing(null);
+    } catch (err) {
+      alert(messages.common.error + ': ' + err.message);
+    } finally {
+      setSaving(false);
     }
-    setShowForm(false);
-    setEditing(null);
   };
 
   const handleEdit = (guard) => {
