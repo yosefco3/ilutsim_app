@@ -31,7 +31,7 @@ class UserService:
             min_evening_shifts=data.min_evening_shifts,
             exemptions_notes=data.exemptions_notes,
         )
-        created = await self._user_repo.create(user)
+        created = await self._user_repo.save(user)
         logger.info(f"User created: id={created.id}")
         return UserResponse.model_validate(created)
 
@@ -41,7 +41,7 @@ class UserService:
         update_data = data.model_dump(exclude_none=True)
         for field, value in update_data.items():
             setattr(user, field, value)
-        updated = await self._user_repo.update(user)
+        updated = await self._user_repo.save(user)
         logger.info(f"User updated: id={user_id}")
         return UserResponse.model_validate(updated)
 
@@ -49,7 +49,7 @@ class UserService:
         """Set is_active=False for a guard."""
         user = await self._get_user_or_raise(user_id)
         user.is_active = False
-        updated = await self._user_repo.update(user)
+        updated = await self._user_repo.save(user)
         logger.info(f"User deactivated: id={user_id}")
         return UserResponse.model_validate(updated)
 
