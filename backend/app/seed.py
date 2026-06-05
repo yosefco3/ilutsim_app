@@ -14,20 +14,18 @@ import sys
 from sqlalchemy import select
 
 from app.constants import AdminRole
-from app.database import AsyncSessionFactory, ensure_engine
+from app.database import async_session_factory
 from app.models.admin import Admin
-from app.dependencies import get_password_hasher
+from app.services.auth_service import AuthService
 
 
 async def seed_admin() -> None:
     """Create the default admin user if it does not already exist."""
-    await ensure_engine()
-
     email = os.environ.get("SEED_ADMIN_EMAIL", "admin@test.com")
     password = os.environ.get("SEED_ADMIN_PASSWORD", "admin123")
     full_name = os.environ.get("SEED_ADMIN_FULL_NAME", "Test Admin")
 
-    async with AsyncSessionFactory() as session:
+    async with async_session_factory() as session:
         result = await session.execute(
             select(Admin).where(Admin.email == email)
         )
@@ -37,10 +35,9 @@ async def seed_admin() -> None:
             print(f"  Admin user '{email}' already exists (id={existing.id}). Skipping.")
             return
 
-        hasher = get_password_hasher()
         admin = Admin(
             email=email,
-            password_hash=hasher.hash(password),
+            password_hash=AuthService.hash_password(password),
             full_name=full_name,
             role=AdminRole.SUPER_ADMIN,
             is_active=True,
