@@ -8,7 +8,7 @@ import uuid
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.dependencies import get_user_service, require_admin_role
-from app.schemas.user_schemas import UserResponse, UserUpdate
+from app.schemas.user_schemas import UserCreate, UserResponse, UserUpdate
 from app.services.user_service import UserService
 
 logger = logging.getLogger("ilutzim")
@@ -25,7 +25,24 @@ async def list_users(
     user_service: UserService = Depends(get_user_service),
 ):
     """List all active users."""
-    return await user_service.get_active_users()
+    return await user_service.get_all_active_users()
+
+
+@router.post("", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
+async def create_user(
+    data: UserCreate,
+    user_service: UserService = Depends(get_user_service),
+):
+    """Create a new guard user."""
+    try:
+        user = await user_service.create_user(data)
+        return user
+    except Exception as e:
+        logger.error(f"User creation failed: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        )
 
 
 @router.get("/{user_id}", response_model=UserResponse)

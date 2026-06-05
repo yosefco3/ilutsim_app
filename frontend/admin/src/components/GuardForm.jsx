@@ -13,7 +13,7 @@ export default function GuardForm({ onSave, onCancel }) {
 
   const [form, setForm] = useState({
     full_name: '',
-    phone: '',
+    phone_number: '',
     role: 'ahmash',
     is_active: true,
   });
@@ -37,7 +37,7 @@ export default function GuardForm({ onSave, onCancel }) {
       </div>
       <div className="form-group">
         <label>{messages.guards.phone}</label>
-        <input name="phone" value={form.phone} onChange={handleChange} />
+         <input name="phone_number" value={form.phone_number} onChange={handleChange} required />
       </div>
       <div className="form-group">
         <label>{messages.guards.role}</label>

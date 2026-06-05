@@ -85,7 +85,7 @@ export function createGuard(data) {
 }
 
 export function updateGuard(id, data) {
-  return request(`/admin/users/${id}`, { method: 'PUT', body: JSON.stringify(data) });
+  return request(`/admin/users/${id}`, { method: 'PATCH', body: JSON.stringify(data) });
 }
 
 export function deleteGuard(id) {
