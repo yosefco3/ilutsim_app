@@ -1,6 +1,6 @@
 import messages from '../utils/messages';
 
-export default function ConfirmDialog({ open, message, onConfirm, onCancel }) {
+export default function ConfirmDialog({ open = true, message, onConfirm, onCancel }) {
   if (!open) return null;
 
   return (

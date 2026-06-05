@@ -36,13 +36,23 @@ export default function GuardsPage() {
   };
 
   const handleToggle = async (guard) => {
-    await toggleGuard(guard.id, !guard.is_active);
+    try {
+      await toggleGuard(guard.id, !guard.is_active);
+      alert(messages.common.success);
+    } catch (err) {
+      alert(messages.common.error + ': ' + err.message);
+    }
   };
 
   const handleDelete = async () => {
     if (confirmDelete) {
-      await deleteGuard(confirmDelete.id);
-      setConfirmDelete(null);
+      try {
+        await deleteGuard(confirmDelete.id);
+        setConfirmDelete(null);
+        alert(messages.common.success);
+      } catch (err) {
+        alert(messages.common.error + ': ' + err.message);
+      }
     }
   };
 
@@ -61,6 +71,7 @@ export default function GuardsPage() {
 
       {showForm && (
         <GuardForm
+          guard={editing}
           onSave={handleSave}
           onCancel={() => { setShowForm(false); setEditing(null); }}
         />

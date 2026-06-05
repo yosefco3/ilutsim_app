@@ -1,20 +1,20 @@
 import { useState } from 'react';
 import messages from '../utils/messages';
 
-export default function GuardForm({ onSave, onCancel }) {
-  const ROLES = [
-    { value: 'AHMASH', label: 'אחמ"ש' },
-    { value: 'BASIC_GUARD', label: 'מאבטח בסיסי' },
-    { value: 'LEVEL_B', label: "מאבטח רמה ב'" },
-    { value: 'NINE_HOURS', label: 'מאבטח 9 שעות' },
-    { value: 'UNARMED', label: 'לא חמוש' },
-    { value: 'CHECKER', label: 'בודק' },
-  ];
+const ROLES = [
+  { value: 'AHMASH', label: 'אחמ"ש' },
+  { value: 'BASIC_GUARD', label: 'מאבטח בסיסי' },
+  { value: 'LEVEL_B', label: "מאבטח רמה ב'" },
+  { value: 'NINE_HOURS', label: 'מאבטח 9 שעות' },
+  { value: 'UNARMED', label: 'לא חמוש' },
+  { value: 'CHECKER', label: 'בודק' },
+];
 
+export default function GuardForm({ guard, onSave, onCancel }) {
   const [form, setForm] = useState({
-    full_name: '',
-    phone_number: '',
-    role: 'AHMASH',
+    full_name: guard?.full_name || '',
+    phone_number: guard?.phone_number || '',
+    role: guard?.role || 'AHMASH',
   });
 
   const handleChange = (e) => {
@@ -29,7 +29,7 @@ export default function GuardForm({ onSave, onCancel }) {
 
   return (
     <form className="card" onSubmit={handleSubmit}>
-      <h3>{messages.guards.addTitle}</h3>
+      <h3>{guard ? messages.guards.editTitle : messages.guards.addTitle}</h3>
       <div className="form-group">
         <label>{messages.guards.fullName}</label>
         <input name="full_name" value={form.full_name} onChange={handleChange} required />
