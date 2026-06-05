@@ -43,6 +43,11 @@ class Settings(BaseSettings):
     CRON_WEEKLY_OPEN_HOUR: str = "09:00"
     REMINDER_HOUR: int = 18
 
+    # Seed — default admin user
+    SEED_ADMIN_EMAIL: str = "admin@test.com"
+    SEED_ADMIN_PASSWORD: str = "admin123"
+    SEED_ADMIN_FULL_NAME: str = "Test Admin"
+
     @property
     def reminder_hour(self) -> int:
         """Hour for closing reminder cron (alias for REMINDER_HOUR)."""
