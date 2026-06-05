@@ -5,7 +5,6 @@ export default function GuardForm({ onSave, onCancel }) {
   const [form, setForm] = useState({
     full_name: '',
     phone: '',
-    telegram_chat_id: '',
     is_active: true,
   });
 
@@ -29,10 +28,6 @@ export default function GuardForm({ onSave, onCancel }) {
       <div className="form-group">
         <label>{messages.guards.phone}</label>
         <input name="phone" value={form.phone} onChange={handleChange} />
-      </div>
-      <div className="form-group">
-        <label>{messages.guards.telegramId}</label>
-        <input name="telegram_chat_id" value={form.telegram_chat_id} onChange={handleChange} />
       </div>
       <div className="form-group checkbox">
         <label>

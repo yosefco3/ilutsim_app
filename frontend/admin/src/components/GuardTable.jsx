@@ -11,7 +11,6 @@ export default function GuardTable({ guards, onEdit, onToggle, onDelete }) {
         <tr>
           <th>{messages.guards.fullName}</th>
           <th>{messages.guards.phone}</th>
-          <th>{messages.guards.telegramId}</th>
           <th>{messages.guards.active}</th>
           <th>{messages.common.actions}</th>
         </tr>
@@ -21,7 +20,6 @@ export default function GuardTable({ guards, onEdit, onToggle, onDelete }) {
           <tr key={g.id}>
             <td>{g.full_name}</td>
             <td>{g.phone || '—'}</td>
-            <td>{g.telegram_chat_id || '—'}</td>
             <td>
               <span className={`badge ${g.is_active ? 'badge-success' : 'badge-secondary'}`}>
                 {g.is_active ? messages.common.yes : messages.common.no}
