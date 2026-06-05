@@ -17,6 +17,9 @@ export function useSubmission(initData) {
   const [events, setEvents] = useState([]);
   const [notes, setNotes] = useState("");
 
+  // ── Dev mode flag ──────────────────────────────────────────────
+  const isDevMode = initData === "__DEV_MODE__";
+
   // ── Load current week + existing submission ──────────────────
   useEffect(() => {
     if (!initData) return;
@@ -29,11 +32,16 @@ export function useSubmission(initData) {
 
       // 1) Get current week
       const { data: weekData, error: weekErr } = await get(
-        "/api/submissions/current-week",
+        "/submissions/current-week",
         initData,
       );
       if (weekErr) {
-        setError(weekErr);
+        // In dev mode, show a friendly message instead of raw error
+        if (isDevMode) {
+          setError("No open week found. Open a week from the admin dashboard first, then refresh this page.");
+        } else {
+          setError(weekErr);
+        }
         setLoading(false);
         return;
       }
@@ -41,9 +49,9 @@ export function useSubmission(initData) {
       if (cancelled) return;
       setWeek(weekData);
 
-      // 2) Get existing submission (may be null)
+      // 2) Get existing submission (may be null / endpoint may not exist in dev)
       const { data: subData } = await get(
-        `/api/submissions/my?week_id=${weekData.week_id}`,
+        `/submissions/my?week_id=${weekData.week_id}`,
         initData,
       );
 
@@ -140,7 +148,7 @@ export function useSubmission(initData) {
     };
 
     const { error: submitErr } = await post(
-      "/api/submissions/submit",
+      "/submissions/submit",
       payload,
       initData,
     );
