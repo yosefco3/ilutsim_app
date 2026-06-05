@@ -36,9 +36,12 @@ class SubmissionStatus(str, enum.Enum):
 
 class UserRole(str, enum.Enum):
     """Guard roles within the system."""
-    GUARD = "guard"
-    SHIFT_LEAD = "shift_lead"
-    SCANNER = "scanner"
+    AHMASH = "AHMASH"
+    BASIC_GUARD = "BASIC_GUARD"
+    LEVEL_B = "LEVEL_B"
+    NINE_HOURS = "NINE_HOURS"
+    UNARMED = "UNARMED"
+    CHECKER = "CHECKER"
 
 
 class AdminRole(str, enum.Enum):

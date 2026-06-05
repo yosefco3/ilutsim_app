@@ -55,7 +55,7 @@ def upgrade() -> None:
     sa.Column('phone_number', sa.String(length=20), nullable=False),
     sa.Column('telegram_id', sa.String(length=50), nullable=True),
     sa.Column('full_name', sa.String(length=100), nullable=False),
-    sa.Column('role', sa.Enum('GUARD', 'SHIFT_LEAD', 'SCANNER', name='user_role'), nullable=False),
+    sa.Column('role', sa.Enum('AHMASH', 'BASIC_GUARD', 'LEVEL_B', 'NINE_HOURS', 'UNARMED', 'CHECKER', name='user_role'), nullable=False),
     sa.Column('is_active', sa.Boolean(), nullable=False),
     sa.Column('exemptions_notes', sa.Text(), nullable=True),
     sa.Column('min_total_shifts', sa.Integer(), nullable=False),

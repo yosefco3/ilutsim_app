@@ -3,15 +3,18 @@ import messages from '../utils/messages';
 
 export default function GuardForm({ onSave, onCancel }) {
   const ROLES = [
-    { value: 'guard', label: messages.guards.roleGuard || 'שומר' },
-    { value: 'shift_lead', label: messages.guards.roleShiftLead || 'ראש צוות' },
-    { value: 'scanner', label: messages.guards.roleScanner || 'סורק' },
+    { value: 'AHMASH', label: 'אחמ"ש' },
+    { value: 'BASIC_GUARD', label: 'מאבטח בסיסי' },
+    { value: 'LEVEL_B', label: "מאבטח רמה ב'" },
+    { value: 'NINE_HOURS', label: 'מאבטח 9 שעות' },
+    { value: 'UNARMED', label: 'לא חמוש' },
+    { value: 'CHECKER', label: 'בודק' },
   ];
 
   const [form, setForm] = useState({
     full_name: '',
     phone_number: '',
-    role: 'guard',
+    role: 'AHMASH',
   });
 
   const handleChange = (e) => {
