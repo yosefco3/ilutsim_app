@@ -3,15 +3,18 @@ import messages from '../utils/messages';
 
 export default function GuardForm({ onSave, onCancel }) {
   const ROLES = [
-    { value: 'guard', label: messages.guards.roleGuard },
-    { value: 'shift_lead', label: messages.guards.roleShiftLead },
-    { value: 'scanner', label: messages.guards.roleScanner },
+    { value: 'ahmash', label: messages.guards.roleAhmash },
+    { value: 'basic_course', label: messages.guards.roleBasicCourse },
+    { value: 'level_b', label: messages.guards.roleLevelB },
+    { value: '9_hours', label: messages.guards.role9Hours },
+    { value: 'unarmed', label: messages.guards.roleUnarmed },
+    { value: 'checker', label: messages.guards.roleChecker },
   ];
 
   const [form, setForm] = useState({
     full_name: '',
     phone: '',
-    role: 'guard',
+    role: 'ahmash',
     is_active: true,
   });
 
