@@ -42,6 +42,10 @@ export default {
     deactivate: 'השבת',
     noGuards: 'אין שומרים במערכת',
     empty: 'אין שומרים במערכת',
+    role: 'תפקיד',
+    roleGuard: 'שומר',
+    roleShiftLead: 'ראש משמרת',
+    roleScanner: 'סורק',
   },
   weeks: {
     title: 'ניהול שבועות',

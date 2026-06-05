@@ -2,9 +2,16 @@ import { useState } from 'react';
 import messages from '../utils/messages';
 
 export default function GuardForm({ onSave, onCancel }) {
+  const ROLES = [
+    { value: 'guard', label: messages.guards.roleGuard },
+    { value: 'shift_lead', label: messages.guards.roleShiftLead },
+    { value: 'scanner', label: messages.guards.roleScanner },
+  ];
+
   const [form, setForm] = useState({
     full_name: '',
     phone: '',
+    role: 'guard',
     is_active: true,
   });
 
@@ -28,6 +35,14 @@ export default function GuardForm({ onSave, onCancel }) {
       <div className="form-group">
         <label>{messages.guards.phone}</label>
         <input name="phone" value={form.phone} onChange={handleChange} />
+      </div>
+      <div className="form-group">
+        <label>{messages.guards.role}</label>
+        <select name="role" value={form.role} onChange={handleChange}>
+          {ROLES.map((r) => (
+            <option key={r.value} value={r.value}>{r.label}</option>
+          ))}
+        </select>
       </div>
       <div className="form-group checkbox">
         <label>
