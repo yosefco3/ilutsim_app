@@ -47,6 +47,32 @@ class AuthService:
             "role": admin.role.value,
         }
 
+    async def login_admin(self, username: str, password: str) -> dict:
+        """Authenticate admin by username (email or local part) and password.
+
+        Used by the admin dashboard login endpoint.
+        Supports login with full email or just the part before '@'.
+        """
+        admin = await self._admin_repo.get_by_username_or_email(username)
+        if admin is None or not admin.is_active:
+            logger.warning(f"Admin login failed — not found or inactive: {username}")
+            raise AuthenticationFailedException()
+
+        if not pwd_context.verify(password, admin.password_hash):
+            logger.warning(f"Admin login failed — bad password: {username}")
+            raise AuthenticationFailedException()
+
+        token = self._create_access_token(
+            data={"sub": str(admin.id), "role": admin.role.value}
+        )
+        logger.info(f"Admin authenticated: {username}")
+        return {
+            "access_token": token,
+            "token_type": "bearer",
+            "admin_id": admin.id,
+            "role": admin.role.value,
+        }
+
     def verify_token(self, token: str) -> dict:
         """Decode and validate a JWT token. Returns payload dict."""
         try:

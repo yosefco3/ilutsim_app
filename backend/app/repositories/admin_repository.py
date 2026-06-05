@@ -29,6 +29,22 @@ class AdminRepository:
         result = await self.session.execute(stmt)
         return result.scalar_one_or_none()
 
+    async def get_by_username_or_email(self, username_or_email: str) -> Admin | None:
+        """Find an admin by exact email, or by prefix of the local part.
+
+        Allows users to type just 'yosef' to match 'yosefco12@gmail.com'.
+        """
+        from sqlalchemy import or_
+
+        stmt = select(Admin).where(
+            or_(
+                Admin.email == username_or_email,
+                Admin.email.ilike(f"{username_or_email}%@%"),
+            )
+        )
+        result = await self.session.execute(stmt)
+        return result.scalar_one_or_none()
+
     async def create_admin(
         self,
         email: str,

@@ -8,7 +8,6 @@ from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.config import Settings, get_settings
 from app.dependencies import get_auth_service, get_current_admin
-from app.schemas.common_schemas import TokenResponse
 from app.schemas.user_schemas import LoginRequest
 from app.services.auth_service import AuthService
 from app.utils.telegram_auth import get_telegram_user_id
@@ -18,7 +17,7 @@ logger = logging.getLogger("ilutzim")
 router = APIRouter(prefix="/auth", tags=["Auth"])
 
 
-@router.post("/telegram", response_model=TokenResponse)
+@router.post("/telegram")
 async def telegram_login(
     body: LoginRequest,
     auth_service: AuthService = Depends(get_auth_service),
@@ -50,8 +49,8 @@ async def telegram_login(
         )
 
     try:
-        token = await auth_service.login_with_telegram(telegram_id)
-        return TokenResponse(token=token)
+        result = await auth_service.login_with_telegram(telegram_id)
+        return result
     except Exception as e:
         logger.error(f"Telegram login failed: {e}")
         raise HTTPException(
@@ -60,7 +59,7 @@ async def telegram_login(
         )
 
 
-@router.post("/admin/login", response_model=TokenResponse)
+@router.post("/admin/login")
 async def admin_login(
     body: LoginRequest,
     auth_service: AuthService = Depends(get_auth_service),
@@ -77,8 +76,8 @@ async def admin_login(
         )
 
     try:
-        token = await auth_service.login_admin(body.username, body.password)
-        return TokenResponse(token=token)
+        result = await auth_service.login_admin(body.username, body.password)
+        return result
     except Exception as e:
         logger.error(f"Admin login failed: {e}")
         raise HTTPException(
