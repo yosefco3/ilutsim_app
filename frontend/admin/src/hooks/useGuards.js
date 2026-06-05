@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { fetchGuards, createGuard, updateGuard, deleteGuard } from '../api/adminApiClient';
 
-export default function useGuards() {
+export function useGuards() {
   const [guards, setGuards] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);

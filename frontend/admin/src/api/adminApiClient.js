@@ -180,6 +180,12 @@ export function deleteAdmin(id) {
   return request(`/admin/admins/${id}`, { method: 'DELETE' });
 }
 
+// ──── Aliases used by pages ────
+export const getEvents = fetchEvents;
+export const exportExcel = exportWeekExcel;
+export const login = adminLogin;
+export const sendReminder = sendWeekReminders;
+
 export default {
   adminLogin,
   adminLogout,

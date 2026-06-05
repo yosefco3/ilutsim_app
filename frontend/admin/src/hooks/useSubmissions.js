@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import { fetchSubmissions } from '../api/adminApiClient';
 
-export default function useSubmissions() {
+export function useSubmissions() {
   const [submissions, setSubmissions] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);

@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { fetchSettings, updateSettings } from '../api/adminApiClient';
 
-export default function useSettings() {
+export function useSettings() {
   const [settings, setSettings] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);

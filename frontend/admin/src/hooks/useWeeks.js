@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { fetchWeeks, createWeek, updateWeekStatus, sendWeekReminders } from '../api/adminApiClient';
 
-export default function useWeeks() {
+export function useWeeks() {
   const [weeks, setWeeks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
