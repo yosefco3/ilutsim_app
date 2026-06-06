@@ -30,10 +30,32 @@ kill_port() {
 cleanup() {
     echo ""
     echo -e "${RED}🛑 Stopping all services...${NC}"
+
+    # Send SIGTERM to tracked PIDs and their children
     for pid in "${PIDS[@]}"; do
+        # Kill child processes first (uvicorn reload worker, vite dev server, etc.)
+        pkill -P "$pid" 2>/dev/null || true
         kill "$pid" 2>/dev/null || true
     done
-    wait 2>/dev/null
+
+    # Give processes 2 seconds to shut down gracefully
+    sleep 2
+
+    # Force-kill anything still running on our ports (safety net)
+    kill_port 8000
+    kill_port 3001
+    kill_port 5173
+
+    # Force-kill any remaining tracked PIDs
+    for pid in "${PIDS[@]}"; do
+        kill -9 "$pid" 2>/dev/null || true
+    done
+
+    # Reap all children with a timeout so we never hang
+    for pid in "${PIDS[@]}"; do
+        timeout 2 bash -c "kill -0 $pid 2>/dev/null && wait $pid" 2>/dev/null || true
+    done
+
     echo -e "${GREEN}✅ All services stopped.${NC}"
     exit 0
 }
