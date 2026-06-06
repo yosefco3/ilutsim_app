@@ -56,7 +56,7 @@ class TestUserCreate:
             phone_number="0521234567",
             first_name="ישראל",
             last_name="ישראלי",
-            role="guard",
+            role="BASIC_GUARD",
         )
         assert user.phone_number == "972521234567"
 
