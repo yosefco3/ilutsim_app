@@ -36,7 +36,7 @@ class AuthMiddleware(BaseMiddleware):
             logger.warning("AuthMiddleware DB error: %s – letting request through", exc)
             return await handler(event, data)
 
-        if user is not None and not user.get("is_active", True):
+        if user is not None and not user.is_active:
             if isinstance(event, Message):
                 await event.answer("🚫 החשבון שלך מושבת. פנה למנהל.")
             elif isinstance(event, CallbackQuery):
