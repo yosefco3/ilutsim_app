@@ -174,9 +174,10 @@ class TestFullWeekLifecycle:
         )
         assert resp.status_code == 201
 
-        # Step 6: Admin locks the week (new_status is a query param)
+        # Step 6: Admin locks the week (status in JSON body)
         resp = client.patch(
-            f"/admin/weeks/{week_id}/status?new_status=locked",
+            f"/admin/weeks/{week_id}/status",
+            json={"status": "locked"},
             headers=_admin_headers(),
         )
         assert resp.status_code == 200
@@ -195,7 +196,8 @@ class TestFullWeekLifecycle:
 
         # Step 9: Admin publishes
         resp = client.patch(
-            f"/admin/weeks/{week_id}/status?new_status=published",
+            f"/admin/weeks/{week_id}/status",
+            json={"status": "published"},
             headers=_admin_headers(),
         )
         assert resp.status_code == 200
@@ -243,7 +245,8 @@ class TestInvalidTransitions:
         client = TestClient(app)
 
         resp = client.patch(
-            f"/admin/weeks/{week_id}/status?new_status=published",
+            f"/admin/weeks/{week_id}/status",
+            json={"status": "published"},
             headers=_admin_headers(),
         )
         assert resp.status_code == 400
@@ -260,7 +263,8 @@ class TestInvalidTransitions:
         client = TestClient(app)
 
         resp = client.patch(
-            f"/admin/weeks/{uuid.uuid4()}/status?new_status=locked",
+            f"/admin/weeks/{uuid.uuid4()}/status",
+            json={"status": "locked"},
             headers=_admin_headers(),
         )
         assert resp.status_code == 400
