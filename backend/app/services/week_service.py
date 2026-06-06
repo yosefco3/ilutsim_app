@@ -19,6 +19,7 @@ logger = logging.getLogger("ilutzim")
 # Allowed week-status transitions: open → locked → published.
 # Admin can also reopen a locked week: locked → open.
 ALLOWED_TRANSITIONS: dict[str, list[str]] = {
+    "closed": ["open"],
     "open": ["locked"],
     "locked": ["open", "published"],
     "published": [],  # terminal state
@@ -83,7 +84,7 @@ class WeekService:
 
         # Send Telegram notifications on status change
         try:
-            from app.bot.notifications import notify_week_locked, notify_week_published
+            from app.bot.notifications import notify_week_locked, notify_week_opened, notify_week_published
 
             telegram_ids: list[int] = []
             if self._user_repo is not None:
@@ -91,7 +92,9 @@ class WeekService:
                 telegram_ids = [u.telegram_id for u in users if u.telegram_id]
 
             if telegram_ids:
-                if new_status == WeekStatus.LOCKED:
+                if new_status == WeekStatus.OPEN:
+                    await notify_week_opened(updated.start_date, updated.end_date, telegram_ids)
+                elif new_status == WeekStatus.LOCKED:
                     await notify_week_locked(updated.start_date, updated.end_date, telegram_ids)
                 elif new_status == WeekStatus.PUBLISHED:
                     await notify_week_published(updated.start_date, updated.end_date, telegram_ids)
@@ -110,6 +113,11 @@ class WeekService:
                 logger.warning(f"Failed to auto-create next week: {exc}")
 
         return WeekResponse.model_validate(updated)
+
+    async def get_week(self, week_id: uuid.UUID) -> WeekResponse:
+        """Return a single week by ID."""
+        week = await self._get_week_or_raise(week_id)
+        return WeekResponse.model_validate(week)
 
     async def get_current_open_week(self) -> Optional[WeekResponse]:
         """Return the currently open week, if any."""

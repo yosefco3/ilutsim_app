@@ -69,11 +69,29 @@ async def get_week(
 ):
     """Get a specific week by ID."""
     try:
-        return await week_service.change_week_status(week_id, WeekStatus.OPEN)
+        return await week_service.get_week(week_id)
     except Exception:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Week not found",
+        )
+
+
+@router.post("/{week_id}/open", response_model=WeekResponse)
+async def reopen_week(
+    week_id: uuid.UUID,
+    week_service: WeekService = Depends(get_week_service),
+):
+    """Re-open a closed or locked week for submissions."""
+    try:
+        return await week_service.change_week_status(week_id, WeekStatus.OPEN)
+    except AppBaseException as exc:
+        raise HTTPException(status_code=exc.status_code, detail=exc.message)
+    except Exception as e:
+        logger.error(f"Week reopen failed: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
         )
 
 
