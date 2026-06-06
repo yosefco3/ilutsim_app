@@ -207,7 +207,6 @@ async def process_phone(message: Message, state: FSMContext):
         await _show_main_menu(message, display_name)
     except Exception as exc:
         logger.error("Failed to show main menu after phone verification: %s", exc, exc_info=True)
-        await message.answer(f"✅ {display_name}, החשבון חובר בהצלחה!\nשלח /start לתפריט.")
 
 
 async def _show_main_menu(message: Message, display_name: str):
