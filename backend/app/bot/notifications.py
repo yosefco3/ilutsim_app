@@ -58,8 +58,7 @@ async def notify_guard_welcome(telegram_id: int, first_name: str, last_name: str
     text = (
         f"👋 שלום {full_name}!\n\n"
         f"נרשמת בהצלחה למערכת ניהול האילוצים.\n"
-        f"מעתה תקבל הודעות ותזכורות דרך הבוט הזה.\n\n"
-        f"שלח /start לכניסה לתפריט הראשי."
+        f"מעתה תקבל הודעות ותזכורות דרך הבוט הזה."
     )
     return await send_notification(telegram_id, text)
 

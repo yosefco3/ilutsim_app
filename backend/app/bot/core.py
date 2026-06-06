@@ -50,18 +50,24 @@ async def _get_services():
     from app.services.user_service import UserService
     from app.services.submission_service import SubmissionService
     from app.services.week_service import WeekService
+    from app.services.deviation_service import DeviationService
     from app.database import get_session
     from app.repositories.user_repository import UserRepository
+    from app.repositories.submission_repository import SubmissionRepository
+    from app.repositories.schedule_week_repository import ScheduleWeekRepository
 
-    # Use the sync async context manager (not the async generator get_pool)
     session_ctx = get_session()
     session = await session_ctx.__aenter__()
     logger.info("Bot _get_services: opened DB session %s", id(session))
 
     user_repo = UserRepository(session)
+    sub_repo = SubmissionRepository(session)
+    week_repo = ScheduleWeekRepository(session)
+    deviation_svc = DeviationService()
+
     user_svc = UserService(user_repo)
     week_svc = WeekService(session)
-    sub_svc = SubmissionService(session)
+    sub_svc = SubmissionService(sub_repo, user_repo, week_repo, deviation_svc)
     return user_svc, week_svc, sub_svc
 
 
