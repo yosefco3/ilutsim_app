@@ -53,6 +53,7 @@ class UserUpdate(BaseModel):
     phone_number: str | None = None
     full_name: str | None = None
     role: UserRole | None = None
+    is_active: bool | None = None
     exemptions_notes: str | None = None
     min_total_shifts: int | None = None
     min_night_shifts: int | None = None
