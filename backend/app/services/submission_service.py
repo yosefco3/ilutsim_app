@@ -70,7 +70,7 @@ class SubmissionService:
             status = SubmissionStatus.SUBMITTED
 
         # Create or update submission
-        existing = await self._submission_repo.get_by_user_and_week(
+        existing = await self._submission_repo.get_submission(
             data.user_id, data.week_id
         )
         if existing:
@@ -94,14 +94,14 @@ class SubmissionService:
         self, week_id: uuid.UUID
     ) -> list[SubmissionResponse]:
         """Return all submissions for a given week."""
-        submissions = await self._submission_repo.get_by_week(week_id)
+        submissions = await self._submission_repo.get_submissions_for_week(week_id)
         return [SubmissionResponse.model_validate(s) for s in submissions]
 
     async def get_submission(
         self, user_id: uuid.UUID, week_id: uuid.UUID
     ) -> Optional[SubmissionResponse]:
         """Return a single submission by user + week."""
-        sub = await self._submission_repo.get_by_user_and_week(user_id, week_id)
+        sub = await self._submission_repo.get_submission(user_id, week_id)
         if sub is None:
             return None
         return SubmissionResponse.model_validate(sub)
@@ -114,7 +114,7 @@ class SubmissionService:
         active_users = await self._user_repo.get_active_users()
         marked = 0
         for user in active_users:
-            existing = await self._submission_repo.get_by_user_and_week(
+            existing = await self._submission_repo.get_submission(
                 user.id, week_id
             )
             if existing is None:
