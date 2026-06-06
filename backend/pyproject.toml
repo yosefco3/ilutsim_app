@@ -9,6 +9,10 @@ testpaths = ["tests"]
 python_files = ["test_*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
+markers = [
+    "integration: marks tests that require Docker/external services (deselect with '-m \"not integration\"')",
+]
+addopts = "-m 'not integration'"
 
 [tool.coverage.run]
 source = ["app"]

@@ -20,16 +20,16 @@ class TestPhoneValidation:
     """Tests for Israeli phone number validation."""
 
     def test_valid_mobile(self):
-        assert _validate_israeli_phone("0521234567") == "0521234567"
+        assert _validate_israeli_phone("0521234567") == "972521234567"
 
     def test_valid_mobile_with_spaces(self):
-        assert _validate_israeli_phone("052 123 4567") == "0521234567"
+        assert _validate_israeli_phone("052 123 4567") == "972521234567"
 
     def test_valid_mobile_with_dashes(self):
-        assert _validate_israeli_phone("052-123-4567") == "0521234567"
+        assert _validate_israeli_phone("052-123-4567") == "972521234567"
 
     def test_valid_international(self):
-        assert _validate_israeli_phone("+972521234567") == "+972521234567"
+        assert _validate_israeli_phone("+972521234567") == "972521234567"
 
     def test_invalid_too_short(self):
         with pytest.raises(ValueError):
@@ -58,7 +58,7 @@ class TestUserCreate:
             last_name="ישראלי",
             role="guard",
         )
-        assert user.phone_number == "0521234567"
+        assert user.phone_number == "972521234567"
 
     def test_invalid_phone_rejected(self):
         with pytest.raises(ValueError):
@@ -79,7 +79,7 @@ class TestUserUpdate:
 
     def test_valid_phone_normalized(self):
         update = UserUpdate(phone_number="052 123 4567")
-        assert update.phone_number == "0521234567"
+        assert update.phone_number == "972521234567"
 
 
 # ── Date range validation ─────────────────────────────────────────

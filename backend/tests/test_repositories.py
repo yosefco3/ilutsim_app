@@ -63,7 +63,8 @@ class TestUserRepository:
         repo = UserRepository(db_session)
         user = await repo.create(
             phone_number="0501234567",
-            full_name="John Doe",
+            first_name="John",
+            last_name="Doe",
             is_active=True,
             role=UserRole.GUARD,
         )
@@ -72,17 +73,18 @@ class TestUserRepository:
         fetched = await repo.get_by_id(user.id)
         assert fetched is not None
         assert fetched.phone_number == "0501234567"
-        assert fetched.full_name == "John Doe"
+        assert fetched.first_name == "John"
+        assert fetched.last_name == "Doe"
 
     @pytest.mark.asyncio
     async def test_get_by_phone(self, db_session: AsyncSession):
         repo = UserRepository(db_session)
-        await repo.create(phone_number="0509876543", full_name="Jane", is_active=True, role=UserRole.GUARD)
+        await repo.create(phone_number="0509876543", first_name="Jane", last_name="", is_active=True, role=UserRole.GUARD)
         await db_session.commit()
 
         found = await repo.get_by_phone("0509876543")
         assert found is not None
-        assert found.full_name == "Jane"
+        assert found.first_name == "Jane"
 
         not_found = await repo.get_by_phone("0000000000")
         assert not_found is None
@@ -90,7 +92,7 @@ class TestUserRepository:
     @pytest.mark.asyncio
     async def test_get_by_telegram_id(self, db_session: AsyncSession):
         repo = UserRepository(db_session)
-        user = await repo.create(phone_number="0501111111", full_name="TG User", is_active=True, role=UserRole.GUARD)
+        user = await repo.create(phone_number="0501111111", first_name="TG", last_name="User", is_active=True, role=UserRole.GUARD)
         user.telegram_id = "123456789"
         await db_session.commit()
 
@@ -101,18 +103,18 @@ class TestUserRepository:
     @pytest.mark.asyncio
     async def test_get_active_users(self, db_session: AsyncSession):
         repo = UserRepository(db_session)
-        await repo.create(phone_number="0500000001", full_name="Active", is_active=True, role=UserRole.GUARD)
-        await repo.create(phone_number="0500000002", full_name="Inactive", is_active=False, role=UserRole.GUARD)
+        await repo.create(phone_number="0500000001", first_name="Active", last_name="", is_active=True, role=UserRole.GUARD)
+        await repo.create(phone_number="0500000002", first_name="Inactive", last_name="", is_active=False, role=UserRole.GUARD)
         await db_session.commit()
 
         active = await repo.get_active_users()
         assert len(active) == 1
-        assert active[0].full_name == "Active"
+        assert active[0].first_name == "Active"
 
     @pytest.mark.asyncio
     async def test_link_telegram_id(self, db_session: AsyncSession):
         repo = UserRepository(db_session)
-        await repo.create(phone_number="0502222222", full_name="Link Me", is_active=True, role=UserRole.GUARD)
+        await repo.create(phone_number="0502222222", first_name="Link", last_name="Me", is_active=True, role=UserRole.GUARD)
         await db_session.commit()
 
         user = await repo.link_telegram_id("0502222222", "999888777")
@@ -127,7 +129,7 @@ class TestUserRepository:
     @pytest.mark.asyncio
     async def test_deactivate_user(self, db_session: AsyncSession):
         repo = UserRepository(db_session)
-        user = await repo.create(phone_number="0503333333", full_name="Deac", is_active=True, role=UserRole.GUARD)
+        user = await repo.create(phone_number="0503333333", first_name="Deac", last_name="", is_active=True, role=UserRole.GUARD)
         await db_session.commit()
 
         deactivated = await repo.deactivate_user(user.id)
@@ -209,7 +211,7 @@ class TestScheduleEventRepository:
     async def test_create_event(self, db_session: AsyncSession):
         # Need a user first
         user_repo = UserRepository(db_session)
-        user = await user_repo.create(phone_number="0504444444", full_name="Ev User", is_active=True, role=UserRole.GUARD)
+        user = await user_repo.create(phone_number="0504444444", first_name="Ev", last_name="User", is_active=True, role=UserRole.GUARD)
         await db_session.commit()
 
         repo = ScheduleEventRepository(db_session)
@@ -227,7 +229,7 @@ class TestScheduleEventRepository:
     @pytest.mark.asyncio
     async def test_get_events_for_user(self, db_session: AsyncSession):
         user_repo = UserRepository(db_session)
-        user = await user_repo.create(phone_number="0505555555", full_name="Ev2", is_active=True, role=UserRole.GUARD)
+        user = await user_repo.create(phone_number="0505555555", first_name="Ev2", last_name="", is_active=True, role=UserRole.GUARD)
         await db_session.commit()
 
         repo = ScheduleEventRepository(db_session)
@@ -243,7 +245,7 @@ class TestScheduleEventRepository:
     @pytest.mark.asyncio
     async def test_get_full_week_absences(self, db_session: AsyncSession):
         user_repo = UserRepository(db_session)
-        user = await user_repo.create(phone_number="0506666666", full_name="Abs", is_active=True, role=UserRole.GUARD)
+        user = await user_repo.create(phone_number="0506666666", first_name="Abs", last_name="", is_active=True, role=UserRole.GUARD)
         await db_session.commit()
 
         repo = ScheduleEventRepository(db_session)
@@ -263,7 +265,7 @@ class TestSubmissionRepository:
     @pytest.mark.asyncio
     async def test_upsert_and_get_submission(self, db_session: AsyncSession):
         user_repo = UserRepository(db_session)
-        user = await user_repo.create(phone_number="0507777777", full_name="Sub", is_active=True, role=UserRole.GUARD)
+        user = await user_repo.create(phone_number="0507777777", first_name="Sub", last_name="", is_active=True, role=UserRole.GUARD)
         await db_session.commit()
 
         week_repo = ScheduleWeekRepository(db_session)
@@ -319,7 +321,7 @@ class TestSubmissionRepository:
     @pytest.mark.asyncio
     async def test_upsert_replaces_existing(self, db_session: AsyncSession):
         user_repo = UserRepository(db_session)
-        user = await user_repo.create(phone_number="0508888888", full_name="Rep", is_active=True, role=UserRole.GUARD)
+        user = await user_repo.create(phone_number="0508888888", first_name="Rep", last_name="", is_active=True, role=UserRole.GUARD)
         await db_session.commit()
 
         week_repo = ScheduleWeekRepository(db_session)
@@ -374,9 +376,9 @@ class TestSubmissionRepository:
     @pytest.mark.asyncio
     async def test_get_missing_submissions(self, db_session: AsyncSession):
         user_repo = UserRepository(db_session)
-        u1 = await user_repo.create(phone_number="0509000001", full_name="U1", is_active=True, role=UserRole.GUARD)
-        u2 = await user_repo.create(phone_number="0509000002", full_name="U2", is_active=True, role=UserRole.GUARD)
-        u3 = await user_repo.create(phone_number="0509000003", full_name="U3", is_active=True, role=UserRole.GUARD)
+        u1 = await user_repo.create(phone_number="0509000001", first_name="U1", last_name="", is_active=True, role=UserRole.GUARD)
+        u2 = await user_repo.create(phone_number="0509000002", first_name="U2", last_name="", is_active=True, role=UserRole.GUARD)
+        u3 = await user_repo.create(phone_number="0509000003", first_name="U3", last_name="", is_active=True, role=UserRole.GUARD)
         await db_session.commit()
 
         week_repo = ScheduleWeekRepository(db_session)

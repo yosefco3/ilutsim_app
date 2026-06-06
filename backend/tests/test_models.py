@@ -39,22 +39,23 @@ class TestUserModel:
         user = User(
             phone_number="0501234567",
             telegram_id="123456789",
-            full_name="John Doe",
-            role=UserRole.GUARD,
+            first_name="John",
+            last_name="Doe",
+            role=UserRole.BASIC_GUARD,
             is_active=True,
         )
         await _persist(db_session, user)
         assert user.id is not None
         assert user.phone_number == "0501234567"
-        assert user.role == UserRole.GUARD
+        assert user.role == UserRole.BASIC_GUARD
         assert user.created_at is not None
 
     async def test_user_table_name(self):
         assert User.__tablename__ == "users"
 
     async def test_user_unique_phone(self, db_session):
-        u1 = User(phone_number="0509999999", full_name="A", role=UserRole.GUARD)
-        u2 = User(phone_number="0509999999", full_name="B", role=UserRole.GUARD)
+        u1 = User(phone_number="0509999999", first_name="A", last_name="", role=UserRole.BASIC_GUARD)
+        u2 = User(phone_number="0509999999", first_name="B", last_name="", role=UserRole.BASIC_GUARD)
         db_session.add(u1)
         await db_session.flush()
         db_session.add(u2)
@@ -86,7 +87,7 @@ class TestScheduleWeekModel:
 
 class TestScheduleEventModel:
     async def test_create_schedule_event(self, db_session):
-        user = User(phone_number="0501111111", full_name="Guard A", role=UserRole.GUARD)
+        user = User(phone_number="0501111111", first_name="Guard", last_name="A", role=UserRole.BASIC_GUARD)
         await _persist(db_session, user)
         event = ScheduleEvent(
             user_id=user.id,
@@ -107,7 +108,7 @@ class TestScheduleEventModel:
 
 class TestWeeklySubmissionModel:
     async def test_create_weekly_submission(self, db_session):
-        user = User(phone_number="0502222222", full_name="Guard B", role=UserRole.GUARD)
+        user = User(phone_number="0502222222", first_name="Guard", last_name="B", role=UserRole.BASIC_GUARD)
         sw = ScheduleWeek(
             start_date=date(2026, 6, 1),
             end_date=date(2026, 6, 7),
@@ -130,7 +131,7 @@ class TestWeeklySubmissionModel:
 
 class TestDailyStatusModel:
     async def test_create_daily_status(self, db_session):
-        user = User(phone_number="0503333333", full_name="Guard C", role=UserRole.GUARD)
+        user = User(phone_number="0503333333", first_name="Guard", last_name="C", role=UserRole.BASIC_GUARD)
         sw = ScheduleWeek(
             start_date=date(2026, 6, 1),
             end_date=date(2026, 6, 7),
@@ -153,7 +154,7 @@ class TestDailyStatusModel:
 
 class TestShiftWindowModel:
     async def test_create_shift_window(self, db_session):
-        user = User(phone_number="0504444444", full_name="Guard D", role=UserRole.GUARD)
+        user = User(phone_number="0504444444", first_name="Guard", last_name="D", role=UserRole.BASIC_GUARD)
         sw = ScheduleWeek(
             start_date=date(2026, 6, 1),
             end_date=date(2026, 6, 7),

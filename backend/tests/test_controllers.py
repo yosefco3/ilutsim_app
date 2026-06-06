@@ -73,7 +73,7 @@ class TestAuthController:
         mock_parse.return_value = 123456
 
         mock_svc = AsyncMock()
-        mock_svc.login_with_telegram.return_value = "jwt-token-abc"
+        mock_svc.login_with_telegram.return_value = {"token": "jwt-token-abc"}
 
         app = _make_app()
         app.dependency_overrides[get_auth_service] = lambda: mock_svc

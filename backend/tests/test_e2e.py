@@ -4,6 +4,9 @@ These tests exercise the real HTTP API (httpx against uvicorn) with a
 real PostgreSQL database.  They are designed to run via:
     docker compose -f docker-compose.yml -f docker-compose.test.yml \
         up --build --abort-on-container-exit --exit-code-from e2e
+
+These tests are marked as ``integration`` and skipped in normal pytest runs.
+Use ``pytest -m integration`` or ``pytest --run-integration`` to include them.
 """
 
 from __future__ import annotations
@@ -11,6 +14,9 @@ from __future__ import annotations
 import os
 import pytest
 import httpx
+
+# Skip entire module unless integration tests are explicitly requested
+pytestmark = pytest.mark.integration
 
 # ---------------------------------------------------------------------------
 # Configuration
