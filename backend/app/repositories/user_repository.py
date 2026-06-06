@@ -36,6 +36,12 @@ class UserRepository(BaseRepository[User]):
         result = await self.session.execute(stmt)
         return list(result.scalars().all())
 
+    async def get_all_users(self) -> List[User]:
+        """Return all users (active and inactive)."""
+        stmt = select(self.model_class).order_by(User.is_active.desc(), User.full_name)
+        result = await self.session.execute(stmt)
+        return list(result.scalars().all())
+
     async def link_telegram_id(self, phone_number: str, telegram_id: str) -> User:
         """Link a Telegram ID to a user identified by phone number.
 

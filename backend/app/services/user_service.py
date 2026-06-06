@@ -54,8 +54,13 @@ class UserService:
         return UserResponse.model_validate(updated)
 
     async def get_all_active_users(self) -> list[UserResponse]:
-        """Return only active guards."""
+        """Return all active users."""
         users = await self._user_repo.get_active_users()
+        return [UserResponse.model_validate(u) for u in users]
+
+    async def get_all_users(self) -> list[UserResponse]:
+        """Return all users (active and inactive) — used by admin."""
+        users = await self._user_repo.get_all_users()
         return [UserResponse.model_validate(u) for u in users]
 
     async def get_user(self, user_id: uuid.UUID) -> UserResponse:

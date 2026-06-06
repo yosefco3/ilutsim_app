@@ -5,7 +5,6 @@ AdminUsersController — admin endpoints for user management.
 import logging
 import uuid
 
-from asyncpg.exceptions import UniqueViolationError
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.exc import IntegrityError
 
@@ -21,13 +20,27 @@ router = APIRouter(
     dependencies=[Depends(require_admin_role)],
 )
 
+DUPLICATE_PHONE_MSG = "מספר טלפון זה כבר קיים במערכת"
+
+
+def _is_duplicate_phone_error(exc: IntegrityError) -> bool:
+    """Check whether the IntegrityError is a duplicate phone_number violation.
+
+    Works across all asyncpg versions and SQLAlchemy exception wrapping
+    by inspecting the string representation of the error.
+    """
+    err_str = str(exc).lower()
+    return "uniqueviolation" in err_str or (
+        "duplicate key" in err_str and "phone_number" in err_str
+    )
+
 
 @router.get("", response_model=list[UserResponse])
 async def list_users(
     user_service: UserService = Depends(get_user_service),
 ):
-    """List all active users."""
-    return await user_service.get_all_active_users()
+    """List all users (active and inactive) for admin management."""
+    return await user_service.get_all_users()
 
 
 @router.post("", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
@@ -41,10 +54,10 @@ async def create_user(
         return user
     except IntegrityError as e:
         logger.warning(f"User creation integrity error: {e}")
-        if isinstance(e.__cause__, UniqueViolationError):
+        if _is_duplicate_phone_error(e):
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
-                detail="מספר טלפון זה כבר קיים במערכת",
+                detail=DUPLICATE_PHONE_MSG,
             )
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -85,10 +98,10 @@ async def update_user(
         return user
     except IntegrityError as e:
         logger.warning(f"User update integrity error: {e}")
-        if isinstance(e.__cause__, UniqueViolationError):
+        if _is_duplicate_phone_error(e):
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
-                detail="מספר טלפון זה כבר קיים במערכת",
+                detail=DUPLICATE_PHONE_MSG,
             )
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
