@@ -16,15 +16,20 @@ logger = logging.getLogger("ilutzim")
 
 def _normalize_phone(phone: str) -> str:
     """Normalize phone to 972XXXXXXXXX format (must match DB storage)."""
+    original = phone
     cleaned = phone.replace(" ", "").replace("-", "")
     if cleaned.startswith("+"):
         cleaned = cleaned[1:]
     # Local format 05XXXXXXXX → 972XXXXXXXXX
     if re.match(r"^05\d{8}$", cleaned):
-        return "972" + cleaned[1:]
+        result = "972" + cleaned[1:]
+        logger.debug("Phone normalized: %r → %r", original, result)
+        return result
     # Already international
     if re.match(r"^972\d{9}$", cleaned):
+        logger.debug("Phone already international: %r", cleaned)
         return cleaned
+    logger.warning("Phone format unexpected: %r → %r (returning as-is)", original, cleaned)
     return cleaned  # Return as-is for edge cases
 
 
@@ -36,7 +41,10 @@ class UserService:
 
     async def create_user(self, data: UserCreate) -> UserResponse:
         """Create a new guard and return the response."""
-        logger.info(f"Creating user with phone={data.phone_number}")
+        logger.info(
+            "Creating user: phone=%s, first_name=%s, last_name=%s",
+            data.phone_number, data.first_name, data.last_name,
+        )
         user = User(
             phone_number=data.phone_number,
             first_name=data.first_name,
@@ -48,8 +56,62 @@ class UserService:
             exemptions_notes=data.exemptions_notes,
         )
         created = await self._user_repo.save(user)
-        logger.info(f"User created: id={created.id}")
+        logger.info("User created successfully: id=%s, phone=%s", created.id, created.phone_number)
+
+        # ── Try to send welcome notification via Telegram ──
+        await self._try_send_welcome_notification(created)
+
         return UserResponse.model_validate(created)
+
+    async def _try_send_welcome_notification(self, user: User) -> None:
+        """Attempt to send a welcome notification to a newly created guard.
+
+        For new users without telegram_id, the notification will be sent
+        later when they verify their phone through the bot (/start flow).
+        """
+        try:
+            from app.bot.notifications import notify_guard_welcome
+            from app.bot.bot_instance import get_bot
+
+            # Check if bot is available
+            try:
+                bot = get_bot()
+                if bot is None:
+                    logger.warning(
+                        "Telegram bot not available — cannot send welcome notification "
+                        "to user %s (phone=%s)",
+                        user.id, user.phone_number,
+                    )
+                    return
+            except Exception as bot_exc:
+                logger.warning(
+                    "Telegram bot not initialized — cannot send welcome notification: %s", bot_exc
+                )
+                return
+
+            if user.telegram_id:
+                # User already has a telegram_id linked — send welcome directly
+                tg_id = int(user.telegram_id)
+                logger.info(
+                    "Sending welcome notification to existing telegram user: "
+                    "user_id=%s, telegram_id=%s", user.id, tg_id,
+                )
+                success = await notify_guard_welcome(
+                    tg_id, user.first_name or "", user.last_name or "",
+                )
+                if success:
+                    logger.info("Welcome notification sent successfully to telegram_id=%s", tg_id)
+                else:
+                    logger.warning("Welcome notification failed for telegram_id=%s", tg_id)
+            else:
+                logger.info(
+                    "No telegram_id for user %s (phone=%s). "
+                    "Welcome notification will be sent when the guard starts the bot "
+                    "and verifies their phone number.",
+                    user.id, user.phone_number,
+                )
+        except Exception as exc:
+            logger.error("Error in welcome notification attempt for user %s: %s", user.id, exc)
 
     async def update_user(self, user_id: uuid.UUID, data: UserUpdate) -> UserResponse:
         """Update an existing guard's details."""
@@ -105,14 +167,16 @@ class UserService:
     async def link_telegram(self, phone_number: str, telegram_id: str) -> UserResponse:
         """Bot authentication: find user by phone and link telegram_id."""
         phone_number = _normalize_phone(phone_number)
+        logger.info("Linking telegram: phone=%s, telegram_id=%s", phone_number, telegram_id)
         user = await self._user_repo.get_by_phone(phone_number)
         if user is None:
-            logger.warning(f"Telegram link failed — phone not found: {phone_number}")
+            logger.warning("Telegram link failed — phone not found: %s", phone_number)
             raise UserNotFoundException()
         if not user.is_active:
+            logger.warning("Telegram link failed — user deactivated: phone=%s", phone_number)
             raise UserDeactivatedException()
         user = await self._user_repo.link_telegram_id_by_phone(phone_number, telegram_id)
-        logger.info(f"Telegram linked: user_id={user.id}, telegram_id={telegram_id}")
+        logger.info("Telegram linked successfully: user_id=%s, telegram_id=%s", user.id, telegram_id)
         return UserResponse.model_validate(user)
 
     async def link_telegram_by_user_id(self, user_id: uuid.UUID, telegram_id: str) -> UserResponse:

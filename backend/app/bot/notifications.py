@@ -14,10 +14,15 @@ async def send_notification(telegram_id: int, text: str) -> bool:
     """Send a message to a single Telegram user."""
     try:
         bot = get_bot()
+        if bot is None:
+            logger.error("send_notification: bot is None — cannot send to telegram_id=%s", telegram_id)
+            return False
+        logger.info("send_notification: sending to telegram_id=%s (text length=%d)", telegram_id, len(text))
         await bot.send_message(chat_id=telegram_id, text=text)
+        logger.info("send_notification: SUCCESS for telegram_id=%s", telegram_id)
         return True
     except Exception as exc:
-        logger.error("Failed to send notification to %s: %s", telegram_id, exc)
+        logger.error("send_notification: FAILED for telegram_id=%s — %s", telegram_id, exc, exc_info=True)
         return False
 
 
@@ -46,6 +51,10 @@ async def notify_week_opened(week_start: date, week_end: date, telegram_ids: lis
 async def notify_guard_welcome(telegram_id: int, first_name: str, last_name: str) -> bool:
     """Send a welcome message to a newly added guard."""
     full_name = f"{first_name} {last_name}".strip()
+    logger.info(
+        "notify_guard_welcome: telegram_id=%s, name=%s",
+        telegram_id, full_name,
+    )
     text = (
         f"👋 שלום {full_name}!\n\n"
         f"נרשמת בהצלחה למערכת ניהול האילוצים.\n"

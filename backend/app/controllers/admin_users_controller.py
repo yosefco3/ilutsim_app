@@ -49,8 +49,16 @@ async def create_user(
     user_service: UserService = Depends(get_user_service),
 ):
     """Create a new guard user and send a welcome message if telegram_id is known."""
+    logger.info(
+        "create_user endpoint called: phone=%s, first_name=%s, last_name=%s",
+        data.phone_number, data.first_name, data.last_name,
+    )
     try:
         user = await user_service.create_user(data)
+        logger.info(
+            "User created: id=%s, phone=%s, telegram_id=%s",
+            user.id, user.phone_number, user.telegram_id,
+        )
 
         # Attempt to send a welcome notification if the user already has a telegram_id
         if user.telegram_id:

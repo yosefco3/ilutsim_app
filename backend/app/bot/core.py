@@ -102,6 +102,8 @@ async def process_phone(message: Message, state: FSMContext):
     """Process phone number and link Telegram ID to user."""
     await state.clear()
     phone_raw = message.text.strip()
+    telegram_id = message.from_user.id
+    logger.info("Phone verification: raw input=%r, telegram_id=%s", phone_raw, telegram_id)
 
     # Normalize to 972XXXXXXXXX format (same format stored in DB)
     phone = phone_raw.replace("-", "").replace(" ", "")
@@ -115,6 +117,7 @@ async def process_phone(message: Message, state: FSMContext):
     elif phone.startswith("972") and len(phone) == 12 and phone.isdigit():
         pass  # already in correct format
     else:
+        logger.warning("Phone verification: invalid format — %r", phone_raw)
         await message.answer(
             "❌ מספר הטלפון אינו תקין.\n"
             "נא לשלוח מספר טלפון ישראלי בן 10 ספרות המתחיל ב-05\n"
@@ -125,12 +128,12 @@ async def process_phone(message: Message, state: FSMContext):
         return
 
     user_svc, _, _ = await _get_services()
-    telegram_id = message.from_user.id
 
     # Find user by phone
+    logger.info("Phone verification: looking up phone=%s for telegram_id=%s", phone, telegram_id)
     user = await user_svc.get_user_by_phone(phone)
     if user is None:
-        logger.warning("Phone verification failed — phone not found: %s", phone)
+        logger.warning("Phone verification FAILED — phone=%s not found in DB (telegram_id=%s)", phone, telegram_id)
         await message.answer(
             "❌ מספר הטלפון לא נמצא במערכת.\n"
             "נא לוודא שהמספר תואם למספר שנרשמת איתו.\n\n"
@@ -149,9 +152,12 @@ async def process_phone(message: Message, state: FSMContext):
     # Link telegram_id to the user
     try:
         await user_svc.link_telegram(phone, str(telegram_id))
-        logger.info("Telegram linked: user_id=%s, telegram_id=%s", user.id, telegram_id)
+        logger.info(
+            "Phone verification SUCCESS: user_id=%s, phone=%s, telegram_id=%s linked",
+            user.id, phone, telegram_id,
+        )
     except Exception as exc:
-        logger.error("Failed to link telegram: %s", exc)
+        logger.error("Failed to link telegram: phone=%s, telegram_id=%s — %s", phone, telegram_id, exc, exc_info=True)
         await message.answer(
             "❌ שגיאה בחיבור החשבון. נסה שוב מאוחר יותר."
         )
