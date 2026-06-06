@@ -43,12 +43,11 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     bot_started = False
     if settings.TELEGRAM_BOT_TOKEN:
         try:
-            from app.bot import start_bot, setup_cron_jobs, scheduler
+            from app.bot import start_bot
+
             await start_bot()
-            setup_cron_jobs()
-            scheduler.start()
             bot_started = True
-            logger.info("Telegram bot and cron jobs started")
+            logger.info("Telegram bot started")
         except Exception as exc:
             logger.warning("Failed to start Telegram bot: %s", exc)
     else:
@@ -59,8 +58,8 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     # Shutdown
     if bot_started:
         try:
-            from app.bot import stop_bot, scheduler
-            scheduler.shutdown(wait=False)
+            from app.bot import stop_bot
+
             await stop_bot()
         except Exception as exc:
             logger.warning("Error stopping bot: %s", exc)
