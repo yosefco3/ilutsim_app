@@ -1,78 +1,87 @@
 /**
- * WeekStatusControl — status-aware action buttons for a schedule week.
+ * WeekStatusControl — status badge + action buttons for a single week card.
  *
- * Allowed transitions:
- *   draft   → open   (Open for Submission)
- *   open    → locked (Close Submissions / Lock)
- *   locked  → open   (Reopen)
- *   locked  → published (Publish Schedule)
+ * Props: week, onOpen, onLock, onPublish, onDelete, loading
  */
+import { useState } from 'react';
 import messages from '../utils/messages';
+import ConfirmDialog from './ConfirmDialog';
 
-const STATUS_LABELS = {
-  draft: messages.weeks.statusDraft,
-  open: messages.weeks.statusOpen,
-  locked: messages.weeks.statusLocked,
-  published: messages.weeks.publishedLabel,
+const STATUS_CFG = {
+  draft:     { label: messages.weeks.statusDraft,     bg: '#e2e3e5', color: '#383d41', icon: '📝' },
+  open:      { label: messages.weeks.statusOpen,      bg: '#d4edda', color: '#155724', icon: '🔓' },
+  locked:    { label: messages.weeks.statusLocked,    bg: '#fff3cd', color: '#856404', icon: '🔒' },
+  published: { label: messages.weeks.publishedLabel,   bg: '#cce5ff', color: '#004085', icon: '📢' },
 };
 
-export default function WeekStatusControl({ week, onOpen, onLock, onPublish, loading }) {
+export default function WeekStatusControl({ week, onOpen, onLock, onPublish, onDelete, loading }) {
   const status = week.status || 'draft';
+  const cfg = STATUS_CFG[status] || STATUS_CFG.draft;
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   return (
-    <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
-      <span
-        className={`badge badge-${status}`}
-        style={{
-          padding: '0.25rem 0.6rem',
-          borderRadius: '12px',
-          fontSize: '0.8rem',
-          fontWeight: 600,
-          background: status === 'open' ? '#d4edda' : status === 'locked' ? '#fff3cd' : status === 'published' ? '#cce5ff' : '#e2e3e5',
-          color: status === 'open' ? '#155724' : status === 'locked' ? '#856404' : status === 'published' ? '#004085' : '#383d41',
-        }}
-      >
-        {STATUS_LABELS[status] || status}
-      </span>
-
-      {status === 'draft' && (
-        <button
-          className="btn btn-primary btn-sm"
-          disabled={loading}
-          onClick={() => onOpen(week.id)}
+    <>
+      <div className="week-card-actions">
+        {/* Status badge */}
+        <span
+          className="week-status-badge"
+          style={{ background: cfg.bg, color: cfg.color }}
         >
-          {messages.weeks.openForSubmission}
-        </button>
-      )}
+          {cfg.icon} {cfg.label}
+        </span>
 
-      {status === 'open' && (
-        <button
-          className="btn btn-warning btn-sm"
-          disabled={loading}
-          onClick={() => onLock(week.id)}
-        >
-          {messages.weeks.lock}
-        </button>
-      )}
+        {/* Action buttons by status */}
+        <div className="week-card-buttons">
+          {status === 'locked' && (
+            <button
+              className="btn btn-primary btn-sm"
+              disabled={loading}
+              onClick={() => onOpen(week.id)}
+            >
+              🟢 {messages.weeks.openForSubmission}
+            </button>
+          )}
 
-      {status === 'locked' && (
-        <>
+          {status === 'open' && (
+            <button
+              className="btn btn-warning btn-sm"
+              disabled={loading}
+              onClick={() => onLock(week.id)}
+            >
+              🔒 {messages.weeks.lock}
+            </button>
+          )}
+
+          {status === 'locked' && (
+            <button
+              className="btn btn-success btn-sm"
+              disabled={loading}
+              onClick={() => onPublish(week.id)}
+            >
+              📢 {messages.weeks.published}
+            </button>
+          )}
+
+          {/* Delete — always available */}
           <button
-            className="btn btn-outline btn-sm"
+            className="btn btn-danger btn-sm"
             disabled={loading}
-            onClick={() => onOpen(week.id)}
+            onClick={() => setShowDeleteConfirm(true)}
           >
-            {messages.weeks.unlock}
+            🗑️ {messages.weeks.delete}
           </button>
-          <button
-            className="btn btn-success btn-sm"
-            disabled={loading}
-            onClick={() => onPublish(week.id)}
-          >
-            {messages.weeks.published}
-          </button>
-        </>
+        </div>
+      </div>
+
+      {showDeleteConfirm && (
+        <ConfirmDialog
+          title={messages.weeks.delete}
+          message={messages.weeks.deleteConfirm}
+          confirmLabel={messages.common.delete}
+          onConfirm={() => { setShowDeleteConfirm(false); onDelete(week.id); }}
+          onCancel={() => setShowDeleteConfirm(false)}
+        />
       )}
-    </div>
+    </>
   );
 }

@@ -261,11 +261,73 @@ body {
   border-radius: var(--radius);
 }
 
-/* Week Status Control */
-.week-status-control {
+/* Page Header */
+.page-header {
   display: flex;
   align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+/* Week Cards */
+.week-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 1rem;
+}
+.week-card {
+  background: #fff;
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius);
+  padding: 1.25rem;
+  animation: fadeIn 0.2s ease;
+}
+.week-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+.week-card-date {
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+.week-card-label {
+  font-size: 0.85rem;
+  color: var(--gray-500);
+}
+.week-card-body {
+  margin-bottom: 0.75rem;
+}
+.week-card-submissions {
+  font-size: 0.9rem;
+  color: var(--gray-600);
+}
+
+/* Week Card Actions */
+.week-card-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+.week-status-badge {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+.week-card-buttons {
+  display: flex;
   gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+/* Modal title */
+.modal-title {
+  margin: 0 0 0.75rem;
+  font-size: 1.1rem;
 }
 
 /* Misc */
