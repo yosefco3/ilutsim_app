@@ -107,6 +107,15 @@ echo -e "${GREEN}🚀 Starting Webapp (port 5173)...${NC}"
 ) &
 PIDS+=($!)
 
+# --- Start Cloudflare Tunnel ---
+if command -v cloudflared &>/dev/null; then
+    echo -e "${GREEN}🌐 Starting Cloudflare Tunnel...${NC}"
+    cloudflared tunnel run ilutzim-app &
+    PIDS+=($!)
+else
+    echo -e "${YELLOW}⚠️  cloudflared not found — skipping tunnel${NC}"
+fi
+
 echo ""
 echo -e "${CYAN}═══════════════════════════════════════════════${NC}"
 echo -e "${GREEN}  ✅ All services are running!${NC}"
@@ -114,6 +123,7 @@ echo -e "${CYAN}═════════════════════�
 echo -e "  Backend API:  ${GREEN}http://localhost:8000${NC}"
 echo -e "  Admin Dashboard: ${GREEN}http://localhost:3001${NC}"
 echo -e "  Webapp:       ${GREEN}http://localhost:5173${NC}"
+echo -e "  Tunnel:       ${GREEN}https://app.safrasecure.uk${NC}"
 echo -e "${CYAN}═══════════════════════════════════════════════${NC}"
 echo -e "  Press ${RED}Ctrl+C${NC} to stop all services"
 echo -e "${CYAN}═══════════════════════════════════════════════${NC}"
