@@ -41,3 +41,33 @@ async def get_pool() -> AsyncSession:  # type: ignore[misc]
 
 # Keep backward-compatible alias
 get_db_session = get_pool
+
+
+class get_session:
+    """Synchronous async context manager for bot code (non-FastAPI).
+
+    Usage::
+
+        async with get_session() as session:
+            repo = UserRepository(session)
+            ...
+    """
+
+    def __init__(self):
+        self._session: AsyncSession | None = None
+
+    async def __aenter__(self) -> AsyncSession:
+        self._session = async_session_factory()
+        return await self._session.__aenter__()
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        if self._session is None:
+            return False
+        try:
+            if exc_type is not None:
+                await self._session.rollback()
+            else:
+                await self._session.commit()
+        finally:
+            await self._session.__aexit__(exc_type, exc_val, exc_tb)
+        return False

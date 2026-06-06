@@ -3,6 +3,7 @@ Core Telegram bot handler – aiogram v3 dispatcher with all handlers.
 """
 
 import logging
+from contextlib import asynccontextmanager
 from datetime import date
 
 from aiogram import Router
@@ -41,18 +42,26 @@ class PhoneVerification(StatesGroup):
 # ─── Dependency helpers ────────────────────────────────────
 
 async def _get_services():
-    """Lazy-import services to avoid circular imports."""
+    """Create services with a dedicated async DB session for bot handlers.
+
+    Returns (user_svc, week_svc, sub_svc) tuple — same interface as before.
+    Each call creates a fresh session that auto-commits on success.
+    """
     from app.services.user_service import UserService
     from app.services.submission_service import SubmissionService
     from app.services.week_service import WeekService
-    from app.database import get_pool
-
-    pool = get_pool()
+    from app.database import get_session
     from app.repositories.user_repository import UserRepository
-    user_repo = UserRepository(pool)
+
+    # Use the sync async context manager (not the async generator get_pool)
+    session_ctx = get_session()
+    session = await session_ctx.__aenter__()
+    logger.info("Bot _get_services: opened DB session %s", id(session))
+
+    user_repo = UserRepository(session)
     user_svc = UserService(user_repo)
-    week_svc = WeekService(pool)
-    sub_svc = SubmissionService(pool)
+    week_svc = WeekService(session)
+    sub_svc = SubmissionService(session)
     return user_svc, week_svc, sub_svc
 
 

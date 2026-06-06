@@ -22,34 +22,31 @@ async def _send_closing_reminders():
         from app.services.week_service import WeekService
         from app.services.submission_service import SubmissionService
         from app.repositories.user_repository import UserRepository
-        from app.database import get_pool
+        from app.database import get_session
         from app.bot.notifications import notify_closing_reminder
 
-        pool = get_pool()
-        if pool is None:
-            return
+        async with get_session() as session:
+            user_svc = UserService(UserRepository(session))
+            week_svc = WeekService(session)
+            sub_svc = SubmissionService(session)
 
-        user_svc = UserService(UserRepository(pool))
-        week_svc = WeekService(pool)
-        sub_svc = SubmissionService(pool)
+            week = await week_svc.get_active_week()
+            if week is None:
+                return
 
-        week = await week_svc.get_active_week()
-        if week is None:
-            return
+            # Get all active users
+            users = await user_svc.get_all_active_users()
+            if not users:
+                return
 
-        # Get all active users
-        users = await user_svc.get_all_active_users()
-        if not users:
-            return
-
-        # Find users who haven't submitted
-        non_submitters = []
-        for user in users:
-            submission = await sub_svc.get_user_submission(user["id"], week["id"])
-            if submission is None:
-                tg_id = user.get("telegram_id")
-                if tg_id:
-                    non_submitters.append(tg_id)
+            # Find users who haven't submitted
+            non_submitters = []
+            for user in users:
+                submission = await sub_svc.get_user_submission(user["id"], week["id"])
+                if submission is None:
+                    tg_id = user.get("telegram_id")
+                    if tg_id:
+                        non_submitters.append(tg_id)
 
         if non_submitters:
             deadline = week.get("submission_deadline", "")

@@ -26,15 +26,15 @@ class AuthMiddleware(BaseMiddleware):
         # Lazy import to avoid circular deps
         from app.services.user_service import UserService
         from app.repositories.user_repository import UserRepository
-        from app.database import get_pool
+        from app.database import get_session
 
-        pool = get_pool()
-        if pool is None:
-            # DB not ready yet – let request through
+        try:
+            async with get_session() as session:
+                user_svc = UserService(UserRepository(session))
+                user = await user_svc.get_by_telegram_id(tg_id)
+        except Exception as exc:
+            logger.warning("AuthMiddleware DB error: %s – letting request through", exc)
             return await handler(event, data)
-
-        user_svc = UserService(UserRepository(pool))
-        user = await user_svc.get_by_telegram_id(tg_id)
 
         if user is not None and not user.get("is_active", True):
             if isinstance(event, Message):
