@@ -103,18 +103,19 @@ async def process_phone(message: Message, state: FSMContext):
     await state.clear()
     phone_raw = message.text.strip()
 
-    # Normalize: remove spaces, dashes, and Hebrew prefix
+    # Normalize: remove spaces, dashes, and Israeli country code prefix
     phone = phone_raw.replace("-", "").replace(" ", "")
     if phone.startswith("+972"):
         phone = "0" + phone[4:]
     elif phone.startswith("972"):
         phone = "0" + phone[3:]
 
-    # Basic validation
-    if not phone.isdigit() or len(phone) < 9:
+    # Israeli phone validation: must be exactly 10 digits starting with 05
+    if not phone.isdigit() or len(phone) != 10 or not phone.startswith("05"):
         await message.answer(
             "❌ מספר הטלפון אינו תקין.\n"
-            "נא לשלוח מספר טלפון בלבד (ללא מקף, ללא רווחים).\n\n"
+            "נא לשלוח מספר טלפון ישראלי בן 10 ספרות המתחיל ב-05\n"
+            "(ללא מקף, ללא רווחים).\n\n"
             "לדוגמה: 0501234567"
         )
         await state.set_state(PhoneVerification.waiting_for_phone)
