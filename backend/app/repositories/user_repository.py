@@ -38,7 +38,7 @@ class UserRepository(BaseRepository[User]):
 
     async def get_all_users(self) -> List[User]:
         """Return all users (active and inactive)."""
-        stmt = select(self.model_class).order_by(User.is_active.desc(), User.full_name)
+        stmt = select(self.model_class).order_by(User.is_active.desc(), User.last_name, User.first_name)
         result = await self.session.execute(stmt)
         return list(result.scalars().all())
 

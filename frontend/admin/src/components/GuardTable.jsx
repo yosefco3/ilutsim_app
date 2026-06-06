@@ -18,7 +18,7 @@ export default function GuardTable({ guards, onEdit, onToggle, onDelete }) {
     <table className="data-table">
       <thead>
         <tr>
-          <th>{messages.guards.fullName}</th>
+          <th>{messages.guards.name}</th>
           <th>{messages.guards.phone}</th>
           <th>{messages.guards.role}</th>
           <th>{messages.guards.active}</th>
@@ -28,7 +28,7 @@ export default function GuardTable({ guards, onEdit, onToggle, onDelete }) {
       <tbody>
         {guards.map((g) => (
           <tr key={g.id}>
-            <td>{g.full_name}</td>
+            <td>{g.first_name} {g.last_name}</td>
             <td>{g.phone_number || '—'}</td>
             <td>{ROLE_LABELS[g.role] || g.role}</td>
             <td>

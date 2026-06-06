@@ -25,9 +25,17 @@ class User(BaseModel):
     telegram_id: Mapped[Optional[str]] = mapped_column(
         String(50), unique=True, nullable=True,
     )
-    full_name: Mapped[str] = mapped_column(
-        String(100), nullable=False,
+    first_name: Mapped[str] = mapped_column(
+        String(50), nullable=False,
     )
+    last_name: Mapped[str] = mapped_column(
+        String(50), nullable=False,
+    )
+
+    @property
+    def full_name(self) -> str:
+        return f"{self.first_name} {self.last_name}".strip()
+
     role: Mapped[UserRole] = mapped_column(
         Enum(UserRole, name="user_role"), nullable=False,
     )

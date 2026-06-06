@@ -34,6 +34,8 @@ export default {
     confirmDelete: 'האם למחוק את השומר לצמיתות? פעולה זו אינה ניתנת לביטול.',
     name: 'שם מלא',
     fullName: 'שם מלא',
+    firstName: 'שם פרטי',
+    lastName: 'שם משפחה',
     phone: 'טלפון',
     telegramId: 'Telegram ID',
     isActive: 'פעיל',

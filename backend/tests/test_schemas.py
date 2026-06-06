@@ -54,7 +54,8 @@ class TestUserCreate:
     def test_valid_user(self):
         user = UserCreate(
             phone_number="0521234567",
-            full_name="ישראל ישראלי",
+            first_name="ישראל",
+            last_name="ישראלי",
             role="guard",
         )
         assert user.phone_number == "0521234567"
@@ -63,7 +64,8 @@ class TestUserCreate:
         with pytest.raises(ValueError):
             UserCreate(
                 phone_number="123",
-                full_name="ישראל ישראלי",
+                first_name="ישראל",
+                last_name="ישראלי",
                 role="guard",
             )
 
@@ -72,7 +74,7 @@ class TestUserUpdate:
     """Tests for UserUpdate schema."""
 
     def test_none_phone_passes(self):
-        update = UserUpdate(full_name="New Name")
+        update = UserUpdate(first_name="New")
         assert update.phone_number is None
 
     def test_valid_phone_normalized(self):

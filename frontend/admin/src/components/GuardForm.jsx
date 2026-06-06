@@ -12,7 +12,8 @@ const ROLES = [
 
 export default function GuardForm({ guard, onSave, onCancel }) {
   const [form, setForm] = useState({
-    full_name: guard?.full_name || '',
+    first_name: guard?.first_name || '',
+    last_name: guard?.last_name || '',
     phone_number: guard?.phone_number || '',
     role: guard?.role || 'AHMASH',
   });
@@ -31,8 +32,12 @@ export default function GuardForm({ guard, onSave, onCancel }) {
     <form className="card" onSubmit={handleSubmit}>
       <h3>{guard ? messages.guards.editTitle : messages.guards.addTitle}</h3>
       <div className="form-group">
-        <label>{messages.guards.fullName}</label>
-        <input name="full_name" value={form.full_name} onChange={handleChange} required />
+        <label>{messages.guards.firstName}</label>
+        <input name="first_name" value={form.first_name} onChange={handleChange} required />
+      </div>
+      <div className="form-group">
+        <label>{messages.guards.lastName}</label>
+        <input name="last_name" value={form.last_name} onChange={handleChange} required />
       </div>
       <div className="form-group">
         <label>{messages.guards.phone}</label>

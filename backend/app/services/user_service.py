@@ -24,7 +24,8 @@ class UserService:
         logger.info(f"Creating user with phone={data.phone_number}")
         user = User(
             phone_number=data.phone_number,
-            full_name=data.full_name,
+            first_name=data.first_name,
+            last_name=data.last_name,
             role=data.role,
             min_total_shifts=data.min_total_shifts,
             min_night_shifts=data.min_night_shifts,
