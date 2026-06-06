@@ -256,7 +256,7 @@ async def _show_main_menu(message: Message, display_name: str):
             user = await user_svc.get_by_telegram_id(telegram_id)
             already_submitted = False
             if user is not None:
-                existing = await sub_svc.get_user_submission(user.id, open_week.id)
+                existing = await sub_svc.get_submission(user.id, open_week.id)
                 already_submitted = existing is not None
 
             button_text = "✏️ עריכת אילוצים" if already_submitted else "📅 הגשת אילוצים"
@@ -472,7 +472,7 @@ async def cb_status(callback: CallbackQuery):
         await callback.answer("משתמש לא רשום. שלח /start.", show_alert=True)
         return
 
-    submission = await sub_svc.get_user_submission(user.id, week.id)
+    submission = await sub_svc.get_submission(user.id, week.id)
     if submission is None:
         text = "📭 טרם הגשת אילוצים לשבוע הנוכחי."
     else:
