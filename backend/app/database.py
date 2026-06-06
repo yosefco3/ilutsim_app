@@ -31,7 +31,12 @@ async_session_factory = async_sessionmaker(
 async def get_pool() -> AsyncSession:  # type: ignore[misc]
     """Yield an async database session (alias used by dependency injection)."""
     async with async_session_factory() as session:
-        yield session
+        try:
+            yield session
+            await session.commit()
+        except Exception:
+            await session.rollback()
+            raise
 
 
 # Keep backward-compatible alias
