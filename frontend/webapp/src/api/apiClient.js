@@ -91,4 +91,11 @@ async function _put(path, body, initData) {
  */
 export const api = { get: _get, post: _post, put: _put };
 
-export { _get as get, _post as post, _put as put };
+/**
+ * Fetch the current open week (or null/404 if none).
+ */
+async function _getCurrentWeek(initData) {
+  return _get("/api/weeks/current", initData);
+}
+
+export { _get as get, _post as post, _put as put, _getCurrentWeek as getCurrentWeek };

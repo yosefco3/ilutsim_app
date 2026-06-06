@@ -3,7 +3,7 @@
  * Manages all state: loading, week data, form, events, errors.
  */
 import { useState, useEffect, useCallback } from "react";
-import { get, post } from "../api/apiClient.js";
+import { get, post, getCurrentWeek } from "../api/apiClient.js";
 
 /**
  * @param {string} initData - Telegram initData for auth
@@ -30,24 +30,33 @@ export function useSubmission(initData) {
       setLoading(true);
       setError(null);
 
-      // 1) Get current week
-      const { data: weekData, error: weekErr } = await get(
-        "/submissions/current-week",
-        initData,
-      );
-      if (weekErr) {
-        // In dev mode, show a friendly message instead of raw error
+      // 1) Get current week + week meta (label, status) in parallel
+      const [subResult, weekMetaResult] = await Promise.all([
+        get("/submissions/current-week", initData),
+        getCurrentWeek(initData),
+      ]);
+
+      if (subResult.error) {
         if (isDevMode) {
           setError("No open week found. Open a week from the admin dashboard first, then refresh this page.");
         } else {
-          setError(weekErr);
+          setError(subResult.error);
         }
         setLoading(false);
         return;
       }
 
       if (cancelled) return;
-      setWeek(weekData);
+
+      const weekMeta = weekMetaResult.data; // { week_label, status, ... } or null
+      const weekData = subResult.data;
+
+      // Merge week meta (label, status) into the week object
+      setWeek({
+        ...weekData,
+        week_label: weekMeta?.week_label || weekData?.week_label || null,
+        status: weekMeta?.status || weekData?.status || null,
+      });
 
       // 2) Get existing submission (may be null / endpoint may not exist in dev)
       const { data: subData } = await get(
