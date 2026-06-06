@@ -1,5 +1,7 @@
 /prompts
 /.code-review-graph
+/features-prompts
+/.gitignore
 
 # Python
 __pycache__/
