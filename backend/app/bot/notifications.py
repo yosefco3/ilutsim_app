@@ -72,6 +72,26 @@ async def notify_guard_welcome(telegram_id: int, first_name: str, last_name: str
     return await send_notification(telegram_id, text)
 
 
+async def notify_week_locked(week_start: date, week_end: date, telegram_ids: list[int]):
+    """Notify users that a week was locked for submissions."""
+    start_fmt = week_start.strftime("%d/%m/%Y")
+    end_fmt = week_end.strftime("%d/%m/%Y")
+    text = f"🔒 שבוע {start_fmt} - {end_fmt} נסגר להגשות"
+    count = await broadcast_notifications(telegram_ids, text)
+    logger.info("Week-locked notification sent to %d/%d users", count, len(telegram_ids))
+    return count
+
+
+async def notify_week_published(week_start: date, week_end: date, telegram_ids: list[int]):
+    """Notify users that a week's schedule was published."""
+    start_fmt = week_start.strftime("%d/%m/%Y")
+    end_fmt = week_end.strftime("%d/%m/%Y")
+    text = f"✅ סידור העבודה לשבוע {start_fmt} - {end_fmt} פורסם!"
+    count = await broadcast_notifications(telegram_ids, text)
+    logger.info("Week-published notification sent to %d/%d users", count, len(telegram_ids))
+    return count
+
+
 async def notify_closing_reminder(week_start: date, deadline_text: str, telegram_ids: list[int]):
     """Remind users to submit before deadline."""
     text = (

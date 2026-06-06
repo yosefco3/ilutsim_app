@@ -81,6 +81,23 @@ class WeekService:
         updated = await self._week_repo.update(week)
         logger.info(f"Week {week_id}: {old_status} -> {new_status}")
 
+        # Send Telegram notifications on status change
+        try:
+            from app.bot.notifications import notify_week_locked, notify_week_published
+
+            telegram_ids: list[int] = []
+            if self._user_repo is not None:
+                users = await self._user_repo.get_all()
+                telegram_ids = [u.telegram_id for u in users if u.telegram_id]
+
+            if telegram_ids:
+                if new_status == WeekStatus.LOCKED:
+                    await notify_week_locked(updated.start_date, updated.end_date, telegram_ids)
+                elif new_status == WeekStatus.PUBLISHED:
+                    await notify_week_published(updated.start_date, updated.end_date, telegram_ids)
+        except Exception as exc:
+            logger.warning(f"Failed to send status-change notification: {exc}")
+
         # Auto-create next week when publishing
         if new_status == WeekStatus.PUBLISHED:
             try:

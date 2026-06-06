@@ -109,3 +109,50 @@ async def test_notification_message_format():
     assert "14/06/2026" in msg
     assert "https://example.com/app" in msg
     assert "שבוע חדש נפתח להגשה" in msg
+
+
+# ===========================================================================
+# Test: notify_week_locked sends to all guards
+# ===========================================================================
+@pytest.mark.asyncio
+async def test_notify_week_locked_sends_to_all_guards():
+    """Should call send_message for every user with a telegram_id."""
+    from app.bot.notifications import notify_week_locked
+
+    ids = [111, 222]
+    with patch("app.bot.notifications.get_bot") as mock_bot_fn:
+        mock_bot = AsyncMock()
+        mock_bot_fn.return_value = mock_bot
+
+        count = await notify_week_locked(date(2026, 6, 8), date(2026, 6, 14), ids)
+
+    assert count == 2
+    assert mock_bot.send_message.call_count == 2
+    # Verify message format
+    call_args = mock_bot.send_message.call_args_list[0]
+    assert "08/06/2026" in call_args.kwargs["text"]
+    assert "14/06/2026" in call_args.kwargs["text"]
+    assert "נסגר" in call_args.kwargs["text"]
+
+
+# ===========================================================================
+# Test: notify_week_published sends to all guards
+# ===========================================================================
+@pytest.mark.asyncio
+async def test_notify_week_published_sends_to_all_guards():
+    """Should call send_message for every user with a telegram_id."""
+    from app.bot.notifications import notify_week_published
+
+    ids = [111, 222, 333]
+    with patch("app.bot.notifications.get_bot") as mock_bot_fn:
+        mock_bot = AsyncMock()
+        mock_bot_fn.return_value = mock_bot
+
+        count = await notify_week_published(date(2026, 6, 8), date(2026, 6, 14), ids)
+
+    assert count == 3
+    assert mock_bot.send_message.call_count == 3
+    # Verify message format
+    call_args = mock_bot.send_message.call_args_list[0]
+    assert "08/06/2026" in call_args.kwargs["text"]
+    assert "פורסם" in call_args.kwargs["text"]
