@@ -130,6 +130,14 @@ export function unlockWeek(id) {
   return updateWeekStatus(id, 'open');
 }
 
+export function openNewWeek(id) {
+  return request(`/admin/weeks/${id}/open`, { method: 'POST' });
+}
+
+export function publishWeek(id) {
+  return updateWeekStatus(id, 'published');
+}
+
 // ──── Events ────
 export function fetchEvents(weekId) {
   return request(`/admin/events?week_id=${weekId}`);

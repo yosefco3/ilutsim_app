@@ -1,44 +1,77 @@
+/**
+ * WeekStatusControl — status-aware action buttons for a schedule week.
+ *
+ * Allowed transitions:
+ *   draft   → open   (Open for Submission)
+ *   open    → locked (Close Submissions / Lock)
+ *   locked  → open   (Reopen)
+ *   locked  → published (Publish Schedule)
+ */
 import messages from '../utils/messages';
-
-const STATUS_FLOW = ['draft', 'open', 'closed', 'published'];
 
 const STATUS_LABELS = {
   draft: messages.weeks.statusDraft,
   open: messages.weeks.statusOpen,
-  closed: messages.weeks.statusClosed,
-  published: messages.weeks.statusPublished,
+  locked: messages.weeks.statusLocked,
+  published: messages.weeks.publishedLabel,
 };
 
-const STATUS_BADGE = {
-  draft: 'badge-secondary',
-  open: 'badge-info',
-  closed: 'badge-warning',
-  published: 'badge-success',
-};
-
-export default function WeekStatusControl({ week, onStatusChange, onRemind }) {
-  if (!week) return null;
-
-  const idx = STATUS_FLOW.indexOf(week.status);
-  const nextStatus = idx < STATUS_FLOW.length - 1 ? STATUS_FLOW[idx + 1] : null;
+export default function WeekStatusControl({ week, onOpen, onLock, onPublish, loading }) {
+  const status = week.status || 'draft';
 
   return (
-    <div className="week-status-control">
-      <span className={`badge ${STATUS_BADGE[week.status] || 'badge-secondary'}`}>
-        {STATUS_LABELS[week.status] || week.status}
+    <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
+      <span
+        className={`badge badge-${status}`}
+        style={{
+          padding: '0.25rem 0.6rem',
+          borderRadius: '12px',
+          fontSize: '0.8rem',
+          fontWeight: 600,
+          background: status === 'open' ? '#d4edda' : status === 'locked' ? '#fff3cd' : status === 'published' ? '#cce5ff' : '#e2e3e5',
+          color: status === 'open' ? '#155724' : status === 'locked' ? '#856404' : status === 'published' ? '#004085' : '#383d41',
+        }}
+      >
+        {STATUS_LABELS[status] || status}
       </span>
-      {nextStatus && (
+
+      {status === 'draft' && (
         <button
-          className="btn btn-sm btn-primary"
-          onClick={() => onStatusChange(week.id, nextStatus)}
+          className="btn btn-primary btn-sm"
+          disabled={loading}
+          onClick={() => onOpen(week.id)}
         >
-          {messages.common.moveTo} {STATUS_LABELS[nextStatus]}
+          {messages.weeks.openForSubmission}
         </button>
       )}
-      {week.status === 'open' && (
-        <button className="btn btn-sm btn-secondary" onClick={() => onRemind(week.id)}>
-          {messages.weeks.sendReminder}
+
+      {status === 'open' && (
+        <button
+          className="btn btn-warning btn-sm"
+          disabled={loading}
+          onClick={() => onLock(week.id)}
+        >
+          {messages.weeks.lock}
         </button>
+      )}
+
+      {status === 'locked' && (
+        <>
+          <button
+            className="btn btn-outline btn-sm"
+            disabled={loading}
+            onClick={() => onOpen(week.id)}
+          >
+            {messages.weeks.unlock}
+          </button>
+          <button
+            className="btn btn-success btn-sm"
+            disabled={loading}
+            onClick={() => onPublish(week.id)}
+          >
+            {messages.weeks.published}
+          </button>
+        </>
       )}
     </div>
   );

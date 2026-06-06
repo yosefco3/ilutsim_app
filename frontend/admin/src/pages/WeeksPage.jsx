@@ -1,14 +1,24 @@
 import { useWeeks } from '../hooks/useWeeks';
 import WeekStatusControl from '../components/WeekStatusControl';
-import { sendReminder } from '../api/adminApiClient';
 import messages from '../utils/messages';
 
 export default function WeeksPage() {
-  const { weeks, loading, changeStatus, refresh } = useWeeks();
+  const { weeks, loading, setStatus, openForSubmission, publish, remind, reload } = useWeeks();
+
+  const handleOpen = async (weekId) => {
+    await openForSubmission(weekId);
+  };
+
+  const handleLock = async (weekId) => {
+    await setStatus(weekId, 'locked');
+  };
+
+  const handlePublish = async (weekId) => {
+    await publish(weekId);
+  };
 
   const handleRemind = async (weekId) => {
-    await sendReminder(weekId);
-    refresh();
+    await remind(weekId);
   };
 
   if (loading) return <div className="loading">{messages.common.loading}</div>;
@@ -16,6 +26,9 @@ export default function WeeksPage() {
   return (
     <div className="page">
       <h2>{messages.weeks.title}</h2>
+      <button className="btn btn-outline btn-sm" onClick={reload} style={{ marginBottom: '1rem' }}>
+        {messages.common.refresh || 'Refresh'}
+      </button>
       {!weeks.length ? (
         <p className="empty-state">{messages.weeks.empty}</p>
       ) : (
@@ -38,9 +51,18 @@ export default function WeeksPage() {
                 <td>
                   <WeekStatusControl
                     week={w}
-                    onStatusChange={changeStatus}
-                    onRemind={handleRemind}
+                    onOpen={handleOpen}
+                    onLock={handleLock}
+                    onPublish={handlePublish}
+                    loading={loading}
                   />
+                </td>
+                <td>
+                  {w.status === 'open' && (
+                    <button className="btn btn-outline btn-sm" onClick={() => handleRemind(w.id)}>
+                      {messages.weeks.remind || 'Remind'}
+                    </button>
+                  )}
                 </td>
               </tr>
             ))}
