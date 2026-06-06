@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { fetchWeeks, createWeek, updateWeekStatus, sendWeekReminders, openNewWeek, publishWeek } from '../api/adminApiClient';
+import { fetchWeeks, createWeek, updateWeekStatus, sendWeekReminders, openNewWeek, publishWeek, deleteWeek } from '../api/adminApiClient';
 
 export function useWeeks() {
   const [weeks, setWeeks] = useState([]);
@@ -49,5 +49,10 @@ export function useWeeks() {
     return updated;
   };
 
-  return { weeks, loading, error, reload: load, addWeek: add, setStatus, remind, openForSubmission, publish };
+  const removeWeek = async (id) => {
+    await deleteWeek(id);
+    setWeeks((prev) => prev.filter((w) => w.id !== id));
+  };
+
+  return { weeks, loading, error, reload: load, addWeek: add, setStatus, remind, openForSubmission, publish, removeWeek };
 }

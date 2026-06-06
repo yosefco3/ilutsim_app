@@ -78,8 +78,11 @@ export default {
     publishedLabel: 'פורסם',
     openSuccess: 'השבוע נפתח להגשה בהצלחה',
     lockSuccess: 'השבוע ננעל בהצלחה',
-    publishSuccess: 'השבוע פורסם בהצלחה',
+    publishSuccess: 'השבוע פורסם בהצלחה — שבוע חדש נוצר אוטומטית',
     currentStatus: 'סטטוס נוכחי',
+    delete: 'מחק שבוע',
+    deleteConfirm: 'האם למחוק את השבוע? פעולה זו אינה ניתנת לביטול.',
+    deleted: 'השבוע נמחק בהצלחה',
   },
   events: {
     title: 'ניהול אירועים',

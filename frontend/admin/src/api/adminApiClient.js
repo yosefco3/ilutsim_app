@@ -138,6 +138,10 @@ export function publishWeek(id) {
   return updateWeekStatus(id, 'published');
 }
 
+export function deleteWeek(id) {
+  return request(`/admin/weeks/${id}`, { method: 'DELETE' });
+}
+
 // ──── Events ────
 export function fetchEvents(weekId) {
   return request(`/admin/events?week_id=${weekId}`);
@@ -215,6 +219,7 @@ export default {
   sendWeekReminders,
   lockWeek,
   unlockWeek,
+  deleteWeek,
   fetchEvents,
   createEvent,
   updateEvent,
