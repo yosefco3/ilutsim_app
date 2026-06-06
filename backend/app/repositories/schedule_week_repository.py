@@ -5,7 +5,7 @@ ScheduleWeek repository — data access for weekly schedule periods.
 import uuid
 from datetime import date
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.constants import WeekStatus
@@ -33,6 +33,11 @@ class ScheduleWeekRepository(BaseRepository[ScheduleWeek]):
         )
         result = await self.session.execute(stmt)
         return result.scalar_one_or_none()
+
+    async def count(self) -> int:
+        """Return the total number of weeks."""
+        result = await self.session.execute(select(func.count(ScheduleWeek.id)))
+        return result.scalar()
 
     async def update_status(
         self, week_id: uuid.UUID, new_status: WeekStatus

@@ -39,6 +39,16 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     logger = logging.getLogger("ilutzim")
     logger.info("Application starting", extra={"extra_data": {"environment": settings.ENVIRONMENT}})
 
+    # Ensure at least one week exists on startup
+    try:
+        from app.database import async_session_factory
+        from app.seed import ensure_initial_week
+
+        async with async_session_factory() as session:
+            await ensure_initial_week(session)
+    except Exception as exc:
+        logger.warning("Could not ensure initial week: %s", exc)
+
     # Start Telegram bot (only if token is configured)
     bot_started = False
     if settings.TELEGRAM_BOT_TOKEN:
