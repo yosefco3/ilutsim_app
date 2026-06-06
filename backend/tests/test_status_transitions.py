@@ -2,6 +2,7 @@
 
 Validates that change_week_status only allows:
   open → locked → published
+  locked → open  (admin can reopen a locked week)
 and rejects all illegal transitions with AppBaseException(400).
 """
 
@@ -59,6 +60,15 @@ class TestValidTransitions:
         result = await svc.change_week_status(week.id, WeekStatus.PUBLISHED)
         assert result.status == WeekStatus.PUBLISHED
 
+    @pytest.mark.asyncio
+    async def test_locked_to_open(self):
+        """Admin can reopen a locked week."""
+        week = _mock_week(WeekStatus.LOCKED)
+        svc = _svc(week)
+
+        result = await svc.change_week_status(week.id, WeekStatus.OPEN)
+        assert result.status == WeekStatus.OPEN
+
 
 class TestInvalidTransitions:
     """Illegal transitions that must raise AppBaseException."""
@@ -73,15 +83,6 @@ class TestInvalidTransitions:
         assert exc_info.value.status_code == 400
 
     @pytest.mark.asyncio
-    async def test_locked_to_open_rejected(self):
-        week = _mock_week(WeekStatus.LOCKED)
-        svc = _svc(week)
-
-        with pytest.raises(AppBaseException) as exc_info:
-            await svc.change_week_status(week.id, WeekStatus.OPEN)
-        assert exc_info.value.status_code == 400
-
-    @pytest.mark.asyncio
     async def test_published_to_open_rejected(self):
         week = _mock_week(WeekStatus.PUBLISHED)
         svc = _svc(week)
@@ -91,11 +92,21 @@ class TestInvalidTransitions:
         assert exc_info.value.status_code == 400
 
     @pytest.mark.asyncio
-    async def test_same_status_rejected(self):
-        """No-op transition (same status) is also rejected."""
+    async def test_same_status_open_rejected(self):
+        """No-op transition open → open is rejected."""
         week = _mock_week(WeekStatus.OPEN)
         svc = _svc(week)
 
         with pytest.raises(AppBaseException) as exc_info:
             await svc.change_week_status(week.id, WeekStatus.OPEN)
+        assert exc_info.value.status_code == 400
+
+    @pytest.mark.asyncio
+    async def test_same_status_locked_rejected(self):
+        """No-op transition locked → locked is rejected."""
+        week = _mock_week(WeekStatus.LOCKED)
+        svc = _svc(week)
+
+        with pytest.raises(AppBaseException) as exc_info:
+            await svc.change_week_status(week.id, WeekStatus.LOCKED)
         assert exc_info.value.status_code == 400

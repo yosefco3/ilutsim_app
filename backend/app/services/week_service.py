@@ -17,9 +17,10 @@ from app.utils.date_utils import week_range
 logger = logging.getLogger("ilutzim")
 
 # Allowed week-status transitions: open → locked → published.
+# Admin can also reopen a locked week: locked → open.
 ALLOWED_TRANSITIONS: dict[str, list[str]] = {
     "open": ["locked"],
-    "locked": ["published"],
+    "locked": ["open", "published"],
     "published": [],  # terminal state
 }
 

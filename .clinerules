@@ -1,5 +1,21 @@
 # Cline Custom Rules - ilutzim_app Project
 
+## Task Execution Strategy — Break Large Tasks into Small Steps
+
+### When receiving a large feature request:
+1. **Always propose breaking it into small, sequential steps** — each step touching 2-4 files max.
+2. **Run tests after every step** — verify the step works before moving to the next.
+3. **Commit after every step** — so each piece is independently reviewable and revertable.
+4. **Present the full plan to the user before starting** — list all proposed steps, get approval, then execute one by one.
+5. **Each step should be independently testable** — not just a partial implementation that leaves the app broken.
+6. **Prefer many small commits over one large commit** — easier to review, revert, and debug.
+
+### Why this matters:
+- Bugs are caught early when each step is tested independently.
+- Context window stays clean — each step focuses on a narrow scope.
+- If something goes wrong, only the last step needs to be fixed.
+- The user can review progress and adjust direction between steps.
+
 ## Code Review Graph — Mandatory Workflow
 
 ### After Every Coding Mission (when code files were created or modified):
