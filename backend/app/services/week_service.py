@@ -41,7 +41,7 @@ class WeekService:
             end_date=data.end_date,
             status=WeekStatus.OPEN,
         )
-        created = await self._week_repo.create(week)
+        created = await self._week_repo.save(week)
         logger.info(f"Week created: id={created.id}")
         return WeekResponse.model_validate(created)
 
@@ -78,8 +78,7 @@ class WeekService:
                 f" מעברים אפשריים: {allowed_str}"
             )
 
-        week.status = new_status
-        updated = await self._week_repo.update(week)
+        updated = await self._week_repo.update(week.id, status=new_status)
         logger.info(f"Week {week_id}: {old_status} -> {new_status}")
 
         # Send Telegram notifications on status change
@@ -148,7 +147,7 @@ class WeekService:
         ws, we = week_range(start_date)
 
         week = ScheduleWeek(start_date=ws, end_date=we, status=WeekStatus.OPEN)
-        created = await self._week_repo.create(week)
+        created = await self._week_repo.save(week)
         logger.info(f"New week opened automatically: {ws} – {we} (id={created.id})")
 
         # Notify all guards via Telegram
@@ -188,7 +187,7 @@ class WeekService:
             end_date=next_end,
             status=WeekStatus.CLOSED,
         )
-        return await self._week_repo.create(next_week)
+        return await self._week_repo.save(next_week)
 
     async def _get_week_or_raise(self, week_id: uuid.UUID) -> ScheduleWeek:
         """Fetch week or raise WeekLockedException as a proxy for not-found."""

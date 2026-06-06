@@ -34,7 +34,14 @@ def _svc(week) -> WeekService:
     """Return a WeekService with a mock repo returning *week* on get_by_id."""
     mock_repo = AsyncMock()
     mock_repo.get_by_id.return_value = week
-    mock_repo.update.return_value = week
+
+    async def _update(wid, **kwargs):
+        """Simulate update() mutating the week's fields."""
+        for k, v in kwargs.items():
+            setattr(week, k, v)
+        return week
+
+    mock_repo.update = AsyncMock(side_effect=_update)
     return WeekService(mock_repo)
 
 

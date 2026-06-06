@@ -32,13 +32,13 @@ async def test_open_new_week_success():
     saved_week.start_date = date(2025, 6, 15)
     saved_week.end_date = date(2025, 6, 21)
     saved_week.status = WeekStatus.OPEN
-    mock_repo.create.return_value = saved_week
+    mock_repo.save.return_value = saved_week
 
     svc = WeekService(mock_repo)
     result = await svc.open_new_week(date(2025, 6, 15))
 
     assert result.status == WeekStatus.OPEN
-    mock_repo.create.assert_awaited_once()
+    mock_repo.save.assert_awaited_once()
 
 
 @pytest.mark.asyncio
@@ -69,7 +69,7 @@ async def test_open_new_week_uses_week_range():
     created.start_date = ws
     created.end_date = we
     created.status = WeekStatus.OPEN
-    mock_repo.create.return_value = created
+    mock_repo.save.return_value = created
 
     svc = WeekService(mock_repo)
     result = await svc.open_new_week(date(2025, 6, 18))
