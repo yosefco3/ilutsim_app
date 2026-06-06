@@ -7,7 +7,7 @@ import SubmissionForm from "../src/components/SubmissionForm.jsx";
 describe("LockBanner", () => {
   it("renders locked message", () => {
     render(<LockBanner />);
-    expect(screen.getByText(/נעול/)).toBeDefined();
+    expect(screen.getByText(/אין שבוע פעיל/)).toBeDefined();
   });
 });
 
