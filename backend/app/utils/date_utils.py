@@ -26,6 +26,16 @@ def upcoming_sunday(today: date = None) -> date:
     return today + timedelta(days=days_ahead)
 
 
+def get_next_week_start(current_start: date) -> date:
+    """Next week starts 7 days after current week's start_date."""
+    return current_start + timedelta(days=7)
+
+
+def get_next_week_end(next_start: date) -> date:
+    """6 days after next_start (= next Saturday)."""
+    return next_start + timedelta(days=6)
+
+
 def week_range(today: date = None) -> tuple[date, date]:
     """Return the (sunday, saturday) tuple for the upcoming guard week.
 

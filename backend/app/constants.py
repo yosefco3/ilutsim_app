@@ -14,6 +14,7 @@ class ShiftType(str, enum.Enum):
 
 class WeekStatus(str, enum.Enum):
     """Weekly schedule lifecycle status."""
+    CLOSED = "closed"
     OPEN = "open"
     LOCKED = "locked"
     PUBLISHED = "published"

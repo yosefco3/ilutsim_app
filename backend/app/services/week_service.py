@@ -12,7 +12,7 @@ from app.exceptions import ConflictException, InvalidTransitionException, WeekLo
 from app.models.schedule_week import ScheduleWeek
 from app.repositories.schedule_week_repository import ScheduleWeekRepository
 from app.schemas.week_schemas import WeekCreate, WeekResponse
-from app.utils.date_utils import week_range
+from app.utils.date_utils import get_next_week_end, get_next_week_start, week_range
 
 logger = logging.getLogger("ilutzim")
 
@@ -80,6 +80,18 @@ class WeekService:
         week.status = new_status
         updated = await self._week_repo.update(week)
         logger.info(f"Week {week_id}: {old_status} -> {new_status}")
+
+        # Auto-create next week when publishing
+        if new_status == WeekStatus.PUBLISHED:
+            try:
+                next_week = await self._ensure_next_week(updated)
+                logger.info(
+                    f"Auto-created next week: {next_week.start_date} – "
+                    f"{next_week.end_date} (id={next_week.id})"
+                )
+            except Exception as exc:
+                logger.warning(f"Failed to auto-create next week: {exc}")
+
         return WeekResponse.model_validate(updated)
 
     async def get_current_open_week(self) -> Optional[WeekResponse]:
@@ -132,6 +144,26 @@ class WeekService:
         return WeekResponse.model_validate(created)
 
     # ── Internal helpers ──────────────────────────────────────────────────
+
+    async def _ensure_next_week(self, week: ScheduleWeek) -> ScheduleWeek:
+        """Auto-create the next schedule week (closed) after publish.
+
+        Returns the newly created week.  Silently skips if one already exists.
+        """
+        next_start = get_next_week_start(week.start_date)
+        next_end = get_next_week_end(next_start)
+
+        existing = await self._week_repo.get_by_date_range(next_start, next_end)
+        if existing is not None:
+            logger.info(f"Next week already exists: {next_start} – {next_end}")
+            return existing
+
+        next_week = ScheduleWeek(
+            start_date=next_start,
+            end_date=next_end,
+            status=WeekStatus.CLOSED,
+        )
+        return await self._week_repo.create(next_week)
 
     async def _get_week_or_raise(self, week_id: uuid.UUID) -> ScheduleWeek:
         """Fetch week or raise WeekLockedException as a proxy for not-found."""
