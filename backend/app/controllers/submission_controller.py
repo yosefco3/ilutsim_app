@@ -19,18 +19,16 @@ logger = logging.getLogger("ilutzim")
 router = APIRouter(prefix="/submissions", tags=["Submissions"])
 
 
-@router.get("/current-week", response_model=WeekResponse)
+@router.get("/current-week", response_model=WeekResponse | None)
 async def get_current_open_week(
     week_service: WeekService = Depends(get_week_service),
 ):
-    """Get the currently open week for submissions."""
-    week = await week_service.get_current_open_week()
-    if week is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="No open week found",
-        )
-    return week
+    """Get the currently open week for submissions.
+
+    Returns the open week data or ``null`` when no week is open.
+    Used by the WebApp to decide between submission form and lock banner.
+    """
+    return await week_service.get_current_open_week()
 
 
 @router.post("", response_model=SubmissionResponse, status_code=status.HTTP_201_CREATED)

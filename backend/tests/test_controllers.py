@@ -123,7 +123,7 @@ class TestSubmissionController:
     """Tests for /submissions endpoints."""
 
     def test_get_current_week_no_data(self):
-        """GET /submissions/current-week returns 404 when no active week."""
+        """GET /submissions/current-week returns 200 + null when no active week."""
         mock_svc = AsyncMock()
         mock_svc.get_current_open_week.return_value = None
 
@@ -132,7 +132,8 @@ class TestSubmissionController:
         client = TestClient(app)
 
         resp = client.get("/submissions/current-week")
-        assert resp.status_code == 404
+        assert resp.status_code == 200
+        assert resp.json() is None
         app.dependency_overrides.clear()
 
     def test_get_current_week_success(self):
