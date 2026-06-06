@@ -34,6 +34,16 @@ class ScheduleWeekRepository(BaseRepository[ScheduleWeek]):
         result = await self.session.execute(stmt)
         return result.scalar_one_or_none()
 
+    async def get_latest_week(self) -> ScheduleWeek | None:
+        """Return the most recent week (by start_date), regardless of status."""
+        stmt = (
+            select(self.model_class)
+            .order_by(ScheduleWeek.start_date.desc())
+            .limit(1)
+        )
+        result = await self.session.execute(stmt)
+        return result.scalar_one_or_none()
+
     async def count(self) -> int:
         """Return the total number of weeks."""
         result = await self.session.execute(select(func.count(ScheduleWeek.id)))

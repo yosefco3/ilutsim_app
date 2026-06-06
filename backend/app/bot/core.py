@@ -25,6 +25,7 @@ from app.bot.keyboards.inline_kb import (
     weekday_kb,
 )
 from app.config import settings
+from app.constants import WeekStatus
 
 logger = logging.getLogger("ilutzim")
 router = Router()
@@ -68,7 +69,7 @@ async def _get_services():
     deviation_svc = DeviationService()
 
     user_svc = UserService(user_repo)
-    week_svc = WeekService(session)
+    week_svc = WeekService(week_repo, user_repo)
     sub_svc = SubmissionService(sub_repo, user_repo, week_repo, deviation_svc)
     return user_svc, week_svc, sub_svc, session
 
@@ -210,33 +211,86 @@ async def process_phone(message: Message, state: FSMContext):
 
 
 async def _show_main_menu(message: Message, display_name: str):
-    """Show the main menu to an authenticated user."""
+    """Show the main menu to an authenticated user.
+
+    Logic:
+    - If a week is OPEN → check if user already submitted.
+      - Submitted → button "עריכת אילוצים" → webapp
+      - Not submitted → button "הגשת אילוצים" → webapp
+    - If latest week is LOCKED → "השבוע סגור להגשה" (no buttons)
+    - If latest week is PUBLISHED → "סידור העבודה לשבוע הבא כבר פורסם" (no buttons)
+    """
+    from app.database import get_session
+    from app.repositories.user_repository import UserRepository
+    from app.repositories.submission_repository import SubmissionRepository
+    from app.repositories.schedule_week_repository import ScheduleWeekRepository
+    from app.services.user_service import UserService
+    from app.services.submission_service import SubmissionService
+    from app.services.week_service import WeekService
+    from app.services.deviation_service import DeviationService
+
     telegram_id = message.from_user.id
     webapp_url = f"{settings.WEBAPP_URL}?tg_id={telegram_id}"
 
-    # Telegram does not allow localhost/private URLs in inline keyboard buttons.
-    # If the URL is not publicly accessible, show it as plain text instead.
+    # Private URL detection
     private_pattern = r"(localhost|127\.|192\.168\.|10\.|172\.(1[6-9]|2[0-9]|3[01])\.)"
     is_private = bool(re.search(private_pattern, webapp_url))
 
-    buttons = [
-        [InlineKeyboardButton(text="📅 הגשת אילוצים", callback_data="submit")],
-        [InlineKeyboardButton(text="📊 סטטוס אילוצים", callback_data="status")],
-    ]
-    if not is_private and webapp_url.startswith("https://"):
-        buttons.append(
-            [InlineKeyboardButton(text="🌐 כניסה למערכת", url=webapp_url)]
-        )
-    buttons.append([InlineKeyboardButton(text="ℹ️ עזרה", callback_data="help")])
+    # Open a short-lived DB session to query week + submission status
+    session_ctx = get_session()
+    session = await session_ctx.__aenter__()
+    try:
+        user_repo = UserRepository(session)
+        week_repo = ScheduleWeekRepository(session)
+        sub_repo = SubmissionRepository(session)
+        deviation_svc = DeviationService()
 
-    kb = InlineKeyboardMarkup(inline_keyboard=buttons)
+        week_svc = WeekService(week_repo, user_repo)
+        sub_svc = SubmissionService(sub_repo, user_repo, week_repo, deviation_svc)
+        user_svc = UserService(user_repo)
 
-    # Build text — include URL as clickable link when it can't be a button
-    text = f"שלום {display_name}! 👋\nברוך הבא למערכת ניהול האילוצים."
-    if is_private or not webapp_url.startswith("https://"):
-        text += f"\n\n🌐 כניסה למערכת: {webapp_url}"
+        # 1) Check if there's an OPEN week
+        open_week = await week_svc.get_current_open_week()
 
-    await message.answer(text, reply_markup=kb)
+        if open_week is not None:
+            # Week is open — check if user already submitted
+            user = await user_svc.get_by_telegram_id(telegram_id)
+            already_submitted = False
+            if user is not None:
+                existing = await sub_svc.get_user_submission(user.id, open_week.id)
+                already_submitted = existing is not None
+
+            button_text = "✏️ עריכת אילוצים" if already_submitted else "📅 הגשת אילוצים"
+            text = f"שלום {display_name}! 👋\nברוך הבא למערכת ניהול האילוצים."
+
+            if not is_private and webapp_url.startswith("https://"):
+                kb = InlineKeyboardMarkup(inline_keyboard=[
+                    [InlineKeyboardButton(text=button_text, url=webapp_url)],
+                ])
+            else:
+                text += f"\n\n🌐 כניסה למערכת: {webapp_url}"
+                kb = InlineKeyboardMarkup(inline_keyboard=[])
+        else:
+            # 2) No open week — check latest week status
+            latest_week = await week_svc.get_latest_week()
+
+            if latest_week is not None and latest_week.status == WeekStatus.LOCKED:
+                text = f"שלום {display_name}! 👋\nהשבוע סגור להגשה."
+                kb = InlineKeyboardMarkup(inline_keyboard=[])
+            elif latest_week is not None and latest_week.status == WeekStatus.PUBLISHED:
+                text = f"שלום {display_name}! 👋\nסידור העבודה לשבוע הבא כבר פורסם."
+                kb = InlineKeyboardMarkup(inline_keyboard=[])
+            else:
+                # Fallback — no week exists at all
+                text = f"שלום {display_name}! 👋\nאין שבוע פעיל כרגע."
+                kb = InlineKeyboardMarkup(inline_keyboard=[])
+
+        await message.answer(text, reply_markup=kb)
+    finally:
+        try:
+            await session_ctx.__aexit__(None, None, None)
+        except Exception:
+            pass
 
 
 # ─── Callback: main menu ───────────────────────────────────
@@ -244,10 +298,9 @@ async def _show_main_menu(message: Message, display_name: str):
 @router.callback_query(lambda c: c.data == "menu")
 async def cb_menu(callback: CallbackQuery, state: FSMContext):
     await state.clear()
-    await callback.message.edit_text(
-        "תפריט ראשי:",
-        reply_markup=main_menu_kb(),
-    )
+    # Re-use the same smart menu logic
+    display_name = callback.from_user.first_name or "שומר"
+    await _show_main_menu(callback.message, display_name)
     await callback.answer()
 
 
@@ -255,27 +308,26 @@ async def cb_menu(callback: CallbackQuery, state: FSMContext):
 
 @router.callback_query(lambda c: c.data == "submit")
 async def cb_submit(callback: CallbackQuery, state: FSMContext):
-    """Start submission flow – find current week."""
+    """Start submission flow – find current open week."""
     _, week_svc, _, _ = await _get_services()
-    telegram_id = callback.from_user.id
 
-    week = await week_svc.get_active_week()
+    week = await week_svc.get_current_open_week()
     if week is None:
         await callback.answer("אין שבוע פתוח להגשה כרגע.", show_alert=True)
         return
 
     await state.set_state(SubmissionFlow.selecting_days)
     await state.update_data(
-        week_id=week["id"],
+        week_id=str(week.id),
         availabilities={},  # day_index -> bool
     )
 
-    start = week["week_start_date"]
-    end = week["week_end_date"]
+    start = week.start_date
+    end = week.end_date
     await callback.message.edit_text(
         f"📅 הגשת אילוצים לשבוע:\n{start} – {end}\n\n"
         "בחר יום לסימון זמינות:",
-        reply_markup=weekday_kb(str(week["id"])),
+        reply_markup=weekday_kb(str(week.id)),
     )
     await callback.answer()
 
@@ -386,7 +438,6 @@ async def cb_finish(callback: CallbackQuery, state: FSMContext):
         logger.error("Bot submission failed: %s", exc)
         await callback.message.edit_text(
             "❌ שגיאה בשמירת האילוצים. נסה שוב.",
-            reply_markup=main_menu_kb(),
         )
         await callback.answer()
         return
@@ -400,7 +451,6 @@ async def cb_finish(callback: CallbackQuery, state: FSMContext):
 
     await callback.message.edit_text(
         "✅ האילוצים נשמרו בהצלחה!\n\n" + "\n".join(lines),
-        reply_markup=main_menu_kb(),
     )
     await callback.answer()
 
@@ -411,26 +461,25 @@ async def cb_finish(callback: CallbackQuery, state: FSMContext):
 async def cb_status(callback: CallbackQuery):
     """Show submission status for the current week."""
     _, week_svc, sub_svc, _ = await _get_services()
-    telegram_id = callback.from_user.id
 
-    week = await week_svc.get_active_week()
+    week = await week_svc.get_current_open_week()
     if week is None:
         await callback.answer("אין שבוע פתוח כרגע.", show_alert=True)
         return
 
     user_svc, _, _, _ = await _get_services()
-    user = await user_svc.get_by_telegram_id(telegram_id)
+    user = await user_svc.get_by_telegram_id(callback.from_user.id)
     if user is None:
         await callback.answer("משתמש לא רשום. שלח /start.", show_alert=True)
         return
 
-    submission = await sub_svc.get_user_submission(user.id, week["id"])
+    submission = await sub_svc.get_user_submission(user.id, week.id)
     if submission is None:
         text = "📭 טרם הגשת אילוצים לשבוע הנוכחי."
     else:
-        text = f"✅ הגשת אילוצים לשבוע {week['week_start_date']}.\nסטטוס: {submission.get('status', 'הוגש')}"
+        text = f"✅ הגשת אילוצים לשבוע {week.start_date}.\nסטטוס: {submission.get('status', 'הוגש')}"
 
-    await callback.message.edit_text(text, reply_markup=main_menu_kb())
+    await callback.message.edit_text(text)
     await callback.answer()
 
 
@@ -444,7 +493,6 @@ async def cb_help(callback: CallbackQuery):
         "📊 <b>סטטוס אילוצים</b> — בדוק אם הגשת אילוצים לשבוע הנוכחי\n"
         "🌐 <b>כניסה למערכת</b> — פתח את המערכת בדפדפן\n\n"
         "לתמיכה נוספת פנה למנהל המערכת.",
-        reply_markup=main_menu_kb(),
     )
     await callback.answer()
 

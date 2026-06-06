@@ -125,6 +125,13 @@ class WeekService:
             return None
         return WeekResponse.model_validate(week)
 
+    async def get_latest_week(self) -> Optional[WeekResponse]:
+        """Return the most recent week (by start_date), regardless of status."""
+        week = await self._week_repo.get_latest_week()
+        if week is None:
+            return None
+        return WeekResponse.model_validate(week)
+
     async def validate_week_is_open(self, week_id: uuid.UUID) -> None:
         """Raise WeekLockedException if the week is not open."""
         week = await self._get_week_or_raise(week_id)
