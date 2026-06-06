@@ -4,6 +4,7 @@
 import { useTelegram } from "./hooks/useTelegram.js";
 import { useSubmission } from "./hooks/useSubmission.js";
 import SubmissionForm from "./components/SubmissionForm.jsx";
+import LockBanner from "./components/LockBanner.jsx";
 
 export default function App() {
   const { initData, isDevMode } = useTelegram();
@@ -29,7 +30,15 @@ export default function App() {
           </a>.
         </div>
       )}
-      <SubmissionForm submission={submission} />
+      {submission.loading ? (
+        <div style={{ textAlign: "center", padding: "40px", fontFamily: "sans-serif" }}>
+          טוען...
+        </div>
+      ) : submission.canSubmit ? (
+        <SubmissionForm submission={submission} />
+      ) : (
+        <LockBanner status={submission.weekStatus} />
+      )}
     </>
   );
 }

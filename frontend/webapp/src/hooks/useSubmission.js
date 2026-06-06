@@ -169,7 +169,9 @@ export function useSubmission(initData) {
     }
   }, [week, days, events, notes, initData]);
 
-  const isLocked = week?.status === "locked";
+  const weekStatus = week?.status || null;
+  const canSubmit = weekStatus === "open";
+  const isLocked = !canSubmit;
 
   return {
     loading,
@@ -180,6 +182,8 @@ export function useSubmission(initData) {
     events,
     notes,
     setNotes,
+    weekStatus,
+    canSubmit,
     isLocked,
     toggleAvailable,
     setShiftType,
