@@ -34,6 +34,10 @@ class SubmissionFlow(StatesGroup):
     selecting_days = State()
 
 
+class PhoneVerification(StatesGroup):
+    waiting_for_phone = State()
+
+
 # ─── Dependency helpers ────────────────────────────────────
 
 async def _get_services():
@@ -44,7 +48,9 @@ async def _get_services():
     from app.database import get_pool
 
     pool = get_pool()
-    user_svc = UserService(pool)
+    from app.repositories.user_repository import UserRepository
+    user_repo = UserRepository(pool)
+    user_svc = UserService(user_repo)
     week_svc = WeekService(pool)
     sub_svc = SubmissionService(pool)
     return user_svc, week_svc, sub_svc
@@ -54,30 +60,111 @@ async def _get_services():
 
 @router.message(CommandStart())
 async def cmd_start(message: Message, state: FSMContext):
-    """Handle /start – register user if new, show main menu."""
+    """Handle /start – verify user, register if new, show main menu."""
     await state.clear()
     telegram_id = message.from_user.id
     first_name = message.from_user.first_name or ""
     last_name = message.from_user.last_name or ""
-    username = message.from_user.username or ""
 
-    user_svc, week_svc, sub_svc = await _get_services()
+    user_svc, _, _ = await _get_services()
 
-    # Register or update user
+    # Check if this Telegram ID is already linked to a user
     user = await user_svc.get_by_telegram_id(telegram_id)
-    if user is None:
-        user = await user_svc.create_user(
-            telegram_id=telegram_id,
-            first_name=first_name,
-            last_name=last_name,
-            username=username,
-        )
-        logger.info("New user registered via bot: tg_id=%s", telegram_id)
+
+    if user is not None:
+        # Already registered — update profile info from Telegram
+        try:
+            await user_svc.update_user_profile(
+                user.id,
+                first_name=first_name,
+                last_name=last_name,
+                username=message.from_user.username or "",
+            )
+        except Exception:
+            pass  # Non-critical — profile update failure shouldn't block
+        await _show_main_menu(message, first_name)
     else:
-        await user_svc.update_user_profile(
-            user["id"], first_name=first_name, last_name=last_name, username=username,
+        # Not yet linked — ask for phone number to verify identity
+        await state.set_state(PhoneVerification.waiting_for_phone)
+        await message.answer(
+            "👋 שלום!\n\n"
+            "כדי להשתמש במערכת, עליך לאמת את מספר הטלפון שלך.\n"
+            "נא לשלוח את מספר הטלפון שאיתו נרשמת למערכת\n"
+            "(ללא מקף, ללא רווחים).\n\n"
+            "לדוגמה: 0501234567"
         )
 
+
+# ─── Phone verification ────────────────────────────────────
+
+@router.message(PhoneVerification.waiting_for_phone)
+async def process_phone(message: Message, state: FSMContext):
+    """Process phone number and link Telegram ID to user."""
+    await state.clear()
+    phone_raw = message.text.strip()
+
+    # Normalize: remove spaces, dashes, and Hebrew prefix
+    phone = phone_raw.replace("-", "").replace(" ", "")
+    if phone.startswith("+972"):
+        phone = "0" + phone[4:]
+    elif phone.startswith("972"):
+        phone = "0" + phone[3:]
+
+    # Basic validation
+    if not phone.isdigit() or len(phone) < 9:
+        await message.answer(
+            "❌ מספר הטלפון אינו תקין.\n"
+            "נא לשלוח מספר טלפון בלבד (ללא מקף, ללא רווחים).\n\n"
+            "לדוגמה: 0501234567"
+        )
+        await state.set_state(PhoneVerification.waiting_for_phone)
+        return
+
+    user_svc, _, _ = await _get_services()
+    telegram_id = message.from_user.id
+
+    # Find user by phone
+    user = await user_svc.get_user_by_phone(phone)
+    if user is None:
+        logger.warning("Phone verification failed — phone not found: %s", phone)
+        await message.answer(
+            "❌ מספר הטלפון לא נמצא במערכת.\n"
+            "נא לוודא שהמספר תואם למספר שנרשמת איתו.\n\n"
+            "נסה שוב או פנה למנהל המערכת."
+        )
+        await state.set_state(PhoneVerification.waiting_for_phone)
+        return
+
+    if not user.is_active:
+        await message.answer(
+            "❌ המשתמש שלך אינו פעיל במערכת.\n"
+            "פנה למנהל המערכת לפרטים."
+        )
+        return
+
+    # Link telegram_id to the user
+    try:
+        await user_svc.link_telegram(phone, str(telegram_id))
+        logger.info("Telegram linked: user_id=%s, telegram_id=%s", user.id, telegram_id)
+    except Exception as exc:
+        logger.error("Failed to link telegram: %s", exc)
+        await message.answer(
+            "❌ שגיאה בחיבור החשבון. נסה שוב מאוחר יותר."
+        )
+        return
+
+    # Success — show welcome and main menu
+    display_name = user.first_name or message.from_user.first_name or "שומר"
+    await message.answer(
+        f"✅ {display_name}, החשבון חובר בהצלחה!\n\n"
+        f"מעתה תקבל הודעות ותזכורות דרך הבוט."
+    )
+    await _show_main_menu(message, display_name)
+
+
+async def _show_main_menu(message: Message, display_name: str):
+    """Show the main menu to an authenticated user."""
+    telegram_id = message.from_user.id
     webapp_url = f"{settings.webapp_base_url}?tg_id={telegram_id}"
     kb = InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text="📅 הגשת אילוצים", callback_data="submit")],
@@ -89,7 +176,7 @@ async def cmd_start(message: Message, state: FSMContext):
         [InlineKeyboardButton(text="ℹ️ עזרה", callback_data="help")],
     ])
     await message.answer(
-        f"שלום {first_name}! 👋\nברוך הבא למערכת ניהול האילוצים.",
+        f"שלום {display_name}! 👋\nברוך הבא למערכת ניהול האילוצים.",
         reply_markup=kb,
     )
 
@@ -220,7 +307,7 @@ async def cb_finish(callback: CallbackQuery, state: FSMContext):
     user_svc, _, sub_svc = await _get_services()
     user = await user_svc.get_by_telegram_id(telegram_id)
     if user is None:
-        await callback.answer("שגיאה: משתמש לא נמצא.", show_alert=True)
+        await callback.answer("שגיאה: משתמש לא נמצא. שלח /start.", show_alert=True)
         return
 
     # Build availability records list
@@ -233,7 +320,7 @@ async def cb_finish(callback: CallbackQuery, state: FSMContext):
 
     try:
         await sub_svc.submit_weekly(
-            user_id=user["id"],
+            user_id=user.id,
             week_id=week_id,
             availability_records=availability_records,
         )
@@ -276,10 +363,10 @@ async def cb_status(callback: CallbackQuery):
     user_svc, _, _ = await _get_services()
     user = await user_svc.get_by_telegram_id(telegram_id)
     if user is None:
-        await callback.answer("משתמש לא רשום.", show_alert=True)
+        await callback.answer("משתמש לא רשום. שלח /start.", show_alert=True)
         return
 
-    submission = await sub_svc.get_user_submission(user["id"], week["id"])
+    submission = await sub_svc.get_user_submission(user.id, week["id"])
     if submission is None:
         text = "📭 טרם הגשת אילוצים לשבוע הנוכחי."
     else:
@@ -307,5 +394,14 @@ async def cb_help(callback: CallbackQuery):
 # ─── Fallback ──────────────────────────────────────────────
 
 @router.message()
-async def fallback(message: Message):
+async def fallback(message: Message, state: FSMContext):
+    """Catch-all for unrecognized messages."""
+    # If user is in phone verification, redirect
+    current_state = await state.get_state()
+    if current_state == PhoneVerification.waiting_for_phone:
+        await message.answer(
+            "נא לשלוח מספר טלפון בלבד (ללא מקף, ללא רווחים).\n\n"
+            "לדוגמה: 0501234567"
+        )
+        return
     await message.answer("לא הבנתי. השתמש בתפריט או שלח /start.")

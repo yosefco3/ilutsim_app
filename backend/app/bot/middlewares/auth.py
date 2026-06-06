@@ -25,6 +25,7 @@ class AuthMiddleware(BaseMiddleware):
 
         # Lazy import to avoid circular deps
         from app.services.user_service import UserService
+        from app.repositories.user_repository import UserRepository
         from app.database import get_pool
 
         pool = get_pool()
@@ -32,7 +33,7 @@ class AuthMiddleware(BaseMiddleware):
             # DB not ready yet – let request through
             return await handler(event, data)
 
-        user_svc = UserService(pool)
+        user_svc = UserService(UserRepository(pool))
         user = await user_svc.get_by_telegram_id(tg_id)
 
         if user is not None and not user.get("is_active", True):

@@ -21,6 +21,7 @@ async def _send_closing_reminders():
         from app.services.user_service import UserService
         from app.services.week_service import WeekService
         from app.services.submission_service import SubmissionService
+        from app.repositories.user_repository import UserRepository
         from app.database import get_pool
         from app.bot.notifications import notify_closing_reminder
 
@@ -28,7 +29,7 @@ async def _send_closing_reminders():
         if pool is None:
             return
 
-        user_svc = UserService(pool)
+        user_svc = UserService(UserRepository(pool))
         week_svc = WeekService(pool)
         sub_svc = SubmissionService(pool)
 

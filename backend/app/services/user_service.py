@@ -78,14 +78,52 @@ class UserService:
         user = await self._get_user_or_raise(user_id)
         return UserResponse.model_validate(user)
 
+    # ── Telegram / Bot methods ─────────────────────────────────────────
+
+    async def get_by_telegram_id(self, telegram_id: int) -> UserResponse | None:
+        """Find a user by Telegram ID. Returns None if not found."""
+        user = await self._user_repo.get_by_telegram_id(str(telegram_id))
+        if user is None:
+            return None
+        return UserResponse.model_validate(user)
+
     async def link_telegram(self, phone_number: str, telegram_id: str) -> UserResponse:
         """Bot authentication: find user by phone and link telegram_id."""
         user = await self._user_repo.get_by_phone(phone_number)
         if user is None:
             logger.warning(f"Telegram link failed — phone not found: {phone_number}")
             raise UserNotFoundException()
-        user = await self._user_repo.link_telegram_id(user.id, telegram_id)
+        if not user.is_active:
+            raise UserDeactivatedException()
+        user = await self._user_repo.link_telegram_id_by_phone(phone_number, telegram_id)
         logger.info(f"Telegram linked: user_id={user.id}, telegram_id={telegram_id}")
+        return UserResponse.model_validate(user)
+
+    async def link_telegram_by_user_id(self, user_id: uuid.UUID, telegram_id: str) -> UserResponse:
+        """Link telegram_id to a user by their user ID."""
+        user = await self._get_user_or_raise(user_id)
+        if not user.is_active:
+            raise UserDeactivatedException()
+        user = await self._user_repo.link_telegram_id_by_user_id(user_id, telegram_id)
+        logger.info(f"Telegram linked by user_id: user_id={user_id}, telegram_id={telegram_id}")
+        return UserResponse.model_validate(user)
+
+    async def update_user_profile(
+        self, user_id: uuid.UUID, *, first_name: str, last_name: str, username: str,
+    ) -> UserResponse:
+        """Update profile fields from Telegram profile info."""
+        user = await self._get_user_or_raise(user_id)
+        user.first_name = first_name
+        user.last_name = last_name
+        user.telegram_username = username
+        updated = await self._user_repo.save(user)
+        return UserResponse.model_validate(updated)
+
+    async def get_user_by_phone(self, phone_number: str) -> UserResponse | None:
+        """Find user by phone number. Returns None if not found."""
+        user = await self._user_repo.get_by_phone(phone_number)
+        if user is None:
+            return None
         return UserResponse.model_validate(user)
 
     # ── Internal helpers ──────────────────────────────────────────────────

@@ -42,7 +42,7 @@ class UserRepository(BaseRepository[User]):
         result = await self.session.execute(stmt)
         return list(result.scalars().all())
 
-    async def link_telegram_id(self, phone_number: str, telegram_id: str) -> User:
+    async def link_telegram_id_by_phone(self, phone_number: str, telegram_id: str) -> User:
         """Link a Telegram ID to a user identified by phone number.
 
         Raises ValueError if no user is found with the given phone number.
@@ -50,6 +50,19 @@ class UserRepository(BaseRepository[User]):
         user = await self.get_by_phone(phone_number)
         if user is None:
             raise ValueError(f"No user found with phone number {phone_number}")
+        user.telegram_id = telegram_id
+        await self.session.flush()
+        await self.session.refresh(user)
+        return user
+
+    async def link_telegram_id_by_user_id(self, user_id: uuid.UUID, telegram_id: str) -> User:
+        """Link a Telegram ID to a user identified by user ID.
+
+        Raises ValueError if no user is found with the given user ID.
+        """
+        user = await self.get_by_id(user_id)
+        if user is None:
+            raise ValueError(f"No user found with id {user_id}")
         user.telegram_id = telegram_id
         await self.session.flush()
         await self.session.refresh(user)

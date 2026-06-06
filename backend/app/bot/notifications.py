@@ -43,6 +43,18 @@ async def notify_week_opened(week_start: date, week_end: date, telegram_ids: lis
     return count
 
 
+async def notify_guard_welcome(telegram_id: int, first_name: str, last_name: str) -> bool:
+    """Send a welcome message to a newly added guard."""
+    full_name = f"{first_name} {last_name}".strip()
+    text = (
+        f"👋 שלום {full_name}!\n\n"
+        f"נרשמת בהצלחה למערכת ניהול האילוצים.\n"
+        f"מעתה תקבל הודעות ותזכורות דרך הבוט הזה.\n\n"
+        f"שלח /start לכניסה לתפריט הראשי."
+    )
+    return await send_notification(telegram_id, text)
+
+
 async def notify_closing_reminder(week_start: date, deadline_text: str, telegram_ids: list[int]):
     """Remind users to submit before deadline."""
     text = (
