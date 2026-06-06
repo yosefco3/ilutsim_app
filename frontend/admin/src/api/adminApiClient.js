@@ -43,6 +43,11 @@ async function request(endpoint, options = {}) {
     throw new Error(body.detail || `HTTP ${res.status}`);
   }
 
+  // Handle 204 No Content (e.g. DELETE responses)
+  if (res.status === 204) {
+    return null;
+  }
+
   // Handle blob responses (Excel export)
   if (endpoint.includes('/export/excel')) {
     return res.blob();
