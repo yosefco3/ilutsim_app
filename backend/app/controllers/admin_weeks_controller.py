@@ -12,7 +12,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from app.constants import WeekStatus
 from app.dependencies import get_week_service, require_admin_role
 from app.exceptions import AppBaseException
-from app.schemas.week_schemas import WeekCreate, WeekResponse
+from app.schemas.week_schemas import WeekCreate, WeekResponse, WeekStatusUpdate
 from app.services.week_service import WeekService
 
 logger = logging.getLogger("ilutzim")
@@ -98,12 +98,12 @@ async def reopen_week(
 @router.patch("/{week_id}/status", response_model=WeekResponse)
 async def update_week_status(
     week_id: uuid.UUID,
-    new_status: WeekStatus,
+    body: WeekStatusUpdate,
     week_service: WeekService = Depends(get_week_service),
 ):
     """Change a week's status (open → locked → published)."""
     try:
-        return await week_service.change_week_status(week_id, new_status)
+        return await week_service.change_week_status(week_id, body.status)
     except Exception as e:
         logger.error(f"Week status change failed: {e}")
         raise HTTPException(

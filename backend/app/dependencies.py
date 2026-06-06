@@ -76,8 +76,9 @@ async def get_user_service(
 
 async def get_week_service(
     week_repo: ScheduleWeekRepository = Depends(_get_week_repo),
+    user_repo: UserRepository = Depends(_get_user_repo),
 ) -> WeekService:
-    return WeekService(week_repo)
+    return WeekService(week_repo, user_repo)
 
 
 async def get_submission_service(

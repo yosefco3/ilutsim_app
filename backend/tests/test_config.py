@@ -23,9 +23,15 @@ def test_settings_caches_singleton() -> None:
     assert s1 is s2
 
 
-def test_default_values() -> None:
+def test_default_values(monkeypatch) -> None:
     """Default values should be set correctly."""
+    # Remove env vars that may override defaults via pydantic-settings
+    for key in ("LOG_LEVEL", "ENVIRONMENT", "DATABASE_URL", "TELEGRAM_BOT_TOKEN",
+                "WEBAPP_URL", "ADMIN_DASHBOARD_URL", "ADMIN_API_KEY", "JWT_SECRET_KEY"):
+        monkeypatch.delenv(key, raising=False)
+
     settings = Settings(
+        _env_file=None,  # prevent .env file from overriding defaults
         DATABASE_URL="sqlite+aiosqlite:///test.db",
         TELEGRAM_BOT_TOKEN="test",
         WEBAPP_URL="http://localhost:3000",
