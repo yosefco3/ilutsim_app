@@ -3,6 +3,7 @@ Core Telegram bot handler – aiogram v3 dispatcher with all handlers.
 """
 
 import logging
+import re
 from contextlib import asynccontextmanager
 from datetime import date
 
@@ -44,8 +45,9 @@ class PhoneVerification(StatesGroup):
 async def _get_services():
     """Create services with a dedicated async DB session for bot handlers.
 
-    Returns (user_svc, week_svc, sub_svc) tuple — same interface as before.
-    Each call creates a fresh session that auto-commits on success.
+    Returns (user_svc, week_svc, sub_svc, session) tuple.
+    Each call creates a fresh session.  Caller is responsible for committing
+    the session (e.g. ``await session.commit()``) when writes are performed.
     """
     from app.services.user_service import UserService
     from app.services.submission_service import SubmissionService
@@ -68,7 +70,7 @@ async def _get_services():
     user_svc = UserService(user_repo)
     week_svc = WeekService(session)
     sub_svc = SubmissionService(sub_repo, user_repo, week_repo, deviation_svc)
-    return user_svc, week_svc, sub_svc
+    return user_svc, week_svc, sub_svc, session
 
 
 # ─── /start ────────────────────────────────────────────────
@@ -81,7 +83,7 @@ async def cmd_start(message: Message, state: FSMContext):
     first_name = message.from_user.first_name or ""
     last_name = message.from_user.last_name or ""
 
-    user_svc, _, _ = await _get_services()
+    user_svc, _, _, session = await _get_services()
 
     # Check if this Telegram ID is already linked to a user
     user = await user_svc.get_by_telegram_id(telegram_id)
@@ -95,9 +97,14 @@ async def cmd_start(message: Message, state: FSMContext):
                 last_name=last_name,
                 username=message.from_user.username or "",
             )
+            await session.commit()
         except Exception:
             pass  # Non-critical — profile update failure shouldn't block
-        await _show_main_menu(message, first_name)
+        try:
+            await _show_main_menu(message, first_name)
+        except Exception as exc:
+            logger.error("Failed to show main menu: %s", exc, exc_info=True)
+            await message.answer(f"שלום {first_name}! 👋\nברוך הבא למערכת ניהול האילוצים.\nשלח /start לתפריט.")
     else:
         # Not yet linked — ask for phone number to verify identity
         await state.set_state(PhoneVerification.waiting_for_phone)
@@ -142,7 +149,7 @@ async def process_phone(message: Message, state: FSMContext):
         await state.set_state(PhoneVerification.waiting_for_phone)
         return
 
-    user_svc, _, _ = await _get_services()
+    user_svc, _, _, session = await _get_services()
 
     # Find user by phone
     logger.info("Phone verification: looking up phone=%s for telegram_id=%s", phone, telegram_id)
@@ -167,6 +174,7 @@ async def process_phone(message: Message, state: FSMContext):
     # Link telegram_id to the user
     try:
         await user_svc.link_telegram(phone, str(telegram_id))
+        await session.commit()
         logger.info(
             "Phone verification SUCCESS: user_id=%s, phone=%s, telegram_id=%s linked",
             user.id, phone, telegram_id,
@@ -194,26 +202,41 @@ async def process_phone(message: Message, state: FSMContext):
             f"✅ {display_name}, החשבון חובר בהצלחה!\n\n"
             f"מעתה תקבל הודעות ותזכורות דרך הבוט."
         )
-    await _show_main_menu(message, display_name)
+    try:
+        await _show_main_menu(message, display_name)
+    except Exception as exc:
+        logger.error("Failed to show main menu after phone verification: %s", exc, exc_info=True)
+        await message.answer(f"✅ {display_name}, החשבון חובר בהצלחה!\nשלח /start לתפריט.")
 
 
 async def _show_main_menu(message: Message, display_name: str):
     """Show the main menu to an authenticated user."""
     telegram_id = message.from_user.id
-    webapp_url = f"{settings.webapp_base_url}?tg_id={telegram_id}"
-    kb = InlineKeyboardMarkup(inline_keyboard=[
+    webapp_url = f"{settings.WEBAPP_URL}?tg_id={telegram_id}"
+
+    # Telegram does not allow localhost/private URLs in inline keyboard buttons.
+    # If the URL is not publicly accessible, show it as plain text instead.
+    private_pattern = r"(localhost|127\.|192\.168\.|10\.|172\.(1[6-9]|2[0-9]|3[01])\.)"
+    is_private = bool(re.search(private_pattern, webapp_url))
+
+    buttons = [
         [InlineKeyboardButton(text="📅 הגשת אילוצים", callback_data="submit")],
         [InlineKeyboardButton(text="📊 סטטוס אילוצים", callback_data="status")],
-        [InlineKeyboardButton(
-            text="🌐 כניסה למערכת",
-            url=webapp_url,
-        )],
-        [InlineKeyboardButton(text="ℹ️ עזרה", callback_data="help")],
-    ])
-    await message.answer(
-        f"שלום {display_name}! 👋\nברוך הבא למערכת ניהול האילוצים.",
-        reply_markup=kb,
-    )
+    ]
+    if not is_private and webapp_url.startswith("https://"):
+        buttons.append(
+            [InlineKeyboardButton(text="🌐 כניסה למערכת", url=webapp_url)]
+        )
+    buttons.append([InlineKeyboardButton(text="ℹ️ עזרה", callback_data="help")])
+
+    kb = InlineKeyboardMarkup(inline_keyboard=buttons)
+
+    # Build text — include URL as clickable link when it can't be a button
+    text = f"שלום {display_name}! 👋\nברוך הבא למערכת ניהול האילוצים."
+    if is_private or not webapp_url.startswith("https://"):
+        text += f"\n\n🌐 כניסה למערכת: {webapp_url}"
+
+    await message.answer(text, reply_markup=kb)
 
 
 # ─── Callback: main menu ───────────────────────────────────
@@ -233,7 +256,7 @@ async def cb_menu(callback: CallbackQuery, state: FSMContext):
 @router.callback_query(lambda c: c.data == "submit")
 async def cb_submit(callback: CallbackQuery, state: FSMContext):
     """Start submission flow – find current week."""
-    _, week_svc, _ = await _get_services()
+    _, week_svc, _, _ = await _get_services()
     telegram_id = callback.from_user.id
 
     week = await week_svc.get_active_week()
@@ -339,7 +362,7 @@ async def cb_finish(callback: CallbackQuery, state: FSMContext):
 
     await state.clear()
 
-    user_svc, _, sub_svc = await _get_services()
+    user_svc, _, sub_svc, session = await _get_services()
     user = await user_svc.get_by_telegram_id(telegram_id)
     if user is None:
         await callback.answer("שגיאה: משתמש לא נמצא. שלח /start.", show_alert=True)
@@ -387,7 +410,7 @@ async def cb_finish(callback: CallbackQuery, state: FSMContext):
 @router.callback_query(lambda c: c.data == "status")
 async def cb_status(callback: CallbackQuery):
     """Show submission status for the current week."""
-    _, week_svc, sub_svc = await _get_services()
+    _, week_svc, sub_svc, _ = await _get_services()
     telegram_id = callback.from_user.id
 
     week = await week_svc.get_active_week()
@@ -395,7 +418,7 @@ async def cb_status(callback: CallbackQuery):
         await callback.answer("אין שבוע פתוח כרגע.", show_alert=True)
         return
 
-    user_svc, _, _ = await _get_services()
+    user_svc, _, _, _ = await _get_services()
     user = await user_svc.get_by_telegram_id(telegram_id)
     if user is None:
         await callback.answer("משתמש לא רשום. שלח /start.", show_alert=True)
