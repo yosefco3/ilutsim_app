@@ -48,9 +48,35 @@ async def create_user(
     data: UserCreate,
     user_service: UserService = Depends(get_user_service),
 ):
-    """Create a new guard user."""
+    """Create a new guard user and send a welcome message if telegram_id is known."""
     try:
         user = await user_service.create_user(data)
+
+        # Attempt to send a welcome notification if the user already has a telegram_id
+        if user.telegram_id:
+            try:
+                from app.bot.notifications import notify_guard_welcome
+                await notify_guard_welcome(
+                    int(user.telegram_id),
+                    user.first_name or "",
+                    user.last_name or "",
+                )
+                logger.info(
+                    "Welcome notification sent to new guard telegram_id=%s",
+                    user.telegram_id,
+                )
+            except Exception as notif_exc:
+                logger.warning(
+                    "Could not send welcome notification to telegram_id=%s: %s",
+                    user.telegram_id, notif_exc,
+                )
+        else:
+            logger.info(
+                "New guard %s has no telegram_id — skipping welcome notification. "
+                "They will be verified when they send /start to the bot.",
+                user.id,
+            )
+
         return user
     except IntegrityError as e:
         logger.warning(f"User creation integrity error: {e}")

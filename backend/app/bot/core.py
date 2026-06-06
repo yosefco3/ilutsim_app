@@ -153,12 +153,22 @@ async def process_phone(message: Message, state: FSMContext):
         )
         return
 
-    # Success — show welcome and main menu
+    # Success — send welcome notification via the shared helper
     display_name = user.first_name or message.from_user.first_name or "שומר"
-    await message.answer(
-        f"✅ {display_name}, החשבון חובר בהצלחה!\n\n"
-        f"מעתה תקבל הודעות ותזכורות דרך הבוט."
-    )
+    try:
+        from app.bot.notifications import notify_guard_welcome
+        await notify_guard_welcome(
+            telegram_id,
+            user.first_name or "",
+            user.last_name or "",
+        )
+    except Exception as notif_exc:
+        logger.warning("Could not send welcome notification: %s", notif_exc)
+        # Fallback — still show a success message in the chat
+        await message.answer(
+            f"✅ {display_name}, החשבון חובר בהצלחה!\n\n"
+            f"מעתה תקבל הודעות ותזכורות דרך הבוט."
+        )
     await _show_main_menu(message, display_name)
 
 
