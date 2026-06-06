@@ -27,6 +27,8 @@ class Messages:
     ERR_AUTH_FAILED: str = "אימות נכשל"
     ERR_CONFLICT: str = "התנגשות שינויים — נסה שוב"
     ERR_VALIDATION: str = "שגיאת אימות נתונים"
+    SUBMISSION_CLOSED: str = "ההגשה סגורה כרגע. אין שבוע פתוח להגשה."
+    SUBMISSION_WRONG_WEEK: str = "ניתן להגיש רק לשבוע הפתוח הנוכחי."
 
     # ── UI Labels ─────────────────────────────────────────────────────
     LABEL_AVAILABLE: str = "זמין"

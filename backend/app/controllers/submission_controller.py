@@ -8,7 +8,7 @@ import uuid
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.dependencies import get_submission_service, get_week_service
-from app.exceptions import WeekLockedException
+from app.messages import Messages
 from app.schemas.submission_schemas import SubmissionCreate, SubmissionResponse
 from app.schemas.week_schemas import WeekResponse
 from app.services.submission_service import SubmissionService
@@ -42,13 +42,17 @@ async def submit_schedule(
 
     The week must be open for submissions.
     """
-    # Validate week is open
-    try:
-        await week_service.validate_week_is_open(data.week_id)
-    except WeekLockedException:
+    # Guard: must have an open week
+    open_week = await week_service.get_current_open_week()
+    if open_week is None:
         raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail="Week is locked for submissions",
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=Messages.SUBMISSION_CLOSED,
+        )
+    if str(open_week.id) != str(data.week_id):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=Messages.SUBMISSION_WRONG_WEEK,
         )
 
     try:
