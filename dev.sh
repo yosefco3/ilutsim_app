@@ -55,6 +55,20 @@ echo -e "${GREEN}🚀 Starting Backend (port 8000)...${NC}"
 ) &
 PIDS+=($!)
 
+# --- Wait for Backend to be ready ---
+echo -e "${CYAN}⏳ Waiting for backend to be ready...${NC}"
+MAX_WAIT=30
+WAITED=0
+until curl -sf http://localhost:8000/health > /dev/null 2>&1; do
+    sleep 1
+    WAITED=$((WAITED + 1))
+    if [ $WAITED -ge $MAX_WAIT ]; then
+        echo -e "${RED}❌ Backend did not become ready within ${MAX_WAIT}s — aborting${NC}"
+        exit 1
+    fi
+done
+echo -e "${GREEN}✅ Backend is ready (took ${WAITED}s)${NC}"
+
 # --- Start Admin Frontend ---
 echo -e "${GREEN}🚀 Starting Admin Dashboard (port 3001)...${NC}"
 (

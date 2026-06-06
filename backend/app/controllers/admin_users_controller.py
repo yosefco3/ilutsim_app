@@ -5,7 +5,9 @@ AdminUsersController — admin endpoints for user management.
 import logging
 import uuid
 
+from asyncpg.exceptions import UniqueViolationError
 from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.exc import IntegrityError
 
 from app.dependencies import get_user_service, require_admin_role
 from app.schemas.user_schemas import UserCreate, UserResponse, UserUpdate
@@ -37,6 +39,17 @@ async def create_user(
     try:
         user = await user_service.create_user(data)
         return user
+    except IntegrityError as e:
+        logger.warning(f"User creation integrity error: {e}")
+        if isinstance(e.__cause__, UniqueViolationError):
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="מספר טלפון זה כבר קיים במערכת",
+            )
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="שגיאה ביצירת המשתמש",
+        )
     except Exception as e:
         logger.error(f"User creation failed: {e}")
         raise HTTPException(
@@ -70,6 +83,17 @@ async def update_user(
     try:
         user = await user_service.update_user(user_id, data)
         return user
+    except IntegrityError as e:
+        logger.warning(f"User update integrity error: {e}")
+        if isinstance(e.__cause__, UniqueViolationError):
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="מספר טלפון זה כבר קיים במערכת",
+            )
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="שגיאה בעדכון המשתמש",
+        )
     except Exception as e:
         logger.error(f"User update failed: {e}")
         raise HTTPException(
