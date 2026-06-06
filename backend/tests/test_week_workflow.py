@@ -288,3 +288,5 @@ class TestNotificationOnOpen:
         week_svc.open_new_week.assert_called_once()
 
         app.dependency_overrides.clear()
+
+

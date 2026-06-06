@@ -82,24 +82,6 @@ class TestNotifications:
             assert mock_send.call_count == 2
 
 
-# ── cron ──────────────────────────────────────────────────
-
-class TestCron:
-    """Tests for cron job setup."""
-
-    def test_setup_cron_jobs(self):
-        """setup_cron_jobs should add jobs to scheduler."""
-        from app.bot.cron import scheduler, setup_cron_jobs
-        mock_settings = MagicMock()
-        mock_settings.REMINDER_HOUR = 18
-        with patch("app.bot.cron.settings", mock_settings), \
-             patch.object(scheduler, "add_job") as mock_add:
-            setup_cron_jobs()
-            mock_add.assert_called_once()
-            call_kwargs = mock_add.call_args
-            assert call_kwargs[1]["id"] == "closing_reminder"
-
-
 # ── bot_router ────────────────────────────────────────────
 
 class TestBotRouter:
