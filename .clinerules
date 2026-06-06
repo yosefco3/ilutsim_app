@@ -25,7 +25,12 @@
    /home/yosef/.local/bin/code-review-graph update
    ```
    This performs an incremental update (only changed files) and is fast.
-3. Only skip graph update if NO source code files (.py, .js, .ts, etc.) were touched.
+3. **Update APP_OVERVIEW.md** — If the change affects features, models, API endpoints, workflow, or architecture:
+   - Add a new entry to the **היסטוריית שינויים משמעותיים** table at the bottom
+   - Update relevant sections (models, endpoints, lifecycle, etc.) to reflect the change
+   - Update the "עדכון אחרון" date at the top
+   - Only skip if the change is purely internal (refactor, bug fix, test) with no user-facing impact.
+4. Only skip graph update if NO source code files (.py, .js, .ts, etc.) were touched.
 
 ### When Starting a New Coding Task:
 1. **Get minimal context first** — Use `get_minimal_context_tool` to understand the current graph state.
