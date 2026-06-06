@@ -3,6 +3,7 @@ UserService — business logic for user (guard) management.
 """
 
 import logging
+import re
 import uuid
 
 from app.exceptions import UserDeactivatedException, UserNotFoundException
@@ -11,6 +12,20 @@ from app.repositories.user_repository import UserRepository
 from app.schemas.user_schemas import UserCreate, UserResponse, UserUpdate
 
 logger = logging.getLogger("ilutzim")
+
+
+def _normalize_phone(phone: str) -> str:
+    """Normalize phone to 972XXXXXXXXX format (must match DB storage)."""
+    cleaned = phone.replace(" ", "").replace("-", "")
+    if cleaned.startswith("+"):
+        cleaned = cleaned[1:]
+    # Local format 05XXXXXXXX → 972XXXXXXXXX
+    if re.match(r"^05\d{8}$", cleaned):
+        return "972" + cleaned[1:]
+    # Already international
+    if re.match(r"^972\d{9}$", cleaned):
+        return cleaned
+    return cleaned  # Return as-is for edge cases
 
 
 class UserService:
@@ -89,6 +104,7 @@ class UserService:
 
     async def link_telegram(self, phone_number: str, telegram_id: str) -> UserResponse:
         """Bot authentication: find user by phone and link telegram_id."""
+        phone_number = _normalize_phone(phone_number)
         user = await self._user_repo.get_by_phone(phone_number)
         if user is None:
             logger.warning(f"Telegram link failed — phone not found: {phone_number}")
@@ -121,6 +137,7 @@ class UserService:
 
     async def get_user_by_phone(self, phone_number: str) -> UserResponse | None:
         """Find user by phone number. Returns None if not found."""
+        phone_number = _normalize_phone(phone_number)
         user = await self._user_repo.get_by_phone(phone_number)
         if user is None:
             return None

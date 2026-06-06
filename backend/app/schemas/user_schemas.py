@@ -11,22 +11,27 @@ from app.messages import Messages
 
 
 def _validate_israeli_phone(phone: str) -> str:
-    """Validate and normalize Israeli phone number.
+    """Validate and normalize Israeli phone number to 972XXXXXXXXX format.
 
     Accepts formats:
     - 05XXXXXXXX (10 digits starting with 05)
     - +972XXXXXXXXX (+972 followed by 9 digits)
+    - 972XXXXXXXXX (972 followed by 9 digits)
     - With spaces/dashes that get stripped
+
+    Always returns in 972XXXXXXXXX format (no leading +).
     """
-    # Strip spaces and dashes
+    # Strip spaces, dashes, and leading +
     cleaned = phone.replace(" ", "").replace("-", "")
+    if cleaned.startswith("+"):
+        cleaned = cleaned[1:]
 
-    # Israeli format: starts with 05, 10 digits total
+    # Israeli local format: starts with 05, 10 digits total → normalize to 972
     if re.match(r"^05\d{8}$", cleaned):
-        return cleaned
+        return "972" + cleaned[1:]
 
-    # International format: +972 followed by 9 digits
-    if re.match(r"^\+972\d{9}$", cleaned):
+    # International format: 972 followed by 9 digits
+    if re.match(r"^972\d{9}$", cleaned):
         return cleaned
 
     raise ValueError(Messages.VAL_INVALID_PHONE)

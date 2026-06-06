@@ -103,15 +103,18 @@ async def process_phone(message: Message, state: FSMContext):
     await state.clear()
     phone_raw = message.text.strip()
 
-    # Normalize: remove spaces, dashes, and Israeli country code prefix
+    # Normalize to 972XXXXXXXXX format (same format stored in DB)
     phone = phone_raw.replace("-", "").replace(" ", "")
-    if phone.startswith("+972"):
-        phone = "0" + phone[4:]
-    elif phone.startswith("972"):
-        phone = "0" + phone[3:]
+    if phone.startswith("+"):
+        phone = phone[1:]
 
-    # Israeli phone validation: must be exactly 10 digits starting with 05
-    if not phone.isdigit() or len(phone) != 10 or not phone.startswith("05"):
+    # Local format 05XXXXXXXX → 972XXXXXXXXX
+    if phone.startswith("05") and len(phone) == 10 and phone.isdigit():
+        phone = "972" + phone[1:]
+    # Already has 972 prefix
+    elif phone.startswith("972") and len(phone) == 12 and phone.isdigit():
+        pass  # already in correct format
+    else:
         await message.answer(
             "❌ מספר הטלפון אינו תקין.\n"
             "נא לשלוח מספר טלפון ישראלי בן 10 ספרות המתחיל ב-05\n"
