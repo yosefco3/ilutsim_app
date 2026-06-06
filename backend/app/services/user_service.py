@@ -53,6 +53,15 @@ class UserService:
         logger.info(f"User deactivated: id={user_id}")
         return UserResponse.model_validate(updated)
 
+    async def delete_user(self, user_id: uuid.UUID) -> bool:
+        """Permanently delete a guard from the database."""
+        user = await self._user_repo.get_by_id(user_id)
+        if user is None:
+            return False
+        await self._user_repo.delete(user_id)
+        logger.info(f"User permanently deleted: id={user_id}, phone={user.phone_number}")
+        return True
+
     async def get_all_active_users(self) -> list[UserResponse]:
         """Return all active users."""
         users = await self._user_repo.get_active_users()

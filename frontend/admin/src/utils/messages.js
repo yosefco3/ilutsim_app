@@ -31,7 +31,7 @@ export default {
     editTitle: 'עריכת שומר',
     edit: 'ערוך',
     delete: 'מחק',
-    confirmDelete: 'האם למחוק את השומר?',
+    confirmDelete: 'האם למחוק את השומר לצמיתות? פעולה זו אינה ניתנת לביטול.',
     name: 'שם מלא',
     fullName: 'שם מלא',
     phone: 'טלפון',

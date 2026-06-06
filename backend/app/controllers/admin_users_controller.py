@@ -116,12 +116,12 @@ async def update_user(
 
 
 @router.delete("/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def deactivate_user(
+async def delete_user(
     user_id: uuid.UUID,
     user_service: UserService = Depends(get_user_service),
 ):
-    """Soft-delete (deactivate) a user."""
-    success = await user_service.deactivate_user(user_id)
+    """Permanently delete a user from the database."""
+    success = await user_service.delete_user(user_id)
     if not success:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
