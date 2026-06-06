@@ -36,12 +36,21 @@ async def broadcast_notifications(telegram_ids: list[int], text: str) -> int:
 
 
 async def notify_week_opened(week_start: date, week_end: date, telegram_ids: list[int]):
-    """Notify users that a new week is open for submissions."""
+    """Notify users that a new week is open for submissions.
+
+    Uses DD/MM/YYYY date format and includes the webapp URL.
+    Returns count of successfully notified guards.
+    """
+    from app.config import settings
+
+    start_fmt = week_start.strftime("%d/%m/%Y")
+    end_fmt = week_end.strftime("%d/%m/%Y")
+
     text = (
-        f"📢 <b>שבוע חדש נפתח!</b>\n\n"
-        f"תאריכים: {week_start} – {week_end}\n"
-        f"ניתן להגיש אילוצים דרך הבוט או המערכת.\n\n"
-        f"שלח /start להתחלה."
+        "🔔 שבוע חדש נפתח להגשה!\n\n"
+        f"תאריכים: {start_fmt} - {end_fmt}\n\n"
+        "לחץ כאן למילוי אילוצים:\n"
+        f"{settings.WEBAPP_URL}"
     )
     count = await broadcast_notifications(telegram_ids, text)
     logger.info("Week-opened notification sent to %d/%d users", count, len(telegram_ids))

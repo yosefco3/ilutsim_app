@@ -27,8 +27,9 @@ ALLOWED_TRANSITIONS: dict[str, list[str]] = {
 class WeekService:
     """Orchestrates schedule week lifecycle."""
 
-    def __init__(self, week_repo: ScheduleWeekRepository) -> None:
+    def __init__(self, week_repo: ScheduleWeekRepository, user_repo=None) -> None:
         self._week_repo = week_repo
+        self._user_repo = user_repo
 
     async def create_week(self, data: WeekCreate) -> WeekResponse:
         """Create a new schedule week."""
@@ -111,6 +112,22 @@ class WeekService:
         week = ScheduleWeek(start_date=ws, end_date=we, status=WeekStatus.OPEN)
         created = await self._week_repo.create(week)
         logger.info(f"New week opened automatically: {ws} – {we} (id={created.id})")
+
+        # Notify all guards via Telegram
+        try:
+            from app.bot.notifications import notify_week_opened
+
+            telegram_ids: list[int] = []
+            if self._user_repo is not None:
+                users = await self._user_repo.get_all()
+                telegram_ids = [u.telegram_id for u in users if u.telegram_id]
+
+            if telegram_ids:
+                notified = await notify_week_opened(ws, we, telegram_ids)
+                logger.info(f"Week-open notification delivered to {notified}/{len(telegram_ids)} guards")
+        except Exception as exc:
+            logger.warning(f"Failed to send week-open notifications: {exc}")
+
         return WeekResponse.model_validate(created)
 
     # ── Internal helpers ──────────────────────────────────────────────────
