@@ -62,6 +62,11 @@ class ConflictException(AppBaseException):
     message = Messages.ERR_CONFLICT
 
 
+class InvalidTransitionException(AppBaseException):
+    """Raised when a week status transition is not allowed."""
+    status_code = 400
+
+
 class AdminNotFoundException(AppBaseException):
     status_code = 404
     message = Messages.ERR_USER_NOT_FOUND

@@ -8,13 +8,20 @@ from datetime import date
 from typing import Optional
 
 from app.constants import WeekStatus
-from app.exceptions import ConflictException, WeekLockedException
+from app.exceptions import ConflictException, InvalidTransitionException, WeekLockedException
 from app.models.schedule_week import ScheduleWeek
 from app.repositories.schedule_week_repository import ScheduleWeekRepository
 from app.schemas.week_schemas import WeekCreate, WeekResponse
 from app.utils.date_utils import week_range
 
 logger = logging.getLogger("ilutzim")
+
+# Allowed week-status transitions: open → locked → published.
+ALLOWED_TRANSITIONS: dict[str, list[str]] = {
+    "open": ["locked"],
+    "locked": ["published"],
+    "published": [],  # terminal state
+}
 
 
 class WeekService:
@@ -43,9 +50,31 @@ class WeekService:
     async def change_week_status(
         self, week_id: uuid.UUID, new_status: WeekStatus
     ) -> WeekResponse:
-        """Transition a week to a new status."""
+        """Transition a week to a new status.
+
+        Validates that the transition follows the allowed path:
+        open → locked → published.
+        """
         week = await self._get_week_or_raise(week_id)
         old_status = week.status
+
+        # Reject same-status (no-op)
+        if old_status == new_status:
+            allowed = ", ".join(ALLOWED_TRANSITIONS.get(old_status, []))
+            raise InvalidTransitionException(
+                f"לא ניתן לשנות סטטוס מ-{old_status} ל-{new_status}."
+                f" מעברים אפשריים: {allowed or 'אין'}"
+            )
+
+        # Validate transition is in the allowed list
+        allowed_next = ALLOWED_TRANSITIONS.get(old_status, [])
+        if new_status not in allowed_next:
+            allowed_str = ", ".join(allowed_next) if allowed_next else "אין"
+            raise InvalidTransitionException(
+                f"לא ניתן לשנות סטטוס מ-{old_status} ל-{new_status}."
+                f" מעברים אפשריים: {allowed_str}"
+            )
+
         week.status = new_status
         updated = await self._week_repo.update(week)
         logger.info(f"Week {week_id}: {old_status} -> {new_status}")
