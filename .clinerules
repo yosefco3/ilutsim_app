@@ -32,6 +32,22 @@
    - Only skip if the change is purely internal (refactor, bug fix, test) with no user-facing impact.
 4. Only skip graph update if NO source code files (.py, .js, .ts, etc.) were touched.
 
+## Test Coverage — Mandatory Workflow
+
+### After every significant change / feature:
+1. **Update tests** — Add or update tests to cover the new/changed code.
+2. **Run the test suite** — Single command:
+   ```
+   python scripts/test_graph.py
+   ```
+   This script does everything: runs all tests (backend + frontend), checks coverage, and generates a markdown report.
+3. **One command instead of three** — No need to manually run pytest, vitest, and coverage separately.
+
+### When to run:
+- After completing a feature or significant change.
+- Before committing final results.
+- The script outputs results to `TEST_GRAPH.md` for easy review.
+
 ### When Starting a New Coding Task:
 1. **Get minimal context first** — Use `get_minimal_context_tool` to understand the current graph state.
 2. **Before reading files manually**, try these graph tools to locate code faster:
