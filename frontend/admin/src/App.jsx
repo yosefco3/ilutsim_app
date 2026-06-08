@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import ProtectedRoute from './components/ProtectedRoute';
 import LoginPage from './pages/LoginPage';
+import SubmitPage from './pages/SubmitPage';
 import GuardsPage from './pages/GuardsPage';
 import WeeksPage from './pages/WeeksPage';
 import EventsPage from './pages/EventsPage';
@@ -17,6 +18,7 @@ export default function App() {
       <main className="main-content">
         <Routes>
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/submit" element={<SubmitPage />} />
           <Route path="/guards" element={<ProtectedRoute><GuardsPage /></ProtectedRoute>} />
           <Route path="/weeks" element={<ProtectedRoute><WeeksPage /></ProtectedRoute>} />
           <Route path="/events" element={<ProtectedRoute><EventsPage /></ProtectedRoute>} />
