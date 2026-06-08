@@ -3,7 +3,7 @@
 > **⚠️ מסמך זה מתעדכן בכל שינוי משמעותי באפליקציה.**
 > אם הנך מוסיף/משנה פיצ'ר — עדכן גם כאן.
 >
-> עדכון אחרון: יוני 2026
+> עדכון אחרון: 8 יוני 2026
 
 ---
 
@@ -16,13 +16,13 @@
 ## ארכיטקטורה
 
 ```
-┌─────────────────┐     ┌──────────────────┐     ┌─────────────────┐
-│  Telegram Bot    │     │  Frontend Admin   │     │  Frontend Web   │
-│  (aiogram)       │     │  (React + Vite)   │     │  (React + Vite) │
-│  התראות לשומרים  │     │  דאשבורד אדמין    │     │ הגשת זמינות     │
-└────────┬─────────┘     └────────┬──────────┘     └────────┬────────┘
-         │                        │                         │
-         │   ┌────────────────────┴─────────────────────────┘
+┌─────────────────┐     ┌────────────────────────┐
+│  Telegram Bot    │     │  Frontend (React+Vite) │
+│  (aiogram)       │     │  :3001                 │
+│  התראות לשומרים  │     │  אדמין + הגשת שומרים   │
+└────────┬─────────┘     └───────────┬────────────┘
+         │                           │
+         │   ┌───────────────────────┘
          │   │  REST API
          ▼   ▼
 ┌──────────────────────────────┐
@@ -47,8 +47,7 @@
 | Backend       | Python 3.12, FastAPI, SQLAlchemy    |
 | Database      | PostgreSQL + Alembic migrations     |
 | Telegram Bot  | aiogram 3.x                        |
-| Frontend Web  | React 19 + Vite (טלגרם Web App)    |
-| Frontend Admin| React 19 + Vite (דאשבורד אדמינים)   |
+| Frontend      | React 19 + Vite (אדמין + שומרים, port 3001) |
 | Testing       | pytest (backend), Vitest (frontend) |
 | Deployment    | Docker + docker-compose             |
 
@@ -209,21 +208,26 @@ ilutzim_app/
 │   ├── alembic/            # Database migrations
 │   └── tests/              # pytest tests
 ├── frontend/
-│   ├── webapp/             # שומרים — Telegram Web App
-│   │   └── src/
-│   │       ├── components/ # DayRow, SubmissionForm, LockBanner
-│   │       ├── hooks/      # useTelegram, useSubmission
-│   │       └── api/        # apiClient
-│   └── admin/              # אדמינים — Dashboard
+│   └── admin/              # אפליקציה מאוחדת — אדמינים + שומרים
 │       └── src/
-│           ├── pages/      # WeeksPage, GuardsPage, etc.
+│           ├── pages/      # WeeksPage, GuardsPage, SubmitPage, etc.
 │           ├── components/ # GuardTable, WeekStatusControl, etc.
-│           ├── hooks/      # useWeeks, useGuards, useSettings
-│           └── api/        # adminApiClient
+│           │   └── guard/  # LockBanner, DayRow, SubmissionForm (ממשק שומר)
+│           ├── hooks/      # useWeeks, useGuards, useSettings, useTelegram, useSubmission
+│           └── api/        # adminApiClient, guardApiClient
 ├── docker-compose.yml
 ├── SETUP.md               # הוראות התקנה והרצה
 └── APP_OVERVIEW.md         # ** המסמך הזה **
 ```
+
+---
+
+## CORS & אבטחה
+
+- **Origin יחיד ב-production**: `APP_URL` (למשל `https://app.safrasecure.uk`)
+- **ב-dev**: נוסף `http://localhost:3001` אוטומטית
+- **ללא wildcard** — `allow_origins` לעולם לא `*`
+- **`allow_credentials=True`** — תומך ב-cookies / Authorization headers
 
 ---
 
@@ -263,3 +267,5 @@ ilutzim_app/
 | יוני 2026 | הוספת מחזור חיי שבוע (closed → open → locked → published) |
 | יוני 2026 | הוספת Telegram Bot עם התראות                            |
 | יוני 2026 | הוספת ניהול אירועים וייצוא Excel                       |
+| 8 יוני 2026 | **איחוד Frontends** — מעבר לאפליקציה מאוחדת (admin :3001) — דף `/submit` ציבורי לשומרים, `guardApiClient` לטלגרם Auth, קומפוננטות guard בתוך admin |
+| 8 יוני 2026 | **איחוד CORS** — החלפת `WEBAPP_URL`+`ADMIN_DASHBOARD_URL` ב-`APP_URL` יחיד + `cors_origins` property |
