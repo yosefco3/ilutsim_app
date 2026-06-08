@@ -35,7 +35,6 @@ stop_all() {
 
     kill_port 8000
     kill_port 3001
-    kill_port 5173
 
     echo -e "${GREEN}✅ All services stopped.${NC}"
 }
@@ -105,7 +104,6 @@ open_terminal() {
 echo -e "${CYAN}🔧 Checking for existing processes...${NC}"
 kill_port 8000
 kill_port 3001
-kill_port 5173
 
 # --- Start Backend in a new window ---
 echo -e "${GREEN}🚀 Starting Backend (port 8000) in a new window...${NC}"
@@ -131,9 +129,6 @@ echo -e "${GREEN}🚀 Starting Admin Dashboard (port 3001) in a new window...${N
 open_terminal "🎨 Admin" \
     "cd '$PROJECT_ROOT/frontend/admin' && exec npm run dev"
 
-# --- Start Webapp Frontend in a new window ---
-echo -e "${GREEN}🚀 Starting Webapp (port 5173) in a new window...${NC}"
-open_terminal "📱 Webapp" \
     "cd '$PROJECT_ROOT/frontend/webapp' && exec npm run dev"
 
 # --- Start Cloudflare Tunnel in a new window ---
@@ -151,7 +146,6 @@ echo -e "${GREEN}  ✅ All services launched in separate windows!${NC}"
 echo -e "${CYAN}═══════════════════════════════════════════════${NC}"
 echo -e "  Backend API:     ${GREEN}http://localhost:8000${NC}"
 echo -e "  Admin Dashboard: ${GREEN}http://localhost:3001${NC}"
-echo -e "  Webapp:          ${GREEN}http://localhost:5173${NC}"
 echo -e "  Tunnel:          ${GREEN}https://app.safrasecure.uk${NC}"
 echo -e "${CYAN}═══════════════════════════════════════════════${NC}"
 echo -e "  To stop all:  ${RED}./dev.sh stop${NC}  (or close each window)"

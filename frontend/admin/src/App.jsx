@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import ProtectedRoute from './components/ProtectedRoute';
 import LoginPage from './pages/LoginPage';
@@ -14,7 +14,18 @@ import './styles/admin.css';
 export default function App() {
   return (
     <BrowserRouter>
-      <Navbar />
+      <AppContent />
+    </BrowserRouter>
+  );
+}
+
+function AppContent() {
+  const location = useLocation();
+  const hideNavbar = location.pathname === '/submit';
+
+  return (
+    <>
+      {!hideNavbar && <Navbar />}
       <main className="main-content">
         <Routes>
           <Route path="/login" element={<LoginPage />} />
@@ -28,6 +39,6 @@ export default function App() {
           <Route path="*" element={<Navigate to="/guards" replace />} />
         </Routes>
       </main>
-    </BrowserRouter>
+    </>
   );
 }
