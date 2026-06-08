@@ -21,6 +21,9 @@ SETTINGS_DEFAULTS: dict[str, Any] = {
     "auto_absence_enabled": True,
     "telegram_bot_token": "",
     "notifications_enabled": True,
+    "shift_default_morning": "07:00-16:30",
+    "shift_default_afternoon": "15:00-23:00",
+    "shift_default_night": "23:00-07:00",
 }
 
 

@@ -53,3 +53,14 @@ export const SHIFT_LABELS = {
   afternoon: messages.LABEL_AFTERNOON,
   night: messages.LABEL_NIGHT,
 };
+
+/**
+ * Default shift hours — used as fallback when the API is unreachable.
+ * Editable by admin via /admin/settings page (stored in DB).
+ * Format: { shift_type: { from_hour, to_hour } }
+ */
+export const SHIFT_DEFAULTS = {
+  morning: { from_hour: "07:00", to_hour: "16:30" },
+  afternoon: { from_hour: "15:00", to_hour: "23:00" },
+  night: { from_hour: "23:00", to_hour: "07:00" },
+};

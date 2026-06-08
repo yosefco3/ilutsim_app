@@ -8,7 +8,7 @@ from datetime import date, time, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
-from app.dependencies import get_current_user, get_submission_service, get_week_service
+from app.dependencies import get_current_user, get_settings_service, get_submission_service, get_week_service
 from app.messages import Messages
 from app.models.user import User
 from app.schemas.submission_schemas import (
@@ -19,6 +19,7 @@ from app.schemas.submission_schemas import (
     SubmissionResponse,
 )
 from app.schemas.week_schemas import WeekWithDaysResponse
+from app.services.settings_service import SettingsService
 from app.services.submission_service import SubmissionService
 from app.services.week_service import WeekService
 
@@ -95,6 +96,27 @@ async def submit_schedule(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e),
         )
+
+
+@router.get("/shift-defaults")
+async def get_shift_defaults(
+    settings_service: SettingsService = Depends(get_settings_service),
+):
+    """Return the default shift hours (editable by admin via /admin/settings).
+
+    Used by the guard submission form to pre-fill hours when a shift is toggled on.
+    Public endpoint — no auth required.
+    """
+    keys = ("shift_default_morning", "shift_default_afternoon", "shift_default_night")
+    result = {}
+    for key in keys:
+        raw = await settings_service.get_setting(key)
+        parts = (raw or "").split("-")
+        result[key] = {
+            "from_hour": parts[0] if len(parts) >= 1 else "",
+            "to_hour": parts[1] if len(parts) >= 2 else "",
+        }
+    return result
 
 
 @router.get("/week/{week_id}", response_model=list[SubmissionResponse])

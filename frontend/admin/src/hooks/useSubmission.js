@@ -1,17 +1,22 @@
 /**
  * Hook to load, edit, and submit a weekly constraints form.
  * Each day holds a shifts map { morning, afternoon, night } → { active, from_hour, to_hour }.
+ *
+ * Default hours come from the server (editable by admin via /admin/settings),
+ * falling back to SHIFT_DEFAULTS from guardMessages.js.
  */
 import { useState, useEffect, useCallback } from "react";
 import { get, post } from "../api/guardApiClient.js";
+import { SHIFT_DEFAULTS } from "../utils/guardMessages.js";
 
 const SHIFT_TYPES = ["morning", "afternoon", "night"];
 
-/** Create a default shifts map (all inactive, no custom hours). */
-function defaultShifts() {
+/** Create a default shifts map using supplied defaults. */
+function makeShifts(defaults) {
   const map = {};
   for (const st of SHIFT_TYPES) {
-    map[st] = { active: false, from_hour: "", to_hour: "" };
+    const d = defaults[st] || { from_hour: "", to_hour: "" };
+    map[st] = { active: false, from_hour: d.from_hour, to_hour: d.to_hour };
   }
   return map;
 }
@@ -26,9 +31,31 @@ export function useSubmission(initData) {
   const [week, setWeek] = useState(null);
   const [days, setDays] = useState([]);
   const [notes, setNotes] = useState("");
+  const [shiftDefaults, setShiftDefaults] = useState(SHIFT_DEFAULTS);
 
   // ── Dev mode flag ──────────────────────────────────────────────
   const isDevMode = initData === "__DEV_MODE__";
+
+  // ── Fetch shift defaults from server (fallback to static SHIFT_DEFAULTS)
+  useEffect(() => {
+    if (!initData) return;
+    get("/submissions/shift-defaults", initData).then(({ data, error: err }) => {
+      if (!err && data) {
+        // Server returns { shift_default_morning: {from_hour, to_hour}, ... }
+        // Map keys: shift_default_morning → morning
+        const mapped = {};
+        for (const key of Object.keys(data)) {
+          const short = key.replace("shift_default_", "");
+          if (SHIFT_TYPES.includes(short)) {
+            mapped[short] = data[key];
+          }
+        }
+        if (Object.keys(mapped).length === 3) {
+          setShiftDefaults(mapped);
+        }
+      }
+    });
+  }, [initData]);
 
   // ── Load current week + existing submission ──────────────────
   useEffect(() => {
@@ -69,7 +96,8 @@ export function useSubmission(initData) {
 
       // Build initial form state — each day gets a shifts map
       const initialDays = (weekData.days || []).map((d) => {
-        const shifts = defaultShifts();
+        // Use current shiftDefaults (may have been updated from server)
+        const shifts = makeShifts(SHIFT_DEFAULTS);
 
         const existingDay = subData?.days?.find(
           (s) => s.day_index === d.day_index,
@@ -105,19 +133,27 @@ export function useSubmission(initData) {
   }, [initData]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Toggle a single shift (morning / afternoon / night) ──────
-  const toggleShift = useCallback((dayIndex, shiftType) => {
-    setDays((prev) =>
-      prev.map((d) => {
-        if (d.day_index !== dayIndex) return d;
-        const shifts = { ...d.shifts };
-        shifts[shiftType] = {
-          ...shifts[shiftType],
-          active: !shifts[shiftType].active,
-        };
-        return { ...d, shifts };
-      }),
-    );
-  }, []);
+  const toggleShift = useCallback(
+    (dayIndex, shiftType) => {
+      setDays((prev) =>
+        prev.map((d) => {
+          if (d.day_index !== dayIndex) return d;
+          const shifts = { ...d.shifts };
+          const current = shifts[shiftType];
+          // When toggling ON, ensure default hours are filled
+          const def = shiftDefaults[shiftType] || { from_hour: "", to_hour: "" };
+          shifts[shiftType] = {
+            ...current,
+            active: !current.active,
+            from_hour: current.from_hour || def.from_hour,
+            to_hour: current.to_hour || def.to_hour,
+          };
+          return { ...d, shifts };
+        }),
+      );
+    },
+    [shiftDefaults],
+  );
 
   // ── Set custom hours for a specific shift ────────────────────
   const setShiftHours = useCallback((dayIndex, shiftType, from, to) => {
@@ -159,11 +195,7 @@ export function useSubmission(initData) {
         })),
     };
 
-    const { error: submitErr } = await post(
-      "/submissions",
-      payload,
-      initData,
-    );
+    const { error: submitErr } = await post("/submissions", payload, initData);
 
     if (submitErr) {
       setError(submitErr);

@@ -59,8 +59,10 @@ export default function DayRow({
                     <label className="hour-label">
                       {messages.LABEL_FROM}
                       <input
-                        type="time"
+                        type="text"
+                        inputMode="numeric"
                         className="hour-input"
+                        placeholder="HH:MM"
                         value={shift.from_hour}
                         disabled={isDisabled}
                         onChange={(e) =>
@@ -76,8 +78,10 @@ export default function DayRow({
                     <label className="hour-label">
                       {messages.LABEL_TO}
                       <input
-                        type="time"
+                        type="text"
+                        inputMode="numeric"
                         className="hour-input"
+                        placeholder="HH:MM"
                         value={shift.to_hour}
                         disabled={isDisabled}
                         onChange={(e) =>
