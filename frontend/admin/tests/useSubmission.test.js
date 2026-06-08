@@ -6,10 +6,9 @@ import { useSubmission } from '../src/hooks/useSubmission';
 vi.mock('../src/api/guardApiClient', () => ({
   get: vi.fn(),
   post: vi.fn(),
-  getCurrentWeek: vi.fn(),
 }));
 
-import { get, post, getCurrentWeek } from '../src/api/guardApiClient';
+import { get, post } from '../src/api/guardApiClient';
 
 describe('useSubmission', () => {
   const initData = 'test-init-data';
@@ -20,7 +19,6 @@ describe('useSubmission', () => {
 
   it('should start in loading state', () => {
     get.mockResolvedValue({ data: null, error: 'no week' });
-    getCurrentWeek.mockResolvedValue({ data: null, error: null });
 
     const { result } = renderHook(() => useSubmission(initData));
     expect(result.current.loading).toBe(true);
@@ -30,7 +28,12 @@ describe('useSubmission', () => {
     get.mockImplementation((path) => {
       if (path.includes('current-week')) {
         return Promise.resolve({
-          data: { week_id: 'w1', days: [{ day_index: 0, blocked: false }] },
+          data: {
+            id: 'w1',
+            status: 'open',
+            week_label: 'שבוע 1',
+            days: [{ day_index: 0, blocked: false }],
+          },
           error: null,
         });
       }
@@ -38,10 +41,6 @@ describe('useSubmission', () => {
         return Promise.resolve({ data: null, error: null });
       }
       return Promise.resolve({ data: null, error: null });
-    });
-    getCurrentWeek.mockResolvedValue({
-      data: { week_id: 'w1', status: 'open', week_label: 'שבוע 1' },
-      error: null,
     });
 
     const { result } = renderHook(() => useSubmission(initData));
@@ -57,11 +56,7 @@ describe('useSubmission', () => {
 
   it('should set canSubmit=false for locked week', async () => {
     get.mockResolvedValue({
-      data: { week_id: 'w1', days: [] },
-      error: null,
-    });
-    getCurrentWeek.mockResolvedValue({
-      data: { week_id: 'w1', status: 'locked' },
+      data: { id: 'w1', status: 'locked', days: [] },
       error: null,
     });
 
@@ -77,11 +72,7 @@ describe('useSubmission', () => {
 
   it('should toggle day availability', async () => {
     get.mockResolvedValue({
-      data: { week_id: 'w1', days: [{ day_index: 0, blocked: false }] },
-      error: null,
-    });
-    getCurrentWeek.mockResolvedValue({
-      data: { week_id: 'w1', status: 'open' },
+      data: { id: 'w1', status: 'open', days: [{ day_index: 0, blocked: false }] },
       error: null,
     });
 
@@ -100,11 +91,7 @@ describe('useSubmission', () => {
 
   it('should submit and set success', async () => {
     get.mockResolvedValue({
-      data: { week_id: 'w1', days: [{ day_index: 0, blocked: false }] },
-      error: null,
-    });
-    getCurrentWeek.mockResolvedValue({
-      data: { week_id: 'w1', status: 'open' },
+      data: { id: 'w1', status: 'open', days: [{ day_index: 0, blocked: false }] },
       error: null,
     });
     post.mockResolvedValue({ data: { success: true }, error: null });
@@ -129,11 +116,7 @@ describe('useSubmission', () => {
 
   it('should handle submit error', async () => {
     get.mockResolvedValue({
-      data: { week_id: 'w1', days: [] },
-      error: null,
-    });
-    getCurrentWeek.mockResolvedValue({
-      data: { week_id: 'w1', status: 'open' },
+      data: { id: 'w1', status: 'open', days: [] },
       error: null,
     });
     post.mockResolvedValue({ data: null, error: 'שגיאה' });

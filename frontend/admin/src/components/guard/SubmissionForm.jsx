@@ -57,7 +57,7 @@ export default function SubmissionForm() {
       {week && (
         <div className="week-info">
           <span className="week-label">
-            {week.week_label || `שבוע ${week.week_id}`}
+            {week.week_label || `שבוע ${week.id}`}
           </span>
         </div>
       )}

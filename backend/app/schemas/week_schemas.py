@@ -34,3 +34,8 @@ class WeekResponse(BaseModel):
     start_date: date
     end_date: date
     status: WeekStatus
+
+    @property
+    def week_label(self) -> str:
+        """Human-readable week label, e.g. 'שבוע 01/06 - 07/06'."""
+        return f"שבוע {self.start_date.strftime('%d/%m')} – {self.end_date.strftime('%d/%m')}"

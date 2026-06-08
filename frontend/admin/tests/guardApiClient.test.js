@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { get, post, getCurrentWeek } from '../src/api/guardApiClient';
+import { get, post } from '../src/api/guardApiClient';
 
 // Mock fetch
 global.fetch = vi.fn();
@@ -67,18 +67,18 @@ describe('guardApiClient', () => {
     });
   });
 
-  describe('getCurrentWeek', () => {
-    it('should call GET /weeks/current', async () => {
+  describe('get current week', () => {
+    it('should call GET /submissions/current-week', async () => {
       fetch.mockResolvedValueOnce({
         ok: true,
         status: 200,
-        json: async () => ({ week_id: 'abc', status: 'open' }),
+        json: async () => ({ id: 'abc', status: 'open' }),
       });
 
-      const { data } = await getCurrentWeek(initData);
-      expect(data.week_id).toBe('abc');
+      const { data } = await get('/submissions/current-week', initData);
+      expect(data.id).toBe('abc');
       expect(fetch).toHaveBeenCalledWith(
-        expect.stringContaining('/weeks/current'),
+        expect.stringContaining('/submissions/current-week'),
         expect.any(Object),
       );
     });

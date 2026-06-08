@@ -3,7 +3,7 @@
 > **⚠️ מסמך זה מתעדכן בכל שינוי משמעותי באפליקציה.**
 > אם הנך מוסיף/משנה פיצ'ר — עדכן גם כאן.
 >
-> עדכון אחרון: 8 יוני 2026
+> עדכון אחרון: 8 יוני 2026 (עדכון תיקון "שבוע undefined")
 
 ---
 
@@ -279,3 +279,4 @@ ilutzim_app/
 | 8 יוני 2026 | **איחוד CORS** — החלפת `WEBAPP_URL`+`ADMIN_DASHBOARD_URL` ב-`APP_URL` יחיד + `cors_origins` property |
 | 8 יוני 2026 | **מחיקת webapp** — מחיקת `frontend/webapp/` סופית. אפליקציה אחת בלבד (`frontend/admin/`) עם אזור שומרים (`/submit`) + אדמינים (`/guards`). ניקוי `dev.sh`, `dev-stop.sh`, `test_graph.py` משירות webapp. |
 | 8 יוני 2026 | **תיקון קישורים ל-/submit** — הוספת `/submit` ב-`notify_week_opened()`, תיקון cloudflared tunnel מ-port 5173 ל-3001, הוספת `allowedHosts` ב-vite.config.js, תיקון `webapp_url` בכפתור Telegram Web App ב-core.py |
+| 8 יוני 2026 | 🐛 **תיקון "שבוע undefined"** — תוקן באג בדף ההגשה: `week_label` נוסף כ-property ב-`WeekResponse`, הוסרה קריאת API מיותרת ל-`/weeks/current` (נתיב שלא קיים), תוקן `week_id`←`id` ב-`useSubmission.js` ו-`SubmissionForm.jsx` |

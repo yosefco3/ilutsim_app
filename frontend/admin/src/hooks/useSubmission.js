@@ -3,7 +3,7 @@
  * Manages all state: loading, week data, form, events, errors.
  */
 import { useState, useEffect, useCallback } from "react";
-import { get, post, getCurrentWeek } from "../api/guardApiClient.js";
+import { get, post } from "../api/guardApiClient.js";
 
 /**
  * @param {string} initData - Telegram initData for auth
@@ -30,11 +30,8 @@ export function useSubmission(initData) {
       setLoading(true);
       setError(null);
 
-      // 1) Get current week + week meta (label, status) in parallel
-      const [subResult, weekMetaResult] = await Promise.all([
-        get("/submissions/current-week", initData),
-        getCurrentWeek(initData),
-      ]);
+      // 1) Get current week (includes status, week_label)
+      const subResult = await get("/submissions/current-week", initData);
 
       if (subResult.error) {
         if (isDevMode) {
@@ -48,19 +45,13 @@ export function useSubmission(initData) {
 
       if (cancelled) return;
 
-      const weekMeta = weekMetaResult.data; // { week_label, status, ... } or null
       const weekData = subResult.data;
 
-      // Merge week meta (label, status) into the week object
-      setWeek({
-        ...weekData,
-        week_label: weekMeta?.week_label || weekData?.week_label || null,
-        status: weekMeta?.status || weekData?.status || null,
-      });
+      setWeek(weekData);
 
-      // 2) Get existing submission (may be null / endpoint may not exist in dev)
+      // 2) Get existing submission (may be null)
       const { data: subData } = await get(
-        `/submissions/my?week_id=${weekData.week_id}`,
+        `/submissions/my?week_id=${weekData.id}`,
         initData,
       );
 
@@ -139,7 +130,7 @@ export function useSubmission(initData) {
     setSuccess(null);
 
     const payload = {
-      week_id: week.week_id,
+      week_id: week.id,
       days: days
         .filter((d) => !d.blocked)
         .map((d) => ({

@@ -72,11 +72,4 @@ async function post(path, body, initData) {
   );
 }
 
-/**
- * Fetch the current open week (or null/404 if none).
- */
-async function getCurrentWeek(initData) {
-  return get('/weeks/current', initData);
-}
-
-export { get, post, getCurrentWeek };
+export { get, post };
