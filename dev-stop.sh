@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# dev-stop.sh — Stop all dev services (backend + admin + webapp + tunnel).
+# dev-stop.sh — Stop all dev services (backend + admin + tunnel).
 # Usage: ./dev-stop.sh
 #        (or: ./dev.sh stop)
 
@@ -16,7 +16,7 @@ echo -e "${RED}🛑 Stopping all services...${NC}"
 pkill -f "cloudflared tunnel" 2>/dev/null && echo -e "  ${YELLOW}⚡ Killed cloudflared tunnel${NC}" || true
 
 # Kill processes on each port
-for port in 8000 3001 5173; do
+for port in 8000 3001; do
     pids=$(lsof -ti :"$port" 2>/dev/null || true)
     if [ -n "$pids" ]; then
         echo -e "  ${YELLOW}⚡ Killing processes on port $port: $pids${NC}"
@@ -28,7 +28,7 @@ sleep 0.5
 
 # Verify everything is dead
 ALL_CLEAR=true
-for port in 8000 3001 5173; do
+for port in 8000 3001; do
     pids=$(lsof -ti :"$port" 2>/dev/null || true)
     if [ -n "$pids" ]; then
         echo -e "  ${RED}⚠️  Port $port still occupied by: $pids${NC}"

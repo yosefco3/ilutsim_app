@@ -85,14 +85,6 @@ BACKEND_MANUAL_MAP = {
 # ── Frontend mapping ─────────────────────────────────────────
 
 FRONTEND_MANUAL_MAP = {
-    # webapp
-    "webapp/tests/apiClient.test.js": ["webapp/src/api/apiClient.js"],
-    "webapp/tests/messages.test.js": ["webapp/src/utils/messages.js"],
-    "webapp/tests/components.test.jsx": [
-        "webapp/src/components/SubmissionForm.jsx",
-        "webapp/src/components/DayRow.jsx",
-        "webapp/src/components/LockBanner.jsx",
-    ],
     # admin
     "admin/tests/apiClient.test.js": ["admin/src/api/adminApiClient.js"],
     "admin/tests/messages.test.js": ["admin/src/utils/messages.js"],
@@ -592,11 +584,6 @@ def main():
         print("Running backend tests...")
         backend_results = run_backend_tests()
         print(f"  Got {len(backend_results)} results")
-
-        print("Running frontend webapp tests...")
-        webapp_results = run_frontend_tests("webapp")
-        for k, v in webapp_results.items():
-            frontend_results[f"webapp/{k}"] = v
 
         print("Running frontend admin tests...")
         admin_results = run_frontend_tests("admin")

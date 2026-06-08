@@ -269,3 +269,4 @@ ilutzim_app/
 | יוני 2026 | הוספת ניהול אירועים וייצוא Excel                       |
 | 8 יוני 2026 | **איחוד Frontends** — מעבר לאפליקציה מאוחדת (admin :3001) — דף `/submit` ציבורי לשומרים, `guardApiClient` לטלגרם Auth, קומפוננטות guard בתוך admin |
 | 8 יוני 2026 | **איחוד CORS** — החלפת `WEBAPP_URL`+`ADMIN_DASHBOARD_URL` ב-`APP_URL` יחיד + `cors_origins` property |
+| 8 יוני 2026 | **מחיקת webapp** — מחיקת `frontend/webapp/` סופית. אפליקציה אחת בלבד (`frontend/admin/`) עם אזור שומרים (`/submit`) + אדמינים (`/guards`). ניקוי `dev.sh`, `dev-stop.sh`, `test_graph.py` משירות webapp. |

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# dev.sh — Run all services (backend + admin + webapp + tunnel) in separate terminal windows.
+# dev.sh — Run all services (backend + admin + tunnel) in separate terminal windows.
 # Usage: ./dev.sh        — start all services
 #        ./dev.sh stop   — stop all services
 
@@ -128,8 +128,6 @@ echo -e "${GREEN}✅ Backend is ready (took ${WAITED}s)${NC}"
 echo -e "${GREEN}🚀 Starting Admin Dashboard (port 3001) in a new window...${NC}"
 open_terminal "🎨 Admin" \
     "cd '$PROJECT_ROOT/frontend/admin' && exec npm run dev"
-
-    "cd '$PROJECT_ROOT/frontend/webapp' && exec npm run dev"
 
 # --- Start Cloudflare Tunnel in a new window ---
 if command -v cloudflared &>/dev/null; then

@@ -1,6 +1,7 @@
 # Test Coverage Graph
 
-_נוצר אוטומטית ב: 2026-06-06 21:02_
+_נוצר אוטומטית ב: 2026-06-08 09:56_
+**טרנד:**  →0%
 
 ## סיכום
 
@@ -9,11 +10,11 @@ _נוצר אוטומטית ב: 2026-06-06 21:02_
 | קבצי קוד backend | 57 |
 | קבצי קוד מכוסים בטסטים | 37 |
 | קבצי קוד ללא טסטים | 20 |
-| אחוז כיסוי | 64% |
+| אחוז כיסוי | 64% →0% |
 | טסטים עוברים (backend) | 16 ✅ |
 | טסטים נכשלים (backend) | 0 ❌ |
-| קבצי קוד frontend (ממופים) | 15 |
-| טסטים עוברים (frontend) | 6 ✅ |
+| קבצי קוד frontend (ממופים) | 10 |
+| טסטים עוברים (frontend) | 12 ✅ |
 | טסטים נכשלים (frontend) | 0 ❌ |
 
 ## Backend: מיפוי קוד → טסטים
@@ -109,11 +110,6 @@ _נוצר אוטומטית ב: 2026-06-06 21:02_
 | admin | `src/components/GuardForm.jsx` | `tests/components.test.jsx` | 🟢 PASS |
 | admin | `src/components/GuardTable.jsx` | `tests/components.test.jsx` | 🟢 PASS |
 | admin | `src/utils/messages.js` | `tests/messages.test.js` | 🟢 PASS |
-| webapp | `src/api/apiClient.js` | `tests/apiClient.test.js` | 🟢 PASS |
-| webapp | `src/components/SubmissionForm.jsx` | `tests/components.test.jsx` | 🟢 PASS |
-| webapp | `src/components/DayRow.jsx` | `tests/components.test.jsx` | 🟢 PASS |
-| webapp | `src/components/LockBanner.jsx` | `tests/components.test.jsx` | 🟢 PASS |
-| webapp | `src/utils/messages.js` | `tests/messages.test.js` | 🟢 PASS |
 
 ## Backend: רשימת קבצי טסט
 
