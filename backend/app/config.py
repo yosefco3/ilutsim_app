@@ -20,11 +20,10 @@ class Settings(BaseSettings):
     # Telegram
     TELEGRAM_BOT_TOKEN: str
 
-    # Web App
-    WEBAPP_URL: str
+    # App (unified — serves both admin and guard interfaces)
+    APP_URL: str
 
     # Admin
-    ADMIN_DASHBOARD_URL: str
     ADMIN_API_KEY: str
 
     # JWT
@@ -47,6 +46,14 @@ class Settings(BaseSettings):
     SEED_ADMIN_EMAIL: str = "admin@test.com"
     SEED_ADMIN_PASSWORD: str = "admin123"
     SEED_ADMIN_FULL_NAME: str = "Test Admin"
+
+    @property
+    def cors_origins(self) -> list[str]:
+        """CORS-allowed origins."""
+        origins = [self.APP_URL]
+        if self.ENVIRONMENT == "dev":
+            origins.append("http://localhost:3001")
+        return origins
 
     @property
     def reminder_hour(self) -> int:
