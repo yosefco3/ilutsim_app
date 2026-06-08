@@ -93,7 +93,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  margin-bottom: 6px;
+  margin-bottom: 8px;
 }
 
 .guard-layout .day-name {
@@ -110,72 +110,58 @@
   font-weight: 600;
 }
 
-/* ── Toggle Button ───────────────────────────────────────── */
-.guard-layout .toggle-btn {
-  border: none;
-  border-radius: 6px;
-  padding: 4px 12px;
-  font-size: 0.85rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: opacity 0.15s;
-}
-
-.guard-layout .toggle-btn.on {
-  background: var(--tg-success);
-  color: #fff;
-}
-
-.guard-layout .toggle-btn.off {
-  background: var(--tg-danger);
-  color: #fff;
-}
-
-.guard-layout .toggle-btn:disabled {
-  opacity: 0.4;
-  cursor: default;
-}
-
-/* ── Shift Buttons ───────────────────────────────────────── */
+/* ── Shift Rows ──────────────────────────────────────────── */
 .guard-layout .day-shifts {
   display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  align-items: center;
-  margin-top: 6px;
+  flex-direction: column;
+  gap: 8px;
 }
 
-.guard-layout .shift-btn {
+/* Single shift row — toggle + hours */
+.guard-layout .shift-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+/* Shift toggle button — full-width, mobile-friendly */
+.guard-layout .shift-toggle-btn {
   border: 2px solid var(--tg-btn);
   background: transparent;
   color: var(--tg-btn);
-  border-radius: 6px;
-  padding: 3px 10px;
-  font-size: 0.8rem;
+  border-radius: 8px;
+  padding: 8px 0;
+  width: 100%;
+  font-size: 0.95rem;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.15s;
+  text-align: center;
 }
 
-.guard-layout .shift-btn.active {
+.guard-layout .shift-toggle-btn.on {
   background: var(--tg-btn);
   color: var(--tg-btn-text);
 }
 
-.guard-layout .shift-btn:disabled {
+.guard-layout .shift-toggle-btn.off {
+  border-color: var(--tg-hint);
+  color: var(--tg-hint);
+}
+
+.guard-layout .shift-toggle-btn:disabled {
   opacity: 0.4;
   cursor: default;
 }
 
-/* ── Custom Hours ────────────────────────────────────────── */
-.guard-layout .custom-hours {
+/* Shift hours — shown when toggle is on */
+.guard-layout .shift-hours {
   display: flex;
   gap: 10px;
-  margin-top: 6px;
-  width: 100%;
+  padding: 2px 4px 0 4px;
 }
 
-.guard-layout .custom-hours label {
+.guard-layout .hour-label {
   display: flex;
   align-items: center;
   gap: 4px;
@@ -183,42 +169,14 @@
   color: var(--tg-hint);
 }
 
-.guard-layout .custom-hours input[type="time"] {
+.guard-layout .hour-input {
   border: 1px solid #ccc;
   border-radius: 6px;
-  padding: 3px 6px;
+  padding: 4px 6px;
   font-size: 0.85rem;
   background: var(--tg-bg);
   color: var(--tg-text);
-}
-
-/* ── Event Buttons ───────────────────────────────────────── */
-.guard-layout .day-events {
-  display: flex;
-  gap: 6px;
-  margin-top: 6px;
-}
-
-.guard-layout .event-btn {
-  border: 2px solid var(--tg-hint);
-  background: transparent;
-  color: var(--tg-text);
-  border-radius: 6px;
-  padding: 3px 10px;
-  font-size: 0.8rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.15s;
-}
-
-.guard-layout .event-btn.active {
-  background: var(--tg-hint);
-  color: #fff;
-}
-
-.guard-layout .event-btn:disabled {
-  opacity: 0.4;
-  cursor: default;
+  max-width: 100px;
 }
 
 /* ── Notes ───────────────────────────────────────────────── */

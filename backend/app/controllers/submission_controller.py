@@ -4,12 +4,20 @@ SubmissionController — guard submission endpoints.
 
 import logging
 import uuid
+from datetime import date, time, timedelta
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 
-from app.dependencies import get_submission_service, get_week_service
+from app.dependencies import get_current_user, get_submission_service, get_week_service
 from app.messages import Messages
-from app.schemas.submission_schemas import SubmissionCreate, SubmissionResponse
+from app.models.user import User
+from app.schemas.submission_schemas import (
+    GuardSubmissionRequest,
+    ShiftWindowInput,
+    DayStatusInput,
+    SubmissionCreate,
+    SubmissionResponse,
+)
 from app.schemas.week_schemas import WeekWithDaysResponse
 from app.services.submission_service import SubmissionService
 from app.services.week_service import WeekService
@@ -31,16 +39,30 @@ async def get_current_open_week(
     return await week_service.get_current_open_week_with_days()
 
 
+@router.get("/my", response_model=SubmissionResponse | None)
+async def get_my_submission(
+    week_id: uuid.UUID = Query(..., description="Week ID"),
+    current_user: User = Depends(get_current_user),
+    submission_service: SubmissionService = Depends(get_submission_service),
+):
+    """Get the authenticated guard's submission for a given week.
+
+    Returns ``null`` if no submission exists yet.
+    """
+    return await submission_service.get_submission(current_user.id, week_id)
+
+
 @router.post("", response_model=SubmissionResponse, status_code=status.HTTP_201_CREATED)
 async def submit_schedule(
-    data: SubmissionCreate,
+    data: GuardSubmissionRequest,
+    current_user: User = Depends(get_current_user),
     submission_service: SubmissionService = Depends(get_submission_service),
     week_service: WeekService = Depends(get_week_service),
 ):
-    """
-    Submit a guard's weekly schedule preferences.
+    """Submit a guard's weekly schedule preferences.
 
     The week must be open for submissions.
+    The guard is authenticated via Telegram WebApp init data.
     """
     # Guard: must have an open week
     open_week = await week_service.get_current_open_week()
@@ -55,8 +77,17 @@ async def submit_schedule(
             detail=Messages.SUBMISSION_WRONG_WEEK,
         )
 
+    # Convert GuardSubmissionRequest → SubmissionCreate
     try:
-        submission = await submission_service.submit(data)
+        submission_create = _convert_guard_request(data, open_week.start_date, current_user.id)
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=str(e),
+        )
+
+    try:
+        submission = await submission_service.create_submission(submission_create)
         return submission
     except Exception as e:
         logger.error(f"Submission failed: {e}")
@@ -82,3 +113,47 @@ async def get_submissions_for_user(
 ):
     """Get all submissions for a specific user."""
     return await submission_service.get_submissions_for_user(user_id)
+
+
+# ── Helpers ──────────────────────────────────────────────────────────────────
+
+def _parse_time(hour_str: str | None) -> time:
+    """Parse 'HH:MM' or 'HH:MM:SS' into a time object.  Defaults to 00:00."""
+    if not hour_str or not hour_str.strip():
+        return time(0, 0)
+    parts = hour_str.strip().split(":")
+    h, m = int(parts[0]) % 24, int(parts[1]) % 60 if len(parts) > 1 else 0
+    return time(h, m)
+
+
+def _convert_guard_request(
+    data: GuardSubmissionRequest,
+    week_start: date,
+    user_id: uuid.UUID,
+) -> SubmissionCreate:
+    """Convert a GuardSubmissionRequest to SubmissionCreate for the service layer."""
+    days: list[DayStatusInput] = []
+    for d in data.days:
+        day_date = week_start + timedelta(days=d.day_index)
+        shifts: list[ShiftWindowInput] = []
+        for s in d.shifts:
+            shifts.append(
+                ShiftWindowInput(
+                    shift_type=s.shift_type,
+                    start_time=_parse_time(s.from_hour),
+                    end_time=_parse_time(s.to_hour),
+                )
+            )
+        day_status = DayStatusInput(
+            date=day_date,
+            is_available=len(shifts) > 0,
+            shifts=shifts,
+        )
+        days.append(day_status)
+
+    return SubmissionCreate(
+        week_id=data.week_id,
+        user_id=user_id,
+        general_notes=data.general_notes,
+        days=days,
+    )

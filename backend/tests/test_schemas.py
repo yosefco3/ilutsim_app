@@ -222,6 +222,7 @@ class TestSubmissionCreate:
     def test_valid_submission(self):
         sub = SubmissionCreate(
             week_id="00000000-0000-0000-0000-000000000001",
+            user_id="00000000-0000-0000-0000-000000000002",
             days=[
                 DayStatusInput(
                     date=date(2024, 1, 1),
@@ -240,5 +241,6 @@ class TestSubmissionCreate:
         with pytest.raises(ValueError):
             SubmissionCreate(
                 week_id="00000000-0000-0000-0000-000000000001",
+                user_id="00000000-0000-0000-0000-000000000002",
                 days=[],
             )

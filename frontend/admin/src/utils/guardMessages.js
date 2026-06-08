@@ -14,7 +14,7 @@ export const messages = {
   LABEL_AVAILABLE: "זמין",
   LABEL_UNAVAILABLE: "לא זמין",
   LABEL_MORNING: "בוקר",
-  LABEL_AFTERNOON: "צהריים",
+  LABEL_AFTERNOON: "ערב",
   LABEL_NIGHT: "לילה",
   LABEL_FROM: "משעה",
   LABEL_TO: "עד שעה",
@@ -34,10 +34,6 @@ export const messages = {
   ERR_GENERIC: "אירעה שגיאה — נסה שוב",
   ERR_NETWORK: "בעיית תקשורת — בדוק את החיבור לאינטרנט",
   SUCCESS_SUBMITTED: "האילוצים נשלחו בהצלחה!",
-
-  EVENT_VACATION: "חופשה",
-  EVENT_MILITARY: "מילואים",
-  EVENT_FIREARMS: "רענון נשק",
 };
 
 /** Day names in order Sunday–Saturday */
@@ -56,11 +52,4 @@ export const SHIFT_LABELS = {
   morning: messages.LABEL_MORNING,
   afternoon: messages.LABEL_AFTERNOON,
   night: messages.LABEL_NIGHT,
-};
-
-/** Map event type key to Hebrew label */
-export const EVENT_LABELS = {
-  vacation: messages.EVENT_VACATION,
-  military: messages.EVENT_MILITARY,
-  firearms: messages.EVENT_FIREARMS,
 };

@@ -1,5 +1,5 @@
 /**
- * Main submission form — renders day rows, events, notes, submit button.
+ * Main submission form — renders day rows, notes, submit button.
  * Self-contained: calls useTelegram + useSubmission hooks internally.
  * Wrapped in .guard-layout for CSS scoping.
  */
@@ -18,15 +18,12 @@ export default function SubmissionForm() {
     success,
     week,
     days,
-    events,
     notes,
     setNotes,
     weekStatus,
     isLocked,
-    toggleAvailable,
-    setShiftType,
-    setHours,
-    toggleEvent,
+    toggleShift,
+    setShiftHours,
     submit,
   } = useSubmission(initData);
 
@@ -51,7 +48,9 @@ export default function SubmissionForm() {
       {isLocked && <LockBanner status={weekStatus} />}
 
       {error && <div className="error-banner">{error}</div>}
-      {success && <div className="success-banner">{messages.SUCCESS_SUBMITTED}</div>}
+      {success && (
+        <div className="success-banner">{messages.SUCCESS_SUBMITTED}</div>
+      )}
 
       {/* Week info */}
       {week && (
@@ -68,12 +67,9 @@ export default function SubmissionForm() {
           <DayRow
             key={day.day_index}
             day={day}
-            events={events}
             disabled={isLocked}
-            onToggleAvailable={toggleAvailable}
-            onSetShiftType={setShiftType}
-            onSetHours={setHours}
-            onToggleEvent={toggleEvent}
+            onToggleShift={toggleShift}
+            onSetShiftHours={setShiftHours}
           />
         ))}
       </div>

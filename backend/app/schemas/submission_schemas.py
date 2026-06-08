@@ -10,6 +10,36 @@ from app.constants import ShiftType, SubmissionStatus
 from app.messages import Messages
 
 
+# ── Guard-side (Telegram WebApp) schemas ────────────────────────────────────
+
+class GuardShiftInput(BaseModel):
+    """Single shift as submitted by a guard — raw time strings."""
+    shift_type: ShiftType
+    from_hour: str | None = None  # "HH:MM"
+    to_hour: str | None = None    # "HH:MM"
+
+
+class GuardDayInput(BaseModel):
+    """Single day entry in a guard's weekly submission."""
+    day_index: int = Field(ge=0, le=6)
+    shifts: list[GuardShiftInput] = []
+
+
+class GuardSubmissionRequest(BaseModel):
+    """Payload sent by the guard's frontend via POST /submissions."""
+    week_id: uuid.UUID
+    general_notes: str | None = None
+    days: list[GuardDayInput]
+
+    @model_validator(mode="after")
+    def validate_days_not_empty(self) -> "GuardSubmissionRequest":
+        if len(self.days) == 0:
+            raise ValueError(Messages.VAL_EMPTY_DAYS)
+        return self
+
+
+# ── Internal schemas (used by service layer) ─────────────────────────────────
+
 class ShiftWindowInput(BaseModel):
     """Schema for a single shift window within a day."""
     shift_type: ShiftType
@@ -18,29 +48,13 @@ class ShiftWindowInput(BaseModel):
 
     @model_validator(mode="after")
     def validate_times(self) -> "ShiftWindowInput":
-        # Same start and end is never valid
         if self.start_time == self.end_time:
             raise ValueError(Messages.VAL_SAME_START_END)
-
-        # Night shifts can cross midnight (start > end is valid, e.g. 23:00-07:00)
         if self.shift_type == ShiftType.NIGHT:
-            pass  # Both start < end and start > end are valid for night
-        else:
-            # For morning/afternoon, start must be before end
-            if self.start_time > self.end_time:
-                raise ValueError(Messages.VAL_SAME_START_END)
-
+            pass  # Night shifts can cross midnight
+        elif self.start_time > self.end_time:
+            raise ValueError(Messages.VAL_SAME_START_END)
         return self
-
-
-class ShiftWindowResponse(BaseModel):
-    """Schema for shift window in API responses."""
-    model_config = ConfigDict(from_attributes=True)
-
-    id: uuid.UUID
-    shift_type: ShiftType
-    start_time: time
-    end_time: time
 
 
 class DayStatusInput(BaseModel):
@@ -58,19 +72,10 @@ class DayStatusInput(BaseModel):
         return self
 
 
-class DayStatusResponse(BaseModel):
-    """Schema for day status in API responses."""
-    model_config = ConfigDict(from_attributes=True)
-
-    id: uuid.UUID
-    date: date
-    is_available: bool
-    shift_windows: list[ShiftWindowResponse] = []
-
-
 class SubmissionCreate(BaseModel):
     """Schema for creating/updating a weekly submission."""
     week_id: uuid.UUID
+    user_id: uuid.UUID
     general_notes: str | None = None
     days: list[DayStatusInput]
 
@@ -79,6 +84,28 @@ class SubmissionCreate(BaseModel):
         if len(self.days) == 0:
             raise ValueError(Messages.VAL_EMPTY_DAYS)
         return self
+
+
+# ── Response schemas ─────────────────────────────────────────────────────────
+
+class ShiftWindowResponse(BaseModel):
+    """Schema for shift window in API responses."""
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    shift_type: ShiftType
+    start_time: time
+    end_time: time
+
+
+class DayStatusResponse(BaseModel):
+    """Schema for day status in API responses."""
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    date: date
+    is_available: bool
+    shift_windows: list[ShiftWindowResponse] = []
 
 
 class SubmissionResponse(BaseModel):

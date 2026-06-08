@@ -1,6 +1,6 @@
 # Test Coverage Graph
 
-_נוצר אוטומטית ב: 2026-06-08 18:45_
+_נוצר אוטומטית ב: 2026-06-08 19:29_
 **טרנד:**  →0%
 
 ## סיכום
@@ -11,11 +11,11 @@ _נוצר אוטומטית ב: 2026-06-08 18:45_
 | קבצי קוד מכוסים בטסטים | 37 |
 | קבצי קוד ללא טסטים | 20 |
 | אחוז כיסוי | 64% →0% |
-| טסטים עוברים (backend) | 16 ✅ |
-| טסטים נכשלים (backend) | 0 ❌ |
+| טסטים עוברים (backend) | 14 ✅ |
+| טסטים נכשלים (backend) | 2 ❌ |
 | קבצי קוד frontend (ממופים) | 10 |
-| טסטים עוברים (frontend) | 12 ✅ |
-| טסטים נכשלים (frontend) | 0 ❌ |
+| טסטים עוברים (frontend) | 11 ✅ |
+| טסטים נכשלים (frontend) | 1 ❌ |
 
 ## Backend: מיפוי קוד → טסטים
 
@@ -50,9 +50,9 @@ _נוצר אוטומטית ב: 2026-06-08 18:45_
 | `models/weekly_submission.py` | `test_models.py` | 🟢 PASS |
 | `repositories/admin_repository.py` | `test_repositories.py` | 🟢 PASS |
 | `repositories/schedule_event_repository.py` | `test_repositories.py` | 🟢 PASS |
-| `repositories/schedule_week_repository.py` | `test_current_week.py` | 🟢 PASS |
+| `repositories/schedule_week_repository.py` | `test_current_week.py` | 🔴 FAIL |
 | `repositories/schedule_week_repository.py` | `test_repositories.py` | 🟢 PASS |
-| `repositories/schedule_week_repository.py` | `test_week_workflow.py` | 🟢 PASS |
+| `repositories/schedule_week_repository.py` | `test_week_workflow.py` | 🔴 FAIL |
 | `repositories/submission_repository.py` | `test_repositories.py` | 🟢 PASS |
 | `repositories/system_settings_repository.py` | `test_repositories.py` | 🟢 PASS |
 | `repositories/user_repository.py` | `test_repositories.py` | 🟢 PASS |
@@ -63,12 +63,12 @@ _נוצר אוטומטית ב: 2026-06-08 18:45_
 | `schemas/week_schemas.py` | `test_schemas.py` | 🟢 PASS |
 | `seed.py` | `test_initial_seed.py` | 🟢 PASS |
 | `services/excel_export_service.py` | `test_export.py` | 🟢 PASS |
-| `services/week_service.py` | `test_current_week.py` | 🟢 PASS |
+| `services/week_service.py` | `test_current_week.py` | 🔴 FAIL |
 | `services/week_service.py` | `test_notification_on_open.py` | 🟢 PASS |
 | `services/week_service.py` | `test_open_week.py` | 🟢 PASS |
 | `services/week_service.py` | `test_status_transitions.py` | 🟢 PASS |
 | `services/week_service.py` | `test_submission_guard.py` | 🟢 PASS |
-| `services/week_service.py` | `test_week_workflow.py` | 🟢 PASS |
+| `services/week_service.py` | `test_week_workflow.py` | 🔴 FAIL |
 | `utils/date_utils.py` | `test_date_utils.py` | 🟢 PASS |
 
 ## Backend: קבצים ללא טסטים (מדורגים לפי חשיבות)
@@ -118,7 +118,7 @@ _נוצר אוטומטית ב: 2026-06-08 18:45_
 | `test_bot.py` | 4 | 🟢 |
 | `test_config.py` | 1 | 🟢 |
 | `test_controllers.py` | 7 | 🟢 |
-| `test_current_week.py` | 2 | 🟢 |
+| `test_current_week.py` | 2 | 🔴 |
 | `test_date_utils.py` | 1 | 🟢 |
 | `test_e2e.py` | 1 | ⚪ |
 | `test_export.py` | 2 | 🟢 |
@@ -131,4 +131,4 @@ _נוצר אוטומטית ב: 2026-06-08 18:45_
 | `test_schemas.py` | 5 | 🟢 |
 | `test_status_transitions.py` | 2 | 🟢 |
 | `test_submission_guard.py` | 2 | 🟢 |
-| `test_week_workflow.py` | 2 | 🟢 |
+| `test_week_workflow.py` | 2 | 🔴 |

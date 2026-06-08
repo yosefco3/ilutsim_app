@@ -7,12 +7,13 @@ Provides service instances and authentication guards via Depends().
 import logging
 import uuid
 
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, Header, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from app.config import Settings, get_settings
 from app.constants import AdminRole
 from app.database import get_pool
+from app.models.user import User
 from app.repositories.admin_repository import AdminRepository
 from app.repositories.schedule_event_repository import ScheduleEventRepository
 from app.repositories.schedule_week_repository import ScheduleWeekRepository
@@ -27,6 +28,7 @@ from app.services.settings_service import SettingsService
 from app.services.submission_service import SubmissionService
 from app.services.user_service import UserService
 from app.services.week_service import WeekService
+from app.utils.telegram_auth import get_telegram_user_id
 
 logger = logging.getLogger("ilutzim")
 
@@ -164,3 +166,46 @@ async def require_super_admin(
             detail="Super admin access required",
         )
     return admin
+
+
+async def get_current_user(
+    x_telegram_init_data: str = Header(None, alias="X-Telegram-Init-Data"),
+    settings: Settings = Depends(get_settings),
+    user_repo: UserRepository = Depends(_get_user_repo),
+) -> User:
+    """Authenticate a guard via Telegram WebApp init data header.
+
+    Returns the User model or raises 401.
+    In dev mode (init_data == '__DEV_MODE__'), returns the first active user.
+    """
+    if x_telegram_init_data == "__DEV_MODE__":
+        users = await user_repo.get_active_users()
+        if not users:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="No active users found (dev mode)",
+            )
+        return users[0]
+
+    bot_token = settings.TELEGRAM_BOT_TOKEN
+    if not bot_token:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Bot token not configured",
+        )
+
+    telegram_id = get_telegram_user_id(x_telegram_init_data, bot_token)
+    if telegram_id is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid Telegram data",
+        )
+
+    user = await user_repo.get_by_telegram_id(telegram_id)
+    if user is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Guard not found",
+        )
+
+    return user
