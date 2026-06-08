@@ -278,4 +278,4 @@ ilutzim_app/
 | 8 יוני 2026 | **איחוד Frontends** — מעבר לאפליקציה מאוחדת (admin :3001) — דף `/submit` ציבורי לשומרים, `guardApiClient` לטלגרם Auth, קומפוננטות guard בתוך admin |
 | 8 יוני 2026 | **איחוד CORS** — החלפת `WEBAPP_URL`+`ADMIN_DASHBOARD_URL` ב-`APP_URL` יחיד + `cors_origins` property |
 | 8 יוני 2026 | **מחיקת webapp** — מחיקת `frontend/webapp/` סופית. אפליקציה אחת בלבד (`frontend/admin/`) עם אזור שומרים (`/submit`) + אדמינים (`/guards`). ניקוי `dev.sh`, `dev-stop.sh`, `test_graph.py` משירות webapp. |
-| 8 יוני 2026 | **תיקון קישור בהתראת פתיחת שבוע** — הוספת `/submit` ל-URL ב-`notify_week_opened()`, תיקון cloudflared tunnel מ-port 5173 ל-3001, הוספת `allowedHosts` ב-vite.config.js |
+| 8 יוני 2026 | **תיקון קישורים ל-/submit** — הוספת `/submit` ב-`notify_week_opened()`, תיקון cloudflared tunnel מ-port 5173 ל-3001, הוספת `allowedHosts` ב-vite.config.js, תיקון `webapp_url` בכפתור Telegram Web App ב-core.py |

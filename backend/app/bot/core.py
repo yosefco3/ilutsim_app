@@ -229,7 +229,7 @@ async def _show_main_menu(message: Message, display_name: str):
     from app.services.deviation_service import DeviationService
 
     telegram_id = message.from_user.id
-    webapp_url = f"{settings.APP_URL}?tg_id={telegram_id}"
+    webapp_url = f"{settings.APP_URL}/submit?tg_id={telegram_id}"
 
     # Private URL detection
     private_pattern = r"(localhost|127\.|192\.168\.|10\.|172\.(1[6-9]|2[0-9]|3[01])\.)"
