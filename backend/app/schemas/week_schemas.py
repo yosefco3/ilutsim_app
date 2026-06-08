@@ -3,7 +3,7 @@
 import uuid
 from datetime import date
 
-from pydantic import BaseModel, ConfigDict, model_validator
+from pydantic import BaseModel, ConfigDict, computed_field, model_validator
 
 from app.constants import WeekStatus
 from app.messages import Messages
@@ -35,7 +35,19 @@ class WeekResponse(BaseModel):
     end_date: date
     status: WeekStatus
 
+    @computed_field
     @property
     def week_label(self) -> str:
         """Human-readable week label, e.g. 'שבוע 01/06 - 07/06'."""
         return f"שבוע {self.start_date.strftime('%d/%m')} – {self.end_date.strftime('%d/%m')}"
+
+
+class DayItem(BaseModel):
+    """Single day in a week's submission form."""
+    day_index: int
+    blocked: bool = False
+
+
+class WeekWithDaysResponse(WeekResponse):
+    """Week data with 7 days for the submission form."""
+    days: list[DayItem]

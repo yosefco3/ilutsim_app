@@ -11,7 +11,7 @@ from app.constants import WeekStatus
 from app.exceptions import ConflictException, InvalidTransitionException, WeekLockedException
 from app.models.schedule_week import ScheduleWeek
 from app.repositories.schedule_week_repository import ScheduleWeekRepository
-from app.schemas.week_schemas import WeekCreate, WeekResponse
+from app.schemas.week_schemas import DayItem, WeekCreate, WeekResponse, WeekWithDaysResponse
 from app.utils.date_utils import get_next_week_end, get_next_week_start, week_range
 
 
@@ -126,6 +126,20 @@ class WeekService:
         if week is None:
             return None
         return WeekResponse.model_validate(week)
+
+    async def get_current_open_week_with_days(self) -> Optional[WeekWithDaysResponse]:
+        """Return the currently open week with 7 days for the submission form."""
+        week = await self._week_repo.get_current_open_week()
+        if week is None:
+            return None
+        days = [DayItem(day_index=i, blocked=False) for i in range(7)]
+        return WeekWithDaysResponse(
+            id=week.id,
+            start_date=week.start_date,
+            end_date=week.end_date,
+            status=week.status,
+            days=days,
+        )
 
     async def get_latest_week(self) -> Optional[WeekResponse]:
         """Return the most recent week (by start_date), regardless of status."""

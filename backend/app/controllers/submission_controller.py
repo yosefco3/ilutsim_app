@@ -10,7 +10,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from app.dependencies import get_submission_service, get_week_service
 from app.messages import Messages
 from app.schemas.submission_schemas import SubmissionCreate, SubmissionResponse
-from app.schemas.week_schemas import WeekResponse
+from app.schemas.week_schemas import WeekWithDaysResponse
 from app.services.submission_service import SubmissionService
 from app.services.week_service import WeekService
 
@@ -19,16 +19,16 @@ logger = logging.getLogger("ilutzim")
 router = APIRouter(prefix="/submissions", tags=["Submissions"])
 
 
-@router.get("/current-week", response_model=WeekResponse | None)
+@router.get("/current-week", response_model=WeekWithDaysResponse | None)
 async def get_current_open_week(
     week_service: WeekService = Depends(get_week_service),
 ):
     """Get the currently open week for submissions.
 
-    Returns the open week data or ``null`` when no week is open.
-    Used by the WebApp to decide between submission form and lock banner.
+    Returns the open week data with 7 days for the submission form,
+    or ``null`` when no week is open.
     """
-    return await week_service.get_current_open_week()
+    return await week_service.get_current_open_week_with_days()
 
 
 @router.post("", response_model=SubmissionResponse, status_code=status.HTTP_201_CREATED)
