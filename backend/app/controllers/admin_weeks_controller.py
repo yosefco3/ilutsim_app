@@ -110,3 +110,21 @@ async def update_week_status(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e),
         )
+
+
+@router.delete("/{week_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_week(
+    week_id: uuid.UUID,
+    week_service: WeekService = Depends(get_week_service),
+):
+    """Delete a non-published schedule week."""
+    try:
+        await week_service.delete_week(week_id)
+    except AppBaseException as exc:
+        raise HTTPException(status_code=exc.status_code, detail=exc.message)
+    except Exception as e:
+        logger.error(f"Week deletion failed: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        )

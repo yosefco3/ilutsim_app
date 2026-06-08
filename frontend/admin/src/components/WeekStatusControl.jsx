@@ -9,6 +9,7 @@ import ConfirmDialog from './ConfirmDialog';
 
 const STATUS_CFG = {
   draft:     { label: messages.weeks.statusDraft,     bg: '#e2e3e5', color: '#383d41', icon: '📝' },
+  closed:    { label: messages.weeks.statusClosed,    bg: '#f8d7da', color: '#721c24', icon: '📛' },
   open:      { label: messages.weeks.statusOpen,      bg: '#d4edda', color: '#155724', icon: '🔓' },
   locked:    { label: messages.weeks.statusLocked,    bg: '#fff3cd', color: '#856404', icon: '🔒' },
   published: { label: messages.weeks.publishedLabel,   bg: '#cce5ff', color: '#004085', icon: '📢' },
@@ -32,7 +33,7 @@ export default function WeekStatusControl({ week, onOpen, onLock, onPublish, onD
 
         {/* Action buttons by status */}
         <div className="week-card-buttons">
-          {status === 'locked' && (
+          {(status === 'locked' || status === 'closed') && (
             <button
               className="btn btn-primary btn-sm"
               disabled={loading}

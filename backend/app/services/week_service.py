@@ -14,6 +14,7 @@ from app.repositories.schedule_week_repository import ScheduleWeekRepository
 from app.schemas.week_schemas import WeekCreate, WeekResponse
 from app.utils.date_utils import get_next_week_end, get_next_week_start, week_range
 
+
 logger = logging.getLogger("ilutzim")
 
 # Allowed week-status transitions: open → locked → published.
@@ -46,7 +47,8 @@ class WeekService:
         return WeekResponse.model_validate(created)
 
     async def get_all_weeks(self) -> list[WeekResponse]:
-        """Return all schedule weeks."""
+        """Return all schedule weeks, after auto-rotating expired ones."""
+        await self.auto_rotate_weeks()
         weeks = await self._week_repo.get_all()
         return [WeekResponse.model_validate(w) for w in weeks]
 
@@ -173,6 +175,69 @@ class WeekService:
             logger.warning(f"Failed to send week-open notifications: {exc}")
 
         return WeekResponse.model_validate(created)
+
+    async def delete_week(self, week_id: uuid.UUID) -> None:
+        """Delete a schedule week by ID.
+
+        Only allows deletion of non-published weeks to preserve history.
+        """
+        week = await self._get_week_or_raise(week_id)
+        if week.status == WeekStatus.PUBLISHED:
+            raise InvalidTransitionException(
+                "לא ניתן למחוק שבוע שפורסם — הוא חלק מההיסטוריה"
+            )
+        deleted = await self._week_repo.delete(week_id)
+        if not deleted:
+            from app.exceptions import UserNotFoundException
+            raise UserNotFoundException()
+        logger.info(f"Week {week_id} deleted (was {week.status})")
+
+    async def auto_rotate_weeks(self) -> None:
+        """Auto-rotate expired weeks and create next week if needed.
+
+        For any week whose end_date < today and is not yet PUBLISHED:
+          - Set status to PUBLISHED (archive it).
+        If no open week exists for the current period:
+          - Create a new OPEN week for the upcoming schedule period.
+        """
+        from sqlalchemy import select
+
+        today = date.today()
+
+        # Find expired weeks (end_date < today) that are not PUBLISHED
+        all_weeks = await self._week_repo.get_all()
+        rotated_any = False
+
+        for week in all_weeks:
+            if week.end_date < today and week.status != WeekStatus.PUBLISHED:
+                old_status = week.status
+                await self._week_repo.update(week.id, status=WeekStatus.PUBLISHED)
+                logger.info(
+                    f"Auto-rotated expired week {week.id} "
+                    f"({week.start_date} – {week.end_date}): "
+                    f"{old_status} → PUBLISHED"
+                )
+                rotated_any = True
+
+        # If no current open week, create one for the upcoming period
+        current_open = await self._week_repo.get_current_open_week()
+        if current_open is None:
+            try:
+                ws, we = week_range(today)
+                # Check if a week for this range already exists
+                existing = await self._week_repo.get_by_date_range(ws, we)
+                if existing is None:
+                    new_week = ScheduleWeek(
+                        start_date=ws,
+                        end_date=we,
+                        status=WeekStatus.OPEN,
+                    )
+                    created = await self._week_repo.save(new_week)
+                    logger.info(
+                        f"Auto-created new open week: {ws} – {we} (id={created.id})"
+                    )
+            except Exception as exc:
+                logger.warning(f"Failed to auto-create current week: {exc}")
 
     # ── Internal helpers ──────────────────────────────────────────────────
 

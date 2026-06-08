@@ -5,6 +5,7 @@ export default defineConfig({
   plugins: [react()],
   server: {
     port: 3001,
+    allowedHosts: ['app.safrasecure.uk', 'localhost', '.safrasecure.uk'],
     proxy: {
       '/api': {
         target: 'http://localhost:8000',

@@ -54,5 +54,5 @@ export function useWeeks() {
     setWeeks((prev) => prev.filter((w) => w.id !== id));
   };
 
-  return { weeks, loading, error, reload: load, addWeek: add, setStatus, remind, openForSubmission, publish, removeWeek };
+  return { weeks, loading, error, reload: load, addWeek: add, setStatus, remind, openForSubmission, publish, deleteWeek: removeWeek };
 }
