@@ -12,8 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sess
 # Set test environment variables before importing app modules
 os.environ.setdefault("DATABASE_URL", "sqlite+aiosqlite:///test.db")
 os.environ.setdefault("TELEGRAM_BOT_TOKEN", "test-token")
-os.environ.setdefault("WEBAPP_URL", "http://localhost:3000")
-os.environ.setdefault("ADMIN_DASHBOARD_URL", "http://localhost:3001")
+os.environ.setdefault("APP_URL", "http://localhost:3000")
 os.environ.setdefault("ADMIN_API_KEY", "test-admin-key")
 os.environ.setdefault("JWT_SECRET_KEY", "test-jwt-secret")
 os.environ.setdefault("ENVIRONMENT", "dev")

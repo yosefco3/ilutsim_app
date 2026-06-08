@@ -5,7 +5,7 @@
 ### When receiving a large feature request:
 1. **Always propose breaking it into small, sequential steps** — each step touching 2-4 files max.
 2. **Run tests after every step** — verify the step works before moving to the next.
-3. **Commit after every step** — so each piece is independently reviewable and revertable.
+3. deleted
 4. **Present the full plan to the user before starting** — list all proposed steps, get approval, then execute one by one.
 5. **Each step should be independently testable** — not just a partial implementation that leaves the app broken.
 6. **Prefer many small commits over one large commit** — easier to review, revert, and debug.
@@ -19,8 +19,8 @@
 ## Code Review Graph — Mandatory Workflow
 
 ### After Every Coding Mission (when code files were created or modified):
-1. **Commit changes first** — `git add -A && git commit -m "descriptive message"`
-2. **Update the code graph** — Run the CLI command:
+1. deleted
+2.**Update the code graph** — Run the CLI command:
    ```
    /home/yosef/.local/bin/code-review-graph update
    ```
@@ -49,7 +49,9 @@
 - The script outputs results to `TEST_GRAPH.md` for easy review.
 
 ### When Starting a New Coding Task:
-1. **Get minimal context first** — Use `get_minimal_context_tool` to understand the current graph state.
+1. **Get minimal context first** — Use: 
+- `get_minimal_context_tool` to understand the current graph state.
+- `APP_OVERVIEW.md` to understand the app purpose etc
 2. **Before reading files manually**, try these graph tools to locate code faster:
    - `semantic_search_nodes_tool` — Find functions/classes by name or description
    - `query_graph_tool` — Trace relationships (callers_of, callees_of, imports_of, importers_of, children_of)
@@ -57,6 +59,8 @@
    - `get_impact_radius_tool` — Understand blast radius before making changes
    - `list_flows_tool` / `get_flow_tool` — Understand execution paths
    - `list_communities_tool` — Understand code organization
+   - `_PROGRESS.md` if you are inside a prompts directory.
+   
 
 ### When Doing Code Review:
 - Use `detect_changes_tool` for risk-scored change analysis
@@ -74,3 +78,40 @@ Instead of `search_files` → `read_file` chains, prefer:
 - **Incremental update:** `/home/yosef/.local/bin/code-review-graph update`
 - **Post-process only:** `/home/yosef/.local/bin/code-review-graph postprocess`
 - **Status check:** `/home/yosef/.local/bin/code-review-graph status`
+
+## Prompt Library — Workflow
+
+### When receiving a prompt library directory (e.g. `features-prompts/something/`):
+1. **Check for `_PROGRESS.md`** in that directory — if it exists, read it to understand what's already done and where to continue.
+2. **If `_PROGRESS.md` doesn't exist** — create an empty file. This means nothing has been done yet.
+3. **Execute the next prompt file** (by number order: `01_...`, `02_...`, etc.).
+4. **After successful completion** (tests pass, committed):
+   - Append a summary line to `_PROGRESS.md`: what was done, files created/modified, commit message.
+   - Delete the prompt file that was just executed.
+5. **Continue to the next prompt** until all are done.
+6. **When all prompts are done** — add a final "✅ All prompts completed" line to `_PROGRESS.md`.
+
+### Why:
+- `_PROGRESS.md` acts as a resumable checkpoint inside the prompt library itself.
+- If stuck mid-way, reading `_PROGRESS.md` tells exactly where to continue.
+- Deleting executed prompts keeps the directory clean — only pending prompts remain.
+- `.clinerules` stays focused on workflows only — no status data here.
+
+## חשיבה תקועה — כלל עצירה
+
+### אם אתה מזהה אחד מהתסמינים הבאים בחשיבה שלך:
+1. **לולאת ניסיונות** — ניסית 3+ גישות שונות לאותה בעיה וכולן נכשלו
+2. **אי-ודאות מצטברת** — הניתוח מתרחב ומסתעף במקום להתכנס לפתרון
+3. **תלות במידע חסר** — אתה צריך מידע שלא מצאת בקוד ולא ביקשת מהמשתמש
+4. **מורכבות יתר** — הפתרון דורש יותר מ-4 קבצים או שינויים ארכיטקטוריים משמעותיים שלא תוכננו
+
+### מה לעשות:
+- **עצור מיד** — אל תמשיך לחשוב / לנסות
+- **כתוב למשתמש** סיכום ברור של: מה ניסית, מה נכשל, ומה חסר
+- **הצע מסלולים אפשריים** — בקש עזרה, הצע לפרק את הבעיה, או הצע גישה חלופית
+- **אל תנחש** — אל תמשיך עם פתרון שאתה לא בטוח בו
+
+### למה זה חשוב:
+- חשיבה ממושכת ללא פלט = בזבוז context window וזמן
+- עדיף לעצור ולשאול מאשר להמשיך בכיוון שגוי
+- המשתמש יכול לתת מידע שיחסוך דקות של ניחושים

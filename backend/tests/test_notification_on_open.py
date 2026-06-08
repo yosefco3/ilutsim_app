@@ -82,14 +82,14 @@ async def test_notify_week_opened_continues_on_error():
 # ===========================================================================
 @pytest.mark.asyncio
 async def test_notification_message_format():
-    """Message must use DD/MM/YYYY format and include WEBAPP_URL."""
+    """Message must use DD/MM/YYYY format and include APP_URL."""
     captured_texts: list[str] = []
 
     with patch("app.bot.notifications.get_bot") as mock_bot_fn, \
          patch("app.config.settings") as mock_settings:
         mock_bot = AsyncMock()
         mock_bot_fn.return_value = mock_bot
-        mock_settings.WEBAPP_URL = "https://example.com/app"
+        mock_settings.APP_URL = "https://example.com/app"
 
         def capture_send(*, chat_id, text):
             captured_texts.append(text)

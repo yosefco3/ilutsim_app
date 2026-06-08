@@ -50,7 +50,7 @@ async def notify_week_opened(week_start: date, week_end: date, telegram_ids: lis
         "🔔 שבוע חדש נפתח להגשה!\n\n"
         f"תאריכים: {start_fmt} - {end_fmt}\n\n"
         "לחץ כאן למילוי אילוצים:\n"
-        f"{settings.WEBAPP_URL}"
+        f"{settings.APP_URL}"
     )
     count = await broadcast_notifications(telegram_ids, text)
     logger.info("Week-opened notification sent to %d/%d users", count, len(telegram_ids))
