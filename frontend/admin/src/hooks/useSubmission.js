@@ -67,15 +67,32 @@ export function useSubmission(initData) {
       setLoading(true);
       setError(null);
 
+      // Fetch shift defaults FIRST so they're available for building initial days
+      let finalDefaults = SHIFT_DEFAULTS;
+      const defaultsResult = await get("/submissions/shift-defaults", initData);
+      if (!defaultsResult.error && defaultsResult.data) {
+        const mapped = {};
+        for (const key of Object.keys(defaultsResult.data)) {
+          const short = key.replace("shift_default_", "");
+          if (SHIFT_TYPES.includes(short)) {
+            mapped[short] = defaultsResult.data[key];
+          }
+        }
+        if (Object.keys(mapped).length === 3) {
+          finalDefaults = mapped;
+          setShiftDefaults(mapped);
+        }
+      }
+
       const subResult = await get("/submissions/current-week", initData);
 
-      if (subResult.error) {
+      if (subResult.error || !subResult.data) {
         if (isDevMode) {
           setError(
             "No open week found. Open a week from the admin dashboard first, then refresh this page.",
           );
         } else {
-          setError(subResult.error);
+          setError(subResult.error || "אין שבוע פתוח כרגע");
         }
         setLoading(false);
         return;
@@ -96,8 +113,7 @@ export function useSubmission(initData) {
 
       // Build initial form state — each day gets a shifts map
       const initialDays = (weekData.days || []).map((d) => {
-        // Use current shiftDefaults (may have been updated from server)
-        const shifts = makeShifts(SHIFT_DEFAULTS);
+        const shifts = makeShifts(finalDefaults);
 
         const existingDay = subData?.days?.find(
           (s) => s.day_index === d.day_index,
@@ -185,13 +201,16 @@ export function useSubmission(initData) {
         .filter((d) => !d.blocked)
         .map((d) => ({
           day_index: d.day_index,
-          shifts: SHIFT_TYPES.filter((st) => d.shifts[st].active).map(
-            (st) => ({
-              shift_type: st,
-              from_hour: d.shifts[st].from_hour || null,
-              to_hour: d.shifts[st].to_hour || null,
-            }),
-          ),
+          shifts: SHIFT_TYPES.filter(
+            (st) =>
+              d.shifts[st].active &&
+              d.shifts[st].from_hour &&
+              d.shifts[st].to_hour,
+          ).map((st) => ({
+            shift_type: st,
+            from_hour: d.shifts[st].from_hour,
+            to_hour: d.shifts[st].to_hour,
+          })),
         })),
     };
 

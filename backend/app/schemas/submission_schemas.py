@@ -115,9 +115,7 @@ class SubmissionResponse(BaseModel):
     id: uuid.UUID
     user_id: uuid.UUID
     week_id: uuid.UUID
-    status: SubmissionStatus
     general_notes: str | None = None
-    has_deviation: bool = False
     submitted_at: datetime
     days: list[DayStatusResponse] = []
 
@@ -127,9 +125,7 @@ class SubmissionStatusGrid(BaseModel):
     user_id: uuid.UUID
     full_name: str
     phone_number: str
-    status: SubmissionStatus
     submitted_at: datetime | None = None
-    has_deviation: bool = False
 
 
 class DeviationDetail(BaseModel):

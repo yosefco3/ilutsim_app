@@ -36,13 +36,12 @@ def _make_week(week_id=None, week_start=None):
     return week
 
 
-def _make_submission(user_id, week_id, constraints=None, status=SubmissionStatus.SUBMITTED):
+def _make_submission(user_id, week_id, status=SubmissionStatus.SUBMITTED):
     sub = MagicMock()
     sub.id = uuid.uuid4()
     sub.user_id = user_id
     sub.week_id = week_id
     sub.status = status
-    sub.constraints = constraints
     return sub
 
 
@@ -92,11 +91,7 @@ async def test_export_weekly_schedule_basic():
     """Basic weekly schedule export with one user and submission."""
     user = _make_user()
     week = _make_week()
-    constraints = {
-        str(week.week_start): {"available": True, "shifts": ["morning"]},
-        str(week.week_start + timedelta(days=1)): {"available": False, "shifts": []},
-    }
-    sub = _make_submission(user.id, week.id, json.dumps(constraints))
+    sub = _make_submission(user.id, week.id)
 
     svc = _create_service(week=week, users=[user], submissions=[sub])
 
@@ -130,7 +125,7 @@ async def test_export_weekly_with_event():
     """Events overlapping the week are shown in cells."""
     user = _make_user()
     week = _make_week()
-    sub = _make_submission(user.id, week.id, "{}")
+    sub = _make_submission(user.id, week.id)
     event = _make_event(user.id, start=week.week_start, end=week.week_start + timedelta(days=1))
 
     svc = _create_service(week=week, users=[user], submissions=[sub], events=[event])
@@ -169,11 +164,7 @@ async def test_export_deviation_report_basic():
     """Deviation report with one guard below threshold."""
     user = _make_user()
     week = _make_week()
-    # Only 1 shift (below threshold of 3)
-    constraints = {
-        str(week.week_start): {"available": True, "shifts": ["morning"]},
-    }
-    sub = _make_submission(user.id, week.id, json.dumps(constraints))
+    sub = _make_submission(user.id, week.id)
 
     svc = _create_service(week=week, users=[user], submissions=[sub])
 
@@ -264,10 +255,7 @@ async def test_weekly_excel_has_correct_structure():
 
     user = _make_user(full_name="יוסי כהן")
     week = _make_week(week_start=date(2025, 1, 5))
-    constraints = {
-        str(week.week_start): {"available": True, "shifts": ["morning", "afternoon"]},
-    }
-    sub = _make_submission(user.id, week.id, json.dumps(constraints))
+    sub = _make_submission(user.id, week.id)
 
     svc = _create_service(week=week, users=[user], submissions=[sub])
 
@@ -298,10 +286,7 @@ async def test_deviation_excel_has_correct_data():
 
     user = _make_user(full_name="דני לוי", phone="0509876543")
     week = _make_week()
-    constraints = {
-        str(week.week_start): {"available": True, "shifts": ["morning"]},
-    }
-    sub = _make_submission(user.id, week.id, json.dumps(constraints))
+    sub = _make_submission(user.id, week.id)
 
     svc = _create_service(week=week, users=[user], submissions=[sub])
 
@@ -314,7 +299,5 @@ async def test_deviation_excel_has_correct_data():
     # Header row
     assert ws.cell(row=3, column=1).value == Messages.EXCEL_HEADER_NAME
 
-    # Data row - should have user with only 1 shift (below threshold=3)
+    # Data row - should have user with submission status
     assert ws.cell(row=4, column=1).value == "דני לוי"
-    assert ws.cell(row=4, column=3).value == "1"  # shift count
-    assert ws.cell(row=4, column=5).value == "2-"  # deviation (3-1=2 below)

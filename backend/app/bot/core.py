@@ -53,7 +53,6 @@ async def _get_services():
     from app.services.user_service import UserService
     from app.services.submission_service import SubmissionService
     from app.services.week_service import WeekService
-    from app.services.deviation_service import DeviationService
     from app.database import get_session
     from app.repositories.user_repository import UserRepository
     from app.repositories.submission_repository import SubmissionRepository
@@ -66,11 +65,10 @@ async def _get_services():
     user_repo = UserRepository(session)
     sub_repo = SubmissionRepository(session)
     week_repo = ScheduleWeekRepository(session)
-    deviation_svc = DeviationService()
 
     user_svc = UserService(user_repo)
     week_svc = WeekService(week_repo, user_repo)
-    sub_svc = SubmissionService(sub_repo, user_repo, week_repo, deviation_svc)
+    sub_svc = SubmissionService(sub_repo, user_repo, week_repo)
     return user_svc, week_svc, sub_svc, session
 
 
@@ -226,7 +224,6 @@ async def _show_main_menu(message: Message, display_name: str):
     from app.services.user_service import UserService
     from app.services.submission_service import SubmissionService
     from app.services.week_service import WeekService
-    from app.services.deviation_service import DeviationService
 
     telegram_id = message.from_user.id
     webapp_url = f"{settings.APP_URL}/submit?tg_id={telegram_id}"
@@ -242,10 +239,9 @@ async def _show_main_menu(message: Message, display_name: str):
         user_repo = UserRepository(session)
         week_repo = ScheduleWeekRepository(session)
         sub_repo = SubmissionRepository(session)
-        deviation_svc = DeviationService()
 
         week_svc = WeekService(week_repo, user_repo)
-        sub_svc = SubmissionService(sub_repo, user_repo, week_repo, deviation_svc)
+        sub_svc = SubmissionService(sub_repo, user_repo, week_repo)
         user_svc = UserService(user_repo)
 
         # 1) Check if there's an OPEN week
@@ -476,7 +472,7 @@ async def cb_status(callback: CallbackQuery):
     if submission is None:
         text = "📭 טרם הגשת אילוצים לשבוע הנוכחי."
     else:
-        text = f"✅ הגשת אילוצים לשבוע {week.start_date}.\nסטטוס: {submission.get('status', 'הוגש')}"
+        text = f"✅ הגשת אילוצים לשבוע {week.start_date}."
 
     await callback.message.edit_text(text)
     await callback.answer()

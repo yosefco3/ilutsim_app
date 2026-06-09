@@ -2,20 +2,17 @@
 SubmissionService — business logic for weekly constraint submissions.
 """
 
-import json
 import logging
 import uuid
-from datetime import date
 from typing import Optional
 
-from app.constants import SubmissionStatus, WeekStatus
+from app.constants import WeekStatus
 from app.exceptions import UserNotFoundException, WeekLockedException
 from app.models.weekly_submission import WeeklySubmission
 from app.repositories.submission_repository import SubmissionRepository
 from app.repositories.user_repository import UserRepository
 from app.repositories.schedule_week_repository import ScheduleWeekRepository
-from app.schemas.submission_schemas import SubmissionCreate, SubmissionResponse
-from app.services.deviation_service import DeviationService
+from app.schemas.submission_schemas import SubmissionCreate, SubmissionResponse, SubmissionStatusGrid
 
 logger = logging.getLogger("ilutzim")
 
@@ -28,12 +25,10 @@ class SubmissionService:
         submission_repo: SubmissionRepository,
         user_repo: UserRepository,
         week_repo: ScheduleWeekRepository,
-        deviation_service: DeviationService,
     ) -> None:
         self._submission_repo = submission_repo
         self._user_repo = user_repo
         self._week_repo = week_repo
-        self._deviation_service = deviation_service
 
     async def create_submission(
         self, data: SubmissionCreate, *, override_lock: bool = False
@@ -56,38 +51,23 @@ class SubmissionService:
         if week.status != WeekStatus.OPEN and not override_lock:
             raise WeekLockedException()
 
-        # Check deviations
-        constraints_dict = data.constraints if isinstance(data.constraints, dict) else data.constraints
-        has_deviation = self._deviation_service.check_deviations(
-            user=user,
-            constraints=constraints_dict,
-        )
-
-        # Determine status
-        if has_deviation:
-            status = SubmissionStatus.SUBMITTED_VARIANCE
-        else:
-            status = SubmissionStatus.SUBMITTED
-
         # Create or update submission
         existing = await self._submission_repo.get_submission(
             data.user_id, data.week_id
         )
         if existing:
-            existing.constraints = json.dumps(constraints_dict) if not isinstance(constraints_dict, str) else constraints_dict
-            existing.status = status
-            updated = await self._submission_repo.update(existing)
-            logger.info(f"Submission updated: user={data.user_id}, week={data.week_id}, status={status}")
+            existing.general_notes = data.general_notes
+            updated = await self._submission_repo.save(existing)
+            logger.info(f"Submission updated: user={data.user_id}, week={data.week_id}")
             return SubmissionResponse.model_validate(updated)
 
         submission = WeeklySubmission(
             user_id=data.user_id,
             week_id=data.week_id,
-            constraints=json.dumps(constraints_dict) if not isinstance(constraints_dict, str) else constraints_dict,
-            status=status,
+            general_notes=data.general_notes,
         )
-        created = await self._submission_repo.create(submission)
-        logger.info(f"Submission created: user={data.user_id}, week={data.week_id}, status={status}")
+        created = await self._submission_repo.save(submission)
+        logger.info(f"Submission created: user={data.user_id}, week={data.week_id}")
         return SubmissionResponse.model_validate(created)
 
     async def get_submissions_for_week(
@@ -106,6 +86,27 @@ class SubmissionService:
             return None
         return SubmissionResponse.model_validate(sub)
 
+    async def get_week_submissions_grid(self, week_id: uuid.UUID) -> list[SubmissionStatusGrid]:
+        """Return submission status for all active users for a week."""
+        submissions = await self._submission_repo.get_submissions_for_week(week_id)
+        active_users = await self._user_repo.get_active_users()
+
+        sub_by_user = {s.user_id: s for s in submissions}
+
+        result = []
+        for user in active_users:
+            sub = sub_by_user.get(user.id)
+            result.append(
+                SubmissionStatusGrid(
+                    user_id=user.id,
+                    full_name=user.full_name,
+                    phone_number=user.phone_number or "",
+                    submitted_at=sub.submitted_at if sub else None,
+                )
+            )
+
+        return result
+
     async def mark_auto_absence(self, week_id: uuid.UUID) -> int:
         """
         Mark all active users who haven't submitted as auto-absence.
@@ -121,10 +122,8 @@ class SubmissionService:
                 sub = WeeklySubmission(
                     user_id=user.id,
                     week_id=week_id,
-                    constraints="{}",
-                    status=SubmissionStatus.AUTO_ABSENCE,
                 )
-                await self._submission_repo.create(sub)
+                await self._submission_repo.save(sub)
                 marked += 1
         logger.info(f"Auto-absence marked: {marked} users for week {week_id}")
         return marked

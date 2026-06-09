@@ -88,9 +88,7 @@ async def get_submission_service(
     user_repo: UserRepository = Depends(_get_user_repo),
     week_repo: ScheduleWeekRepository = Depends(_get_week_repo),
 ) -> SubmissionService:
-    from app.services.deviation_service import DeviationService
-    deviation_service = DeviationService()
-    return SubmissionService(submission_repo, user_repo, week_repo, deviation_service)
+    return SubmissionService(submission_repo, user_repo, week_repo)
 
 
 async def get_event_service(

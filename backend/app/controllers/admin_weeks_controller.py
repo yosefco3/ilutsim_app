@@ -10,9 +10,11 @@ from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from app.constants import WeekStatus
-from app.dependencies import get_week_service, require_admin_role
+from app.dependencies import get_submission_service, get_week_service, require_admin_role
 from app.exceptions import AppBaseException
+from app.schemas.submission_schemas import SubmissionStatusGrid
 from app.schemas.week_schemas import WeekCreate, WeekResponse, WeekStatusUpdate
+from app.services.submission_service import SubmissionService
 from app.services.week_service import WeekService
 
 logger = logging.getLogger("ilutzim")
@@ -110,6 +112,15 @@ async def update_week_status(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e),
         )
+
+
+@router.get("/{week_id}/submissions", response_model=list[SubmissionStatusGrid])
+async def get_week_submissions(
+    week_id: uuid.UUID,
+    submission_service: SubmissionService = Depends(get_submission_service),
+):
+    """Get submission status for all users for a given week."""
+    return await submission_service.get_week_submissions_grid(week_id)
 
 
 @router.delete("/{week_id}", status_code=status.HTTP_204_NO_CONTENT)

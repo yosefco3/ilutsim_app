@@ -1,24 +1,34 @@
-import { useState, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { fetchSubmissions } from '../api/adminApiClient';
 
-export function useSubmissions() {
+export function useSubmissions(weekId) {
   const [submissions, setSubmissions] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  const loadForWeek = useCallback(async (weekId) => {
-    if (!weekId) { setSubmissions([]); return; }
-    try {
-      setLoading(true);
-      setError(null);
-      const data = await fetchSubmissions(weekId);
-      setSubmissions(Array.isArray(data) ? data : data.items || []);
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
+  useEffect(() => {
+    if (!weekId) {
+      setSubmissions([]);
+      return;
     }
-  }, []);
+    let cancelled = false;
+    async function load() {
+      try {
+        setLoading(true);
+        setError(null);
+        const data = await fetchSubmissions(weekId);
+        if (!cancelled) {
+          setSubmissions(Array.isArray(data) ? data : data.items || []);
+        }
+      } catch (err) {
+        if (!cancelled) setError(err.message);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+    load();
+    return () => { cancelled = true; };
+  }, [weekId]);
 
-  return { submissions, loading, error, loadForWeek };
+  return { submissions, loading, error };
 }

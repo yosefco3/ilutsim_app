@@ -8,7 +8,6 @@ Three report types:
 """
 
 import io
-import json
 import logging
 import uuid
 from datetime import date, timedelta
@@ -18,7 +17,6 @@ from app.constants import (
     AdminRole,
     EventType,
     ShiftType,
-    SubmissionStatus,
     WeekStatus,
 )
 from app.messages import Messages
@@ -86,12 +84,6 @@ _EVENT_LABELS: dict[str, str] = {
     EventType.FIREARMS_TRAINING.value: Messages.EVENT_FIREARMS,
 }
 
-_STATUS_LABELS: dict[str, str] = {
-    SubmissionStatus.SUBMITTED.value: Messages.STATUS_SUBMITTED,
-    SubmissionStatus.SUBMITTED_WITH_VARIANCE.value: Messages.STATUS_SUBMITTED_VARIANCE,
-    SubmissionStatus.PENDING.value: Messages.STATUS_PENDING,
-    SubmissionStatus.AUTO_ABSENCE.value: Messages.STATUS_AUTO_ABSENCE,
-}
 
 
 def _apply_header_style(cell: Any) -> None:
@@ -181,16 +173,6 @@ class ExcelExportService:
             ws.cell(row=row_num, column=1).alignment = Alignment(vertical="center")
 
             sub = sub_map.get(user.id)
-            constraints: dict | None = None
-            if sub and sub.constraints:
-                if isinstance(sub.constraints, str):
-                    try:
-                        constraints = json.loads(sub.constraints)
-                    except (json.JSONDecodeError, TypeError):
-                        constraints = None
-                elif isinstance(sub.constraints, dict):
-                    constraints = sub.constraints
-
             user_events = event_map.get(user.id, [])
 
             for day_offset in range(7):
@@ -212,24 +194,11 @@ class ExcelExportService:
                     cell_fill = _YELLOW_FILL
                 elif sub is None:
                     # No submission → auto-absence
-                    cell_value = Messages.STATUS_AUTO_ABSENCE
+                    cell_value = "❌"
                     cell_fill = _RED_FILL
-                elif constraints and str(current_date) in constraints:
-                    day_data = constraints[str(current_date)]
-                    if isinstance(day_data, dict):
-                        if not day_data.get("available", True):
-                            cell_value = Messages.LABEL_UNAVAILABLE
-                            cell_fill = _RED_FILL
-                        else:
-                            shifts = day_data.get("shifts", [])
-                            labels = [_SHIFT_LABELS.get(s, s) for s in shifts]
-                            cell_value = ", ".join(labels) if labels else Messages.LABEL_AVAILABLE
-                            if labels:
-                                cell_fill = _GREEN_FILL
-                    else:
-                        cell_value = str(day_data)
-                elif sub and not constraints:
-                    cell_value = _STATUS_LABELS.get(sub.status.value, sub.status.value)
+                else:
+                    cell_value = "✅"
+                    cell_fill = _GREEN_FILL
 
                 cell = ws.cell(row=row_num, column=col, value=cell_value)
                 _apply_cell_style(cell)
@@ -299,42 +268,18 @@ class ExcelExportService:
             if not user:
                 continue
 
-            # Count shifts from constraints
-            shift_count = 0
-            constraints: dict | None = None
-            if sub.constraints:
-                if isinstance(sub.constraints, str):
-                    try:
-                        constraints = json.loads(sub.constraints)
-                    except (json.JSONDecodeError, TypeError):
-                        constraints = None
-                elif isinstance(sub.constraints, dict):
-                    constraints = sub.constraints
-
-            if constraints:
-                for day_key, day_data in constraints.items():
-                    if isinstance(day_data, dict) and day_data.get("available", True):
-                        shifts = day_data.get("shifts", [])
-                        shift_count += len(shifts)
-
-            deviation = shift_count - threshold
-            if deviation < 0:
-                # Only show guards below threshold
-                deviation_text = f"{abs(deviation)}-"
-                row_data = [
-                    user.full_name,
-                    user.phone_number or "",
-                    str(shift_count),
-                    str(threshold),
-                    deviation_text,
-                ]
-                for col, value in enumerate(row_data, 1):
-                    cell = ws.cell(row=row_num, column=col, value=value)
-                    _apply_cell_style(cell)
-                    if col == 5:
-                        cell.fill = _RED_FILL
-                row_num += 1
-
+            # Show all submissions
+            row_data = [
+                user.full_name,
+                user.phone_number or "",
+                "✅",
+                str(threshold),
+                "-",
+            ]
+            for col, value in enumerate(row_data, 1):
+                cell = ws.cell(row=row_num, column=col, value=value)
+                _apply_cell_style(cell)
+            row_num += 1
         # Also show guards with no submission
         sub_user_ids = {s.user_id for s in submissions}
         for user in active_users:
@@ -342,7 +287,7 @@ class ExcelExportService:
                 row_data = [
                     user.full_name,
                     user.phone_number or "",
-                    "0",
+                    "❌",
                     str(threshold),
                     f"{threshold}-",
                 ]

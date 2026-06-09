@@ -159,6 +159,11 @@ def _convert_guard_request(
         day_date = week_start + timedelta(days=d.day_index)
         shifts: list[ShiftWindowInput] = []
         for s in d.shifts:
+            # Skip shifts with empty from_hour or to_hour (guard didn't fill hours)
+            if not s.from_hour or not s.from_hour.strip():
+                continue
+            if not s.to_hour or not s.to_hour.strip():
+                continue
             shifts.append(
                 ShiftWindowInput(
                     shift_type=s.shift_type,

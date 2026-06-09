@@ -4,7 +4,6 @@ Services package — business logic layer.
 
 from app.services.admin_service import AdminService
 from app.services.auth_service import AuthService
-from app.services.deviation_service import DeviationService
 from app.services.event_service import EventService
 from app.services.excel_export_service import ExcelExportService
 from app.services.settings_service import SettingsService
@@ -15,7 +14,6 @@ from app.services.week_service import WeekService
 __all__ = [
     "AdminService",
     "AuthService",
-    "DeviationService",
     "EventService",
     "ExcelExportService",
     "SettingsService",
