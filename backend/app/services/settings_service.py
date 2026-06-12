@@ -13,7 +13,6 @@ logger = logging.getLogger("ilutzim")
 
 # Default settings keys and their types
 SETTINGS_DEFAULTS: dict[str, Any] = {
-    "telegram_bot_token": "",
     "notifications_enabled": True,
     "shift_default_morning": "07:00-16:30",
     "shift_default_afternoon": "15:00-23:00",
@@ -82,13 +81,11 @@ class SettingsService:
         return SETTINGS_DEFAULTS.get(key)
 
     async def get_effective_bot_token(self) -> str:
-        """Active Telegram bot token: the DB value if set, else env fallback.
+        """Active Telegram bot token, sourced exclusively from the environment.
 
-        Lets the admin change the token live (auth paths read this per-request).
+        The token is an env var only (TELEGRAM_BOT_TOKEN) — it is never stored in
+        or read from the DB. Async kept for a stable call signature in auth paths.
         """
-        db_val = await self._settings_repo.get("telegram_bot_token")
-        if db_val:
-            return str(db_val)
         from app.config import get_settings
         return get_settings().TELEGRAM_BOT_TOKEN or ""
 

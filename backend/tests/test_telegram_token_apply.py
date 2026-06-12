@@ -1,11 +1,11 @@
-"""Tests for live Telegram bot-token apply.
+"""Tests for the env-only Telegram bot token.
 
-POST /admin/settings/telegram/apply validates the token via getMe BEFORE
-touching the running bot, persists it, then hot-restarts the bot. An invalid
-token must leave the running bot (and the stored value) untouched.
+The token is sourced exclusively from the TELEGRAM_BOT_TOKEN environment
+variable. It is never stored in or read from the DB, and there is no admin
+endpoint to change it live.
 """
 
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from fastapi import FastAPI
@@ -24,64 +24,33 @@ def _make_app(svc):
     return app
 
 
-def _fake_bot(username="my_bot", get_me_error=None):
-    bot = MagicMock()
-    bot.session.close = AsyncMock()
-    if get_me_error is not None:
-        bot.get_me = AsyncMock(side_effect=get_me_error)
-    else:
-        bot.get_me = AsyncMock(return_value=MagicMock(username=username))
-    return bot
-
-
-def test_valid_token_persists_and_restarts():
+def test_no_telegram_apply_endpoint():
+    """The live token-apply route must no longer exist (env-only token)."""
     svc = AsyncMock()
     client = TestClient(_make_app(svc))
-
-    with patch("aiogram.Bot", return_value=_fake_bot("safra_bot")), \
-         patch("app.bot.restart_bot_with_token", new=AsyncMock()) as restart:
-        resp = client.post("/admin/settings/telegram/apply", json={"token": "123:abc"})
-
-    assert resp.status_code == 200
-    assert resp.json() == {"ok": True, "bot_username": "safra_bot"}
-    svc.update_settings.assert_awaited_once()
-    restart.assert_awaited_once_with("123:abc")
-
-
-def test_invalid_token_leaves_running_bot_untouched():
-    svc = AsyncMock()
-    client = TestClient(_make_app(svc))
-
-    with patch("aiogram.Bot", return_value=_fake_bot(get_me_error=Exception("Unauthorized"))), \
-         patch("app.bot.restart_bot_with_token", new=AsyncMock()) as restart:
-        resp = client.post("/admin/settings/telegram/apply", json={"token": "bad"})
-
-    assert resp.status_code == 400
-    svc.update_settings.assert_not_awaited()
-    restart.assert_not_awaited()
-
-
-def test_empty_token_rejected():
-    svc = AsyncMock()
-    client = TestClient(_make_app(svc))
-    resp = client.post("/admin/settings/telegram/apply", json={"token": "  "})
-    assert resp.status_code == 400
+    resp = client.post("/admin/settings/telegram/apply", json={"token": "123:abc"})
+    assert resp.status_code in (404, 405)
 
 
 @pytest.mark.asyncio
-async def test_effective_token_prefers_db():
+async def test_effective_token_comes_from_env(monkeypatch):
     repo = AsyncMock()
-    repo.get.return_value = "db-token"
-    assert await SettingsService(repo).get_effective_bot_token() == "db-token"
-
-
-@pytest.mark.asyncio
-async def test_effective_token_falls_back_to_env(monkeypatch):
-    repo = AsyncMock()
-    repo.get.return_value = None
     import app.config
 
     monkeypatch.setattr(
         app.config, "get_settings", lambda: MagicMock(TELEGRAM_BOT_TOKEN="env-token")
     )
     assert await SettingsService(repo).get_effective_bot_token() == "env-token"
+    # The token never touches the DB.
+    repo.get.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_effective_token_empty_when_env_unset(monkeypatch):
+    repo = AsyncMock()
+    import app.config
+
+    monkeypatch.setattr(
+        app.config, "get_settings", lambda: MagicMock(TELEGRAM_BOT_TOKEN="")
+    )
+    assert await SettingsService(repo).get_effective_bot_token() == ""

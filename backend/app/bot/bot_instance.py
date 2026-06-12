@@ -27,19 +27,3 @@ def get_bot() -> Bot:
         )
         logger.info("Telegram Bot instance created")
     return _bot
-
-
-async def rebuild_bot(token: str) -> Bot:
-    """Close the existing Bot (if any) and create a new one with ``token``.
-
-    Used to apply a new bot token live without restarting the server.
-    """
-    global _bot
-    if _bot is not None:
-        try:
-            await _bot.session.close()
-        except Exception:  # pragma: no cover - best-effort cleanup
-            logger.warning("Failed closing old bot session", exc_info=True)
-    _bot = Bot(token=token, default=DefaultBotProperties(parse_mode="HTML"))
-    logger.info("Telegram Bot instance rebuilt")
-    return _bot
