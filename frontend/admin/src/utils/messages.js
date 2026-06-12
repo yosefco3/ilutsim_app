@@ -129,6 +129,10 @@ export default {
       shift_default_morning: 'ברירת מחדל — בוקר',
       shift_default_afternoon: 'ברירת מחדל — ערב',
       shift_default_night: 'ברירת מחדל — לילה',
+      min_shifts_per_guard: 'מינימום משמרות למאבטח',
+      min_nights: 'מינימום לילות',
+      min_evenings: 'מינימום ערבים',
+      max_consecutive_days: 'מקסימום ימים רצוף',
     },
   },
   export: {

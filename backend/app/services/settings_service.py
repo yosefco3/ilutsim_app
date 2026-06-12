@@ -22,6 +22,11 @@ SETTINGS_DEFAULTS: dict[str, Any] = {
     "shift_default_morning": "07:00-16:30",
     "shift_default_afternoon": "15:00-23:00",
     "shift_default_night": "23:00-07:00",
+    # Constraint-rule thresholds — surfaced to the guard form as soft warnings.
+    "min_shifts_per_guard": 5,
+    "min_nights": 2,
+    "min_evenings": 2,
+    "max_consecutive_days": 6,
 }
 
 

@@ -39,6 +39,21 @@ async def test_get_settings_returns_one_item_per_default_key():
 
 
 @pytest.mark.asyncio
+async def test_constraint_rule_thresholds_present_with_defaults():
+    """The constraint-rule thresholds are exposed at their defaults."""
+    repo = AsyncMock()
+    repo.get_all_settings.return_value = []
+
+    svc = SettingsService(repo)
+    items = {i.key: i.value for i in await svc.get_settings()}
+
+    assert items["min_shifts_per_guard"] == "5"
+    assert items["min_nights"] == "2"
+    assert items["min_evenings"] == "2"
+    assert items["max_consecutive_days"] == "6"
+
+
+@pytest.mark.asyncio
 async def test_db_row_overrides_default():
     """A DB row's value/description override the default for that key."""
     repo = AsyncMock()
