@@ -60,9 +60,10 @@ _YELLOW_FILL = PatternFill(
 _GREEN_FILL = PatternFill(
     start_color="C6EFCE", end_color="C6EFCE", fill_type="solid"
 )
-# Neutral light fill for an available day where this period was not chosen
+# Orange fill for an available day where this particular period was not chosen
+# (distinct from the solid red of a fully-unavailable day).
 _EMPTY_FILL = PatternFill(
-    start_color="F2F2F2", end_color="F2F2F2", fill_type="solid"
+    start_color="FFC000", end_color="FFC000", fill_type="solid"
 )
 
 # Three daily shift periods, in display order, with their own accent colour
