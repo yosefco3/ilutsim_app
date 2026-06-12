@@ -28,10 +28,17 @@ def _make_user(user_id=None, full_name="Test Guard", phone="0501234567"):
 
 
 def _make_week(week_id=None, week_start=None):
+    # Mirror the real ScheduleWeek attributes (start_date/end_date) so the
+    # mock catches attribute-name drift. week_start/week_end kept as aliases
+    # for the legacy weekly-grid export which still reads them.
+    start = week_start or date(2025, 1, 5)  # Sunday
+    end = start + timedelta(days=6)
     week = MagicMock()
     week.id = week_id or uuid.uuid4()
-    week.week_start = week_start or date(2025, 1, 5)  # Sunday
-    week.week_end = week.week_start + timedelta(days=6)
+    week.start_date = start
+    week.end_date = end
+    week.week_start = start
+    week.week_end = end
     week.status = WeekStatus.OPEN
     return week
 
@@ -74,6 +81,7 @@ def _create_service(
     sub_repo.get_submissions_for_week.return_value = submissions or []
     sub_repo.get_by_user.return_value = submissions or []
     event_repo.get_by_user.return_value = events or []
+    event_repo.get_events_for_user.return_value = events or []
     user_repo.get_by_id.return_value = users[0] if users else None
 
     return ExcelExportService(

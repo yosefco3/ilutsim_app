@@ -128,6 +128,16 @@ class SubmissionRepository(BaseRepository[WeeklySubmission]):
         result = await self.session.execute(stmt)
         return list(result.scalars().all())
 
+    async def get_by_user(
+        self, user_id: uuid.UUID
+    ) -> list[WeeklySubmission]:
+        """Get all submissions made by a user, eagerly loaded."""
+        stmt = self._eager_load_query().where(
+            WeeklySubmission.user_id == user_id
+        )
+        result = await self.session.execute(stmt)
+        return list(result.scalars().all())
+
     async def get_missing_submissions(
         self, week_id: uuid.UUID, active_user_ids: list[uuid.UUID]
     ) -> list[uuid.UUID]:

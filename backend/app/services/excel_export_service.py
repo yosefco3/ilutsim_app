@@ -130,7 +130,7 @@ class ExcelExportService:
         if week is None:
             raise ValueError(f"Week {week_id} not found")
 
-        submissions = await self._submission_repo.get_by_week(week_id)
+        submissions = await self._submission_repo.get_submissions_for_week(week_id)
         active_users = await self._user_repo.get_active_users()
 
         wb = openpyxl.Workbook()
@@ -139,7 +139,7 @@ class ExcelExportService:
 
         # Title
         title_text = Messages.EXCEL_REPORT_TITLE.format(
-            start=str(week.week_start), end=str(week.week_end)
+            start=str(week.start_date), end=str(week.end_date)
         )
         ws.merge_cells(start_row=1, start_column=1, end_row=1, end_column=8)
         title_cell = ws.cell(row=1, column=1, value=title_text)
@@ -158,12 +158,13 @@ class ExcelExportService:
         event_map: dict[uuid.UUID, list[tuple[date, date, str]]] = {}
         if self._event_repo:
             for user in active_users:
-                events = await self._event_repo.get_by_user(user.id)
+                events = await self._event_repo.get_events_for_user(
+                    user.id, week.start_date, week.end_date
+                )
                 for ev in events:
-                    if ev.end_date >= week.week_start and ev.start_date <= week.week_end:
-                        event_map.setdefault(user.id, []).append(
-                            (ev.start_date, ev.end_date, _EVENT_LABELS.get(ev.event_type, ev.event_type))
-                        )
+                    event_map.setdefault(user.id, []).append(
+                        (ev.start_date, ev.end_date, _EVENT_LABELS.get(ev.event_type, ev.event_type))
+                    )
 
         # Data rows
         row_num = 4
@@ -177,7 +178,7 @@ class ExcelExportService:
 
             for day_offset in range(7):
                 col = day_offset + 2
-                current_date = week.week_start + timedelta(days=day_offset)
+                current_date = week.start_date + timedelta(days=day_offset)
 
                 cell_value = ""
                 cell_fill = None
@@ -246,7 +247,7 @@ class ExcelExportService:
         n_cols = 10  # name + phone + 7 days + notes
 
         # Title
-        title_text = f"אילוצים שהוגשו — {week.week_start} עד {week.week_end}"
+        title_text = f"אילוצים שהוגשו — {week.start_date} עד {week.end_date}"
         ws.merge_cells(start_row=1, start_column=1, end_row=1, end_column=n_cols)
         title_cell = ws.cell(row=1, column=1, value=title_text)
         title_cell.font = _TITLE_FONT
@@ -296,7 +297,7 @@ class ExcelExportService:
 
             for day_offset in range(7):
                 col = day_offset + 3
-                current_date = week.week_start + timedelta(days=day_offset)
+                current_date = week.start_date + timedelta(days=day_offset)
                 ds = status_by_date.get(current_date)
 
                 if ds is None or not ds.is_available:
@@ -367,7 +368,7 @@ class ExcelExportService:
         if week is None:
             raise ValueError(f"Week {week_id} not found")
 
-        submissions = await self._submission_repo.get_by_week(week_id)
+        submissions = await self._submission_repo.get_submissions_for_week(week_id)
         active_users = await self._user_repo.get_active_users()
         user_map = {u.id: u for u in active_users}
 
@@ -380,7 +381,7 @@ class ExcelExportService:
         ws.title = "Deviations"
 
         # Title
-        title_text = f"דוח חריגות — {week.week_start} עד {week.week_end}"
+        title_text = f"דוח חריגות — {week.start_date} עד {week.end_date}"
         ws.merge_cells(start_row=1, start_column=1, end_row=1, end_column=5)
         title_cell = ws.cell(row=1, column=1, value=title_text)
         title_cell.font = _TITLE_FONT
@@ -467,10 +468,9 @@ class ExcelExportService:
         # Get events for this user in the date range
         events: list[Any] = []
         if self._event_repo:
-            all_events = await self._event_repo.get_by_user(user_id)
-            for ev in all_events:
-                if ev.end_date >= start_date and ev.start_date <= end_date:
-                    events.append(ev)
+            events = await self._event_repo.get_events_for_user(
+                user_id, start_date, end_date
+            )
 
         wb = openpyxl.Workbook()
         ws = wb.active
