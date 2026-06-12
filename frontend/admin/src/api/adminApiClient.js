@@ -169,6 +169,21 @@ export function fetchSubmissionsDetailed(weekId) {
   return request(`/admin/weeks/${weekId}/submissions/detailed`);
 }
 
+// All submissions for one guard (admin-only). Used to pre-fill the
+// admin constraints form with an existing submission.
+export function fetchUserSubmissions(userId) {
+  return request(`/submissions/user/${userId}`);
+}
+
+// Admin fills a guard's weekly constraints on their behalf (e.g. guards
+// without Telegram). Works regardless of the week's status.
+export function createGuardSubmission(payload) {
+  return request('/submissions/admin', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+}
+
 // ──── Notifications ────
 export function sendNotifications(weekId) {
   return request(`/admin/notifications/week/${weekId}`, { method: 'POST' });

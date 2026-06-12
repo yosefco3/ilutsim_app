@@ -1,0 +1,101 @@
+/**
+ * Admin constraints page — lets an admin fill a guard's weekly availability on
+ * their behalf (for guards without Telegram). Reuses the guard-side DayRow +
+ * guard.css for the per-day shift toggles.
+ */
+import { useParams, useNavigate } from 'react-router-dom';
+import { useAdminConstraints } from '../hooks/useAdminConstraints';
+import DayRow from '../components/guard/DayRow';
+import { messages as guardMessages } from '../utils/guardMessages';
+import messages from '../utils/messages';
+import '../styles/guard.css';
+
+export default function AdminConstraintsPage() {
+  const { guardId } = useParams();
+  const navigate = useNavigate();
+  const {
+    loading,
+    error,
+    saving,
+    saved,
+    guard,
+    weeks,
+    selectedWeekId,
+    setSelectedWeekId,
+    days,
+    notes,
+    setNotes,
+    toggleShift,
+    setShiftHours,
+    submit,
+  } = useAdminConstraints(guardId);
+
+  if (loading) return <div className="loading">{messages.common.loading}</div>;
+
+  const guardName = guard ? `${guard.first_name} ${guard.last_name}` : '';
+
+  return (
+    <div className="page">
+      <div className="page-header">
+        <h2>
+          {messages.guards.fillConstraints} — {guardName}
+        </h2>
+        <button className="btn btn-secondary" onClick={() => navigate('/guards')}>
+          {messages.common.back || 'חזרה'}
+        </button>
+      </div>
+
+      {error && <div className="error-banner">{error}</div>}
+      {saved && <div className="success-banner">{messages.common.success}</div>}
+
+      {/* Week selector */}
+      <div className="form-group">
+        <label>שבוע</label>
+        <select
+          value={selectedWeekId}
+          onChange={(e) => setSelectedWeekId(e.target.value)}
+        >
+          {weeks.map((w) => (
+            <option key={w.id} value={w.id}>
+              {w.week_label}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      {/* Day rows (guard-scoped CSS) */}
+      <div className="guard-layout">
+        <div className="days-list">
+          {days.map((day) => (
+            <DayRow
+              key={day.day_index}
+              day={day}
+              disabled={false}
+              onToggleShift={toggleShift}
+              onSetShiftHours={setShiftHours}
+            />
+          ))}
+        </div>
+
+        <div className="notes-section">
+          <label className="notes-label">{guardMessages.LABEL_NOTES}</label>
+          <textarea
+            className="notes-input"
+            value={notes}
+            placeholder={guardMessages.LABEL_NOTES_PLACEHOLDER}
+            onChange={(e) => setNotes(e.target.value)}
+          />
+        </div>
+
+        <button
+          type="button"
+          className="submit-btn"
+          disabled={saving || !selectedWeekId}
+          onClick={submit}
+        >
+          {saving ? messages.common.loading : guardMessages.LABEL_SUBMIT}
+        </button>
+      </div>
+    </div>
+  );
+}

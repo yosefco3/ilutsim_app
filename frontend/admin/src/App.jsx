@@ -5,6 +5,7 @@ import LoginPage from './pages/LoginPage';
 import SubmitPage from './pages/SubmitPage';
 import SuccessPage from './pages/SuccessPage';
 import GuardsPage from './pages/GuardsPage';
+import AdminConstraintsPage from './pages/AdminConstraintsPage';
 import WeeksPage from './pages/WeeksPage';
 import EventsPage from './pages/EventsPage';
 import SubmissionsPage from './pages/SubmissionsPage';
@@ -34,6 +35,7 @@ function AppContent() {
           <Route path="/submit" element={<SubmitPage />} />
           <Route path="/submit/success" element={<SuccessPage />} />
           <Route path="/guards" element={<ProtectedRoute><GuardsPage /></ProtectedRoute>} />
+          <Route path="/guards/:guardId/constraints" element={<ProtectedRoute><AdminConstraintsPage /></ProtectedRoute>} />
           <Route path="/weeks" element={<ProtectedRoute><WeeksPage /></ProtectedRoute>} />
           <Route path="/events" element={<ProtectedRoute><EventsPage /></ProtectedRoute>} />
           <Route path="/submissions/:weekId" element={<ProtectedRoute><SubmissionDetailPage /></ProtectedRoute>} />
