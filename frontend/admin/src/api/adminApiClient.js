@@ -202,8 +202,11 @@ export function fetchSettings() {
   return request('/admin/settings');
 }
 
-export function updateSettings(data) {
-  return request('/admin/settings', { method: 'PUT', body: JSON.stringify(data) });
+export function updateSettings(settingsMap) {
+  return request('/admin/settings', {
+    method: 'PUT',
+    body: JSON.stringify({ settings: settingsMap }),
+  });
 }
 
 // ──── Admins ────
