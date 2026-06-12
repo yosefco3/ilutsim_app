@@ -5,11 +5,47 @@
  * Default hours come from the server (editable by admin via /admin/settings),
  * falling back to SHIFT_DEFAULTS from guardMessages.js.
  */
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { get, post } from "../api/guardApiClient.js";
-import { SHIFT_DEFAULTS } from "../utils/guardMessages.js";
+import { SHIFT_DEFAULTS, messages } from "../utils/guardMessages.js";
 
 const SHIFT_TYPES = ["morning", "afternoon", "night"];
+
+/** Longest run of consecutive day_index values that have any active shift. */
+function maxConsecutiveActiveDays(days) {
+  const sorted = [...days].sort((a, b) => a.day_index - b.day_index);
+  let run = 0;
+  let max = 0;
+  for (const d of sorted) {
+    const any = SHIFT_TYPES.some((t) => d.shifts?.[t]?.active);
+    run = any ? run + 1 : 0;
+    if (run > max) max = run;
+  }
+  return max;
+}
+
+/** Build soft (non-blocking) warnings from the form state vs. admin thresholds. */
+export function computeWarnings(days, rules) {
+  if (!rules) return [];
+  const out = [];
+  const total = days.reduce(
+    (n, d) => n + SHIFT_TYPES.filter((t) => d.shifts?.[t]?.active).length,
+    0,
+  );
+  const nights = days.filter((d) => d.shifts?.night?.active).length;
+  const evenings = days.filter((d) => d.shifts?.afternoon?.active).length; // afternoon = ערב
+  const consec = maxConsecutiveActiveDays(days);
+
+  if (total < rules.min_shifts_per_guard)
+    out.push(messages.WARN_MIN_SHIFTS(total, rules.min_shifts_per_guard));
+  if (nights < rules.min_nights)
+    out.push(messages.WARN_MIN_NIGHTS(nights, rules.min_nights));
+  if (evenings < rules.min_evenings)
+    out.push(messages.WARN_MIN_EVENINGS(evenings, rules.min_evenings));
+  if (consec > rules.max_consecutive_days)
+    out.push(messages.WARN_MAX_CONSEC(consec, rules.max_consecutive_days));
+  return out;
+}
 
 /** Create a default shifts map using supplied defaults. */
 function makeShifts(defaults) {
@@ -31,9 +67,18 @@ export function useSubmission(initData) {
   const [days, setDays] = useState([]);
   const [notes, setNotes] = useState("");
   const [shiftDefaults, setShiftDefaults] = useState(SHIFT_DEFAULTS);
+  const [rules, setRules] = useState(null);
 
   // ── Dev mode flag ──────────────────────────────────────────────
   const isDevMode = initData === "__DEV_MODE__";
+
+  // ── Fetch constraint-rule thresholds (soft warnings; silent on failure) ──
+  useEffect(() => {
+    if (!initData) return;
+    get("/submissions/constraint-rules", initData).then(({ data, error: err }) => {
+      if (!err && data) setRules(data);
+    });
+  }, [initData]);
 
   // ── Fetch shift defaults from server (fallback to static SHIFT_DEFAULTS)
   useEffect(() => {
@@ -240,6 +285,9 @@ export function useSubmission(initData) {
   const canSubmit = weekStatus === "open";
   const isLocked = !canSubmit;
 
+  // Soft warnings — informational only, never block submit.
+  const warnings = useMemo(() => computeWarnings(days, rules), [days, rules]);
+
   return {
     loading,
     error,
@@ -250,6 +298,7 @@ export function useSubmission(initData) {
     weekStatus,
     canSubmit,
     isLocked,
+    warnings,
     toggleShift,
     setShiftHours,
     submit,

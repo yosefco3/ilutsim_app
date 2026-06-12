@@ -57,6 +57,20 @@
   margin-bottom: 12px;
 }
 
+.guard-layout .warning-banner {
+  background: #fff3e0;
+  color: #8a5300;
+  padding: 10px 14px;
+  border-radius: var(--radius);
+  margin: 12px 0;
+  font-size: 0.95rem;
+}
+
+.guard-layout .warning-banner ul {
+  margin: 6px 0 0;
+  padding-inline-start: 20px;
+}
+
 /* ── Loading ─────────────────────────────────────────────── */
 .guard-layout .loading {
   text-align: center;

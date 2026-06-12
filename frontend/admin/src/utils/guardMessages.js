@@ -35,6 +35,13 @@ export const messages = {
   ERR_GENERIC: "אירעה שגיאה — נסה שוב",
   ERR_NETWORK: "בעיית תקשורת — בדוק את החיבור לאינטרנט",
   SUCCESS_SUBMITTED: "האילוצים נשלחו בהצלחה!",
+
+  // Soft, non-blocking constraint-rule warnings (submission is still allowed).
+  WARN_TITLE: "שים לב — ייתכן שחרגת מהכללים (ניתן לשלוח בכל זאת):",
+  WARN_MIN_SHIFTS: (got, min) => `סימנת ${got} משמרות בלבד; המומלץ לפחות ${min}.`,
+  WARN_MIN_NIGHTS: (got, min) => `סימנת ${got} לילות; המומלץ לפחות ${min}.`,
+  WARN_MIN_EVENINGS: (got, min) => `סימנת ${got} ערבים; המומלץ לפחות ${min}.`,
+  WARN_MAX_CONSEC: (got, max) => `סימנת ${got} ימים רצופים; המקסימום הוא ${max}.`,
 };
 
 /** Day names in order Sunday–Saturday */

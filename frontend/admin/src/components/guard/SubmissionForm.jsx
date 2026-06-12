@@ -21,6 +21,7 @@ export default function SubmissionForm() {
     setNotes,
     weekStatus,
     isLocked,
+    warnings = [],
     toggleShift,
     setShiftHours,
     submit,
@@ -81,6 +82,18 @@ export default function SubmissionForm() {
           onChange={(e) => setNotes(e.target.value)}
         />
       </div>
+
+      {/* Soft constraint-rule warnings — informational, submit still allowed */}
+      {!isLocked && warnings.length > 0 && (
+        <div className="warning-banner">
+          <strong>{messages.WARN_TITLE}</strong>
+          <ul>
+            {warnings.map((w, i) => (
+              <li key={i}>{w}</li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       {/* Submit button */}
       {!isLocked && (
