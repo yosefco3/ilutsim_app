@@ -27,6 +27,13 @@ SETTINGS_DEFAULTS: dict[str, Any] = {
     "min_nights": 2,
     "min_evenings": 2,
     "max_consecutive_days": 6,
+    # Week auto open/lock — placeholder config only (no scheduler wired yet).
+    "auto_open_enabled": False,
+    "auto_open_weekday": "thursday",
+    "auto_open_time": "08:00",
+    "auto_lock_enabled": False,
+    "auto_lock_weekday": "saturday",
+    "auto_lock_time": "20:00",
 }
 
 

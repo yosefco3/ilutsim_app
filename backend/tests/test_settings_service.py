@@ -54,6 +54,21 @@ async def test_constraint_rule_thresholds_present_with_defaults():
 
 
 @pytest.mark.asyncio
+async def test_auto_open_lock_placeholders_present():
+    """The cron placeholder fields exist (bools serialized as 'true'/'false')."""
+    repo = AsyncMock()
+    repo.get_all_settings.return_value = []
+
+    svc = SettingsService(repo)
+    items = {i.key: i.value for i in await svc.get_settings()}
+
+    assert items["auto_open_enabled"] == "false"
+    assert items["auto_open_weekday"] == "thursday"
+    assert items["auto_lock_enabled"] == "false"
+    assert items["auto_lock_time"] == "20:00"
+
+
+@pytest.mark.asyncio
 async def test_db_row_overrides_default():
     """A DB row's value/description override the default for that key."""
     repo = AsyncMock()

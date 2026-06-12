@@ -133,6 +133,12 @@ export default {
       min_nights: 'מינימום לילות',
       min_evenings: 'מינימום ערבים',
       max_consecutive_days: 'מקסימום ימים רצוף',
+      auto_open_enabled: 'פתיחה אוטומטית פעילה',
+      auto_open_weekday: 'יום פתיחה אוטומטית',
+      auto_open_time: 'שעת פתיחה אוטומטית',
+      auto_lock_enabled: 'נעילה אוטומטית פעילה',
+      auto_lock_weekday: 'יום נעילה אוטומטית',
+      auto_lock_time: 'שעת נעילה אוטומטית',
     },
     telegram: {
       section: 'בוט טלגרם',
