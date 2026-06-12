@@ -201,6 +201,26 @@ async def get_shift_defaults(
     return result
 
 
+@router.get("/constraint-rules")
+async def get_constraint_rules(
+    settings_service: SettingsService = Depends(get_settings_service),
+):
+    """Constraint-rule thresholds (admin-editable via /admin/settings).
+
+    Used by the guard submission form to show soft (non-blocking) warnings.
+    Public endpoint — no auth required.
+    """
+    keys = ("min_shifts_per_guard", "min_nights", "min_evenings", "max_consecutive_days")
+    result = {}
+    for key in keys:
+        raw = await settings_service.get_setting(key)
+        try:
+            result[key] = int(raw)
+        except (TypeError, ValueError):
+            result[key] = 0
+    return result
+
+
 @router.get(
     "/week/{week_id}",
     response_model=list[SubmissionResponse],
