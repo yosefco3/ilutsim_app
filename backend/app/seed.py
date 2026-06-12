@@ -52,7 +52,11 @@ async def seed_admin() -> None:
 
 
 async def ensure_initial_week(session) -> None:
-    """Ensure at least one week exists. If DB is empty, create current week as locked."""
+    """Ensure at least one week exists. If DB is empty, create upcoming week as closed.
+
+    A new week always starts CLOSED — the admin opens it manually (which sends
+    the open notification to guards).
+    """
     repo = ScheduleWeekRepository(session)
     count = await repo.count()
     if count == 0:
@@ -61,12 +65,12 @@ async def ensure_initial_week(session) -> None:
         week = ScheduleWeek(
             start_date=start,
             end_date=end,
-            status=WeekStatus.LOCKED,
+            status=WeekStatus.CLOSED,
         )
         session.add(week)
         await session.commit()
         logger.info(
-            "Created initial week %s – %s (locked)",
+            "Created initial week %s – %s (closed)",
             start.isoformat(),
             end.isoformat(),
         )

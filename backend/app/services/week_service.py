@@ -40,7 +40,7 @@ class WeekService:
         week = ScheduleWeek(
             start_date=data.start_date,
             end_date=data.end_date,
-            status=WeekStatus.OPEN,
+            status=WeekStatus.CLOSED,
         )
         created = await self._week_repo.save(week)
         logger.info(f"Week created: id={created.id}")

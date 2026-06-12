@@ -117,3 +117,30 @@ class TestInvalidTransitions:
         with pytest.raises(AppBaseException) as exc_info:
             await svc.change_week_status(week.id, WeekStatus.LOCKED)
         assert exc_info.value.status_code == 400
+
+
+# ── create_week default status ─────────────────────────────────────────────
+
+
+@pytest.mark.asyncio
+async def test_create_week_defaults_to_closed():
+    """A newly created week starts CLOSED — admin opens it manually."""
+    from app.schemas.week_schemas import WeekCreate
+
+    saved = _mock_week(WeekStatus.CLOSED)
+    mock_repo = AsyncMock()
+
+    async def _save(week):
+        # Echo back the status the service set on the model.
+        saved.status = week.status
+        saved.start_date = week.start_date
+        saved.end_date = week.end_date
+        return saved
+
+    mock_repo.save = AsyncMock(side_effect=_save)
+    svc = WeekService(mock_repo)
+
+    result = await svc.create_week(
+        WeekCreate(start_date=date(2025, 6, 1), end_date=date(2025, 6, 7))
+    )
+    assert result.status == WeekStatus.CLOSED
