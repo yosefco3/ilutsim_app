@@ -4,10 +4,8 @@ AdminWeeksController — admin endpoints for schedule week management.
 
 import logging
 import uuid
-from datetime import date
-from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.constants import WeekStatus
 from app.dependencies import get_submission_service, get_week_service, require_admin_role
@@ -48,20 +46,6 @@ async def create_week(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e),
         )
-
-
-@router.post("/open", response_model=WeekResponse, status_code=status.HTTP_201_CREATED)
-async def open_week(
-    start_date: Optional[date] = Query(
-        None, description="Sunday for the new week (default: upcoming Sunday)"
-    ),
-    week_service: WeekService = Depends(get_week_service),
-):
-    """Open the next schedule week. Refuses 409 if a week is already open."""
-    try:
-        return await week_service.open_new_week(start_date)
-    except AppBaseException as exc:
-        raise HTTPException(status_code=exc.status_code, detail=exc.message)
 
 
 @router.get("/{week_id}", response_model=WeekResponse)

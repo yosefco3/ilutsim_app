@@ -130,7 +130,8 @@ export function unlockWeek(id) {
   return updateWeekStatus(id, 'open');
 }
 
-export function openNewWeek(id) {
+// Open a week for submission (closed/locked → open). Sends guard notifications.
+export function openWeek(id) {
   return request(`/admin/weeks/${id}/open`, { method: 'POST' });
 }
 

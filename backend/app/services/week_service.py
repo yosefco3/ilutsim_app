@@ -8,7 +8,7 @@ from datetime import date
 from typing import Optional
 
 from app.constants import WeekStatus
-from app.exceptions import ConflictException, InvalidTransitionException, WeekLockedException
+from app.exceptions import InvalidTransitionException, WeekLockedException
 from app.models.schedule_week import ScheduleWeek
 from app.repositories.schedule_week_repository import ScheduleWeekRepository
 from app.schemas.week_schemas import DayItem, WeekCreate, WeekResponse, WeekWithDaysResponse
@@ -162,41 +162,6 @@ class WeekService:
         if week.status != WeekStatus.OPEN:
             logger.warning(f"Week {week_id} is {week.status}, not open")
             raise WeekLockedException()
-
-    async def open_new_week(self, start_date: Optional[date] = None) -> WeekResponse:
-        """Open the next schedule week.
-
-        Refuses if a week is already open (returns 409 Conflict).
-        If *start_date* is None the upcoming Sunday is used.
-        """
-        existing = await self._week_repo.get_current_open_week()
-        if existing is not None:
-            raise ConflictException("שבוע פתוח כבר קיים — יש לסגור אותו קודם")
-
-        if start_date is None:
-            start_date = date.today()
-        ws, we = week_range(start_date)
-
-        week = ScheduleWeek(start_date=ws, end_date=we, status=WeekStatus.OPEN)
-        created = await self._week_repo.save(week)
-        logger.info(f"New week opened automatically: {ws} – {we} (id={created.id})")
-
-        # Notify all guards via Telegram
-        try:
-            from app.bot.notifications import notify_week_opened
-
-            telegram_ids: list[int] = []
-            if self._user_repo is not None:
-                users = await self._user_repo.get_all()
-                telegram_ids = [u.telegram_id for u in users if u.telegram_id]
-
-            if telegram_ids:
-                notified = await notify_week_opened(ws, we, telegram_ids)
-                logger.info(f"Week-open notification delivered to {notified}/{len(telegram_ids)} guards")
-        except Exception as exc:
-            logger.warning(f"Failed to send week-open notifications: {exc}")
-
-        return WeekResponse.model_validate(created)
 
     async def delete_week(self, week_id: uuid.UUID) -> None:
         """Delete a schedule week by ID.

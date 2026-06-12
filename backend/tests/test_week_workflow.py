@@ -22,7 +22,6 @@ from app.dependencies import (
     get_week_service,
     require_admin_role,
 )
-from app.exceptions import InvalidTransitionException
 from app.messages import Messages
 
 
@@ -163,18 +162,16 @@ class TestFullWeekLifecycle:
             None,                          # Step 8: submission blocked (locked)
         ]
 
-        # open_new_week returns
-        week_svc.open_new_week.side_effect = [
-            _week_obj(week_id),                                              # Step 2
-            _week_obj(next_week_id, start_date="2026-06-15", end_date="2026-06-21"),  # Step 10
-        ]
-
         sub_svc.create_submission.return_value = _submission_obj(sub_id, week_id)
 
-        # lock + publish transitions (controller calls change_week_status)
+        # All status transitions go through change_week_status (controller):
+        #   open (step 3) → locked (step 6) → published (step 9) → open next (step 10)
         week_svc.change_week_status.side_effect = [
+            _week_obj(week_id, WeekStatus.OPEN),
             _week_obj(week_id, WeekStatus.LOCKED),
             _week_obj(week_id, WeekStatus.PUBLISHED),
+            _week_obj(next_week_id, WeekStatus.OPEN,
+                      start_date="2026-06-15", end_date="2026-06-21"),
         ]
 
         app = _setup_app(week_svc, sub_svc)
@@ -192,9 +189,9 @@ class TestFullWeekLifecycle:
         )
         assert resp.status_code == 403
 
-        # Step 3: Admin opens a new week
-        resp = client.post("/admin/weeks/open", headers=_admin_headers())
-        assert resp.status_code == 201
+        # Step 3: Admin opens the (closed) week via {id}/open → change_week_status
+        resp = client.post(f"/admin/weeks/{week_id}/open", headers=_admin_headers())
+        assert resp.status_code == 200
         week = resp.json()
         assert week["status"] == "open"
 
@@ -239,9 +236,9 @@ class TestFullWeekLifecycle:
         )
         assert resp.status_code == 200
 
-        # Step 10: Admin opens NEXT week — different dates
-        resp = client.post("/admin/weeks/open", headers=_admin_headers())
-        assert resp.status_code == 201
+        # Step 10: Admin opens the NEXT (auto-created closed) week — different dates
+        resp = client.post(f"/admin/weeks/{next_week_id}/open", headers=_admin_headers())
+        assert resp.status_code == 200
         new_week = resp.json()
         assert new_week["start_date"] != week["start_date"]
 
@@ -253,21 +250,6 @@ class TestFullWeekLifecycle:
 # ===========================================================================
 class TestInvalidTransitions:
     """Guards against illegal state changes."""
-
-    def test_cannot_open_when_week_already_open(self):
-        week_svc = AsyncMock()
-        # Controller catches AppBaseException subclasses, not ValueError
-        week_svc.open_new_week.side_effect = InvalidTransitionException(
-            "A week is already open"
-        )
-
-        app = _setup_app(week_svc)
-        client = TestClient(app)
-
-        resp = client.post("/admin/weeks/open", headers=_admin_headers())
-        assert resp.status_code == 400
-
-        app.dependency_overrides.clear()
 
     def test_cannot_publish_from_open(self):
         """Publishing directly from open (skip locked) should fail."""
@@ -313,20 +295,24 @@ class TestInvalidTransitions:
 # 3. Notification sent on open
 # ===========================================================================
 class TestNotificationOnOpen:
-    """Verify that opening a week triggers Telegram notifications."""
+    """Verify that opening a week goes through change_week_status (which notifies)."""
 
-    def test_notification_sent_on_open(self):
+    def test_open_goes_through_change_status(self):
+        week_id = uuid.uuid4()
         week_svc = AsyncMock()
-        week_svc.open_new_week.return_value = _week_obj()
+        week_svc.change_week_status.return_value = _week_obj(week_id, WeekStatus.OPEN)
 
         app = _setup_app(week_svc)
         client = TestClient(app)
 
-        resp = client.post("/admin/weeks/open", headers=_admin_headers())
+        resp = client.post(f"/admin/weeks/{week_id}/open", headers=_admin_headers())
 
-        assert resp.status_code == 201
-        # open_new_week was called → the service mock recorded the call
-        week_svc.open_new_week.assert_called_once()
+        assert resp.status_code == 200
+        # The {id}/open route transitions via change_week_status, which is where
+        # notify_week_opened is dispatched for all guards with a telegram_id.
+        week_svc.change_week_status.assert_called_once()
+        args = week_svc.change_week_status.call_args.args
+        assert args[1] == WeekStatus.OPEN
 
         app.dependency_overrides.clear()
 
