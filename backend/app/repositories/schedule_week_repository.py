@@ -34,6 +34,22 @@ class ScheduleWeekRepository(BaseRepository[ScheduleWeek]):
         result = await self.session.execute(stmt)
         return result.scalar_one_or_none()
 
+    async def get_current_or_upcoming_week(self, today: date) -> ScheduleWeek | None:
+        """Return the nearest week that has not ended yet (``end_date >= today``).
+
+        Ordered by start_date ascending, so the *current* cycle wins over a
+        later already-created week. Used to show the guard the week they most
+        recently acted on (e.g. a locked current week) rather than next week.
+        """
+        stmt = (
+            select(self.model_class)
+            .where(ScheduleWeek.end_date >= today)
+            .order_by(ScheduleWeek.start_date.asc())
+            .limit(1)
+        )
+        result = await self.session.execute(stmt)
+        return result.scalar_one_or_none()
+
     async def get_latest_week(self) -> ScheduleWeek | None:
         """Return the most recent week (by start_date), regardless of status."""
         stmt = (

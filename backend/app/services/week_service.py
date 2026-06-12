@@ -130,12 +130,19 @@ class WeekService:
     async def get_relevant_week_with_days(self) -> Optional[WeekWithDaysResponse]:
         """Return the week guards should see, with its status.
 
-        Prefers the open week (where guards can actually submit); when none is
-        open it falls back to the latest week (the upcoming closed/locked week,
-        or a freshly published one) so the UI can show a status banner instead
-        of a generic "no week" error. Returns ``None`` only when no week exists.
+        Resolution order (most relevant to the guard first):
+          1. The OPEN week — where they can actually submit.
+          2. The nearest week that has not ended yet (``end_date >= today``),
+             so a locked *current* week wins over an already-created next week.
+          3. The latest week overall — when every week has ended, show the most
+             recent one (typically a published schedule).
+
+        Returns ``None`` only when no week exists at all. The UI uses the status
+        to render the right banner instead of a generic "no week" error.
         """
         week = await self._week_repo.get_current_open_week()
+        if week is None:
+            week = await self._week_repo.get_current_or_upcoming_week(date.today())
         if week is None:
             week = await self._week_repo.get_latest_week()
         if week is None:

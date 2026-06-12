@@ -98,7 +98,7 @@ class TestGetCurrentWeek:
 
 
 class TestGetRelevantWeekWithDaysService:
-    """Service-level logic for get_relevant_week_with_days (real fallback)."""
+    """Service-level logic for get_relevant_week_with_days (3-tier fallback)."""
 
     def _week(self, status):
         from datetime import date as _date
@@ -109,10 +109,11 @@ class TestGetRelevantWeekWithDaysService:
         w.end_date = _date(2025, 1, 12)
         return w
 
-    async def _run(self, open_week, latest_week):
+    async def _run(self, open_week, current_or_upcoming, latest_week):
         from app.services.week_service import WeekService
         repo = AsyncMock()
         repo.get_current_open_week.return_value = open_week
+        repo.get_current_or_upcoming_week.return_value = current_or_upcoming
         repo.get_latest_week.return_value = latest_week
         svc = WeekService(repo)
         return await svc.get_relevant_week_with_days()
@@ -121,19 +122,31 @@ class TestGetRelevantWeekWithDaysService:
         import asyncio
         from app.constants import WeekStatus
         open_w = self._week(WeekStatus.OPEN)
-        latest = self._week(WeekStatus.CLOSED)
-        result = asyncio.run(self._run(open_w, latest))
+        result = asyncio.run(self._run(open_w, self._week(WeekStatus.CLOSED),
+                                       self._week(WeekStatus.PUBLISHED)))
         assert result.status == WeekStatus.OPEN
         assert len(result.days) == 7
 
-    def test_falls_back_to_latest_when_no_open(self):
+    def test_prefers_current_locked_over_next_closed(self):
+        """No open week: the nearest not-yet-ended week (locked current) wins
+        over the latest week (next-week closed)."""
         import asyncio
         from app.constants import WeekStatus
-        latest = self._week(WeekStatus.LOCKED)
-        result = asyncio.run(self._run(None, latest))
+        current_locked = self._week(WeekStatus.LOCKED)
+        latest_next_closed = self._week(WeekStatus.CLOSED)
+        result = asyncio.run(self._run(None, current_locked, latest_next_closed))
         assert result.status == WeekStatus.LOCKED
+
+    def test_falls_back_to_latest_when_all_ended(self):
+        """When nothing is open and nothing is still current, show the latest
+        (typically a published) week."""
+        import asyncio
+        from app.constants import WeekStatus
+        latest_published = self._week(WeekStatus.PUBLISHED)
+        result = asyncio.run(self._run(None, None, latest_published))
+        assert result.status == WeekStatus.PUBLISHED
 
     def test_none_when_no_weeks(self):
         import asyncio
-        result = asyncio.run(self._run(None, None))
+        result = asyncio.run(self._run(None, None, None))
         assert result is None

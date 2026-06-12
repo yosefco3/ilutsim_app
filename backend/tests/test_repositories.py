@@ -201,6 +201,35 @@ class TestScheduleWeekRepository:
         updated = await repo.update_status(week.id, WeekStatus.LOCKED)
         assert updated.status == WeekStatus.LOCKED
 
+    @pytest.mark.asyncio
+    async def test_get_current_or_upcoming_week(self, db_session: AsyncSession):
+        repo = ScheduleWeekRepository(db_session)
+        # An already-ended week, the current (locked) week, and next week (closed).
+        await repo.create(
+            start_date=date(2026, 5, 25), end_date=date(2026, 5, 31),
+            status=WeekStatus.PUBLISHED,
+        )
+        await repo.create(
+            start_date=date(2026, 6, 1), end_date=date(2026, 6, 7),
+            status=WeekStatus.LOCKED,
+        )
+        await repo.create(
+            start_date=date(2026, 6, 8), end_date=date(2026, 6, 14),
+            status=WeekStatus.CLOSED,
+        )
+        await db_session.commit()
+
+        # As of mid-current-week, the nearest not-yet-ended week is the locked one,
+        # not next week's closed one.
+        week = await repo.get_current_or_upcoming_week(date(2026, 6, 3))
+        assert week is not None
+        assert week.status == WeekStatus.LOCKED
+        assert week.start_date == date(2026, 6, 1)
+
+        # Once everything has ended, there is no current/upcoming week.
+        none_week = await repo.get_current_or_upcoming_week(date(2027, 1, 1))
+        assert none_week is None
+
 
 # ──────────────── ScheduleEventRepository ────────────────
 
