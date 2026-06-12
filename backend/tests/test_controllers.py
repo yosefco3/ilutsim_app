@@ -23,6 +23,7 @@ from app.controllers.admin_admins_controller import router as admin_admins_route
 from app.dependencies import (
     get_auth_service,
     get_current_admin,
+    get_settings_service,
     get_submission_service,
     get_user_service,
     get_week_service,
@@ -75,8 +76,12 @@ class TestAuthController:
         mock_svc = AsyncMock()
         mock_svc.login_with_telegram.return_value = {"token": "jwt-token-abc"}
 
+        mock_settings = AsyncMock()
+        mock_settings.get_effective_bot_token.return_value = "test-token"
+
         app = _make_app()
         app.dependency_overrides[get_auth_service] = lambda: mock_svc
+        app.dependency_overrides[get_settings_service] = lambda: mock_settings
         client = TestClient(app)
 
         resp = client.post(

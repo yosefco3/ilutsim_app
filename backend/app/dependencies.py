@@ -170,6 +170,7 @@ async def get_current_user(
     x_telegram_init_data: str = Header(None, alias="X-Telegram-Init-Data"),
     settings: Settings = Depends(get_settings),
     user_repo: UserRepository = Depends(_get_user_repo),
+    settings_service: SettingsService = Depends(get_settings_service),
 ) -> User:
     """Authenticate a guard via Telegram WebApp init data header.
 
@@ -187,7 +188,7 @@ async def get_current_user(
             )
         return users[0]
 
-    bot_token = settings.TELEGRAM_BOT_TOKEN
+    bot_token = await settings_service.get_effective_bot_token()
     if not bot_token:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

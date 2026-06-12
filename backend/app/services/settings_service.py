@@ -78,6 +78,17 @@ class SettingsService:
             return value
         return SETTINGS_DEFAULTS.get(key)
 
+    async def get_effective_bot_token(self) -> str:
+        """Active Telegram bot token: the DB value if set, else env fallback.
+
+        Lets the admin change the token live (auth paths read this per-request).
+        """
+        db_val = await self._settings_repo.get("telegram_bot_token")
+        if db_val:
+            return str(db_val)
+        from app.config import get_settings
+        return get_settings().TELEGRAM_BOT_TOKEN or ""
+
     async def ensure_defaults(self) -> None:
         """Seed any missing default settings on startup."""
         for key, default in SETTINGS_DEFAULTS.items():

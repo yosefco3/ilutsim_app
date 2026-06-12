@@ -6,10 +6,10 @@ import logging
 
 from fastapi import APIRouter, Depends, HTTPException, status
 
-from app.config import Settings, get_settings
-from app.dependencies import get_auth_service, get_current_admin
+from app.dependencies import get_auth_service, get_current_admin, get_settings_service
 from app.schemas.user_schemas import LoginRequest
 from app.services.auth_service import AuthService
+from app.services.settings_service import SettingsService
 from app.utils.telegram_auth import get_telegram_user_id
 
 logger = logging.getLogger("ilutzim")
@@ -21,7 +21,7 @@ router = APIRouter(prefix="/auth", tags=["Auth"])
 async def telegram_login(
     body: LoginRequest,
     auth_service: AuthService = Depends(get_auth_service),
-    settings: Settings = Depends(get_settings),
+    settings_service: SettingsService = Depends(get_settings_service),
 ):
     """
     Authenticate a user via Telegram WebApp init_data.
@@ -34,7 +34,7 @@ async def telegram_login(
             detail="init_data is required",
         )
 
-    bot_token = settings.TELEGRAM_BOT_TOKEN
+    bot_token = await settings_service.get_effective_bot_token()
     if not bot_token:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

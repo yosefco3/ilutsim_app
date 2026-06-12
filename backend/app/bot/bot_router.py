@@ -8,7 +8,7 @@ from aiogram import Dispatcher
 from aiogram.enums import ParseMode
 from aiogram.client.default import DefaultBotProperties
 
-from app.bot.bot_instance import get_bot
+from app.bot.bot_instance import get_bot, rebuild_bot
 from app.bot.core import router as main_router
 from app.bot.middlewares.auth import AuthMiddleware
 
@@ -59,3 +59,11 @@ async def stop_bot():
         await _dispatcher.stop_polling()
         _dispatcher = None
         logger.info("Telegram bot polling stopped")
+
+
+async def restart_bot_with_token(token: str):
+    """Apply a new bot token live: stop polling, rebuild the Bot, restart polling."""
+    await stop_bot()
+    await rebuild_bot(token)
+    await start_bot()
+    logger.info("Telegram bot restarted with a new token")

@@ -103,12 +103,15 @@ class TestDevModeGating:
 
         settings = type("S", (), {"ENVIRONMENT": "production", "TELEGRAM_BOT_TOKEN": BOT_TOKEN})()
         user_repo = AsyncMock()
+        settings_service = AsyncMock()
+        settings_service.get_effective_bot_token.return_value = BOT_TOKEN
 
         with pytest.raises(HTTPException) as exc:
             await get_current_user(
                 x_telegram_init_data="__DEV_MODE__",
                 settings=settings,
                 user_repo=user_repo,
+                settings_service=settings_service,
             )
         assert exc.value.status_code == 401
         user_repo.get_active_users.assert_not_called()
