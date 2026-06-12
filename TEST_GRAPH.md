@@ -1,6 +1,6 @@
 # Test Coverage Graph
 
-_נוצר אוטומטית ב: 2026-06-12 18:24_
+_נוצר אוטומטית ב: 2026-06-12 21:07_
 **טרנד:**  →0%
 
 ## סיכום
@@ -11,10 +11,10 @@ _נוצר אוטומטית ב: 2026-06-12 18:24_
 | קבצי קוד מכוסים בטסטים | 37 |
 | קבצי קוד ללא טסטים | 20 |
 | אחוז כיסוי | 64% →0% |
-| טסטים עוברים (backend) | 18 ✅ |
+| טסטים עוברים (backend) | 23 ✅ |
 | טסטים נכשלים (backend) | 0 ❌ |
 | קבצי קוד frontend (ממופים) | 10 |
-| טסטים עוברים (frontend) | 15 ✅ |
+| טסטים עוברים (frontend) | 20 ✅ |
 | טסטים נכשלים (frontend) | 0 ❌ |
 
 ## Backend: מיפוי קוד → טסטים
@@ -34,7 +34,7 @@ _נוצר אוטומטית ב: 2026-06-12 18:24_
 | `controllers/admin_notifications_controller.py` | `test_controllers.py` | 🟢 PASS |
 | `controllers/admin_users_controller.py` | `test_controllers.py` | 🟢 PASS |
 | `controllers/admin_weeks_controller.py` | `test_controllers.py` | 🟢 PASS |
-| `controllers/admin_weeks_controller.py` | `test_open_week.py` | 🟢 PASS |
+| `controllers/admin_weeks_controller.py` | `test_open_week.py` | ⚪ ⚠️ NOT RUN |
 | `controllers/auth_controller.py` | `test_controllers.py` | 🟢 PASS |
 | `controllers/submission_controller.py` | `test_controllers.py` | 🟢 PASS |
 | `controllers/submission_controller.py` | `test_submission_guard.py` | 🟢 PASS |
@@ -65,7 +65,7 @@ _נוצר אוטומטית ב: 2026-06-12 18:24_
 | `services/excel_export_service.py` | `test_export.py` | 🟢 PASS |
 | `services/week_service.py` | `test_current_week.py` | 🟢 PASS |
 | `services/week_service.py` | `test_notification_on_open.py` | 🟢 PASS |
-| `services/week_service.py` | `test_open_week.py` | 🟢 PASS |
+| `services/week_service.py` | `test_open_week.py` | ⚪ ⚠️ NOT RUN |
 | `services/week_service.py` | `test_status_transitions.py` | 🟢 PASS |
 | `services/week_service.py` | `test_submission_guard.py` | 🟢 PASS |
 | `services/week_service.py` | `test_week_workflow.py` | 🟢 PASS |
@@ -115,8 +115,11 @@ _נוצר אוטומטית ב: 2026-06-12 18:24_
 
 | קובץ טסט | מכסה קבצי קוד | סטטוס |
 |---|---|---|
+| `test_admin_submission.py` | 1 | 🟢 |
+| `test_auto_rotate.py` | 1 | 🟢 |
 | `test_bot.py` | 4 | 🟢 |
 | `test_config.py` | 1 | 🟢 |
+| `test_constraint_rules_endpoint.py` | 1 | 🟢 |
 | `test_controllers.py` | 7 | 🟢 |
 | `test_current_week.py` | 2 | 🟢 |
 | `test_date_utils.py` | 1 | 🟢 |
@@ -126,11 +129,13 @@ _נוצר אוטומטית ב: 2026-06-12 18:24_
 | `test_initial_seed.py` | 1 | 🟢 |
 | `test_models.py` | 8 | 🟢 |
 | `test_notification_on_open.py` | 2 | 🟢 |
-| `test_open_week.py` | 2 | 🟢 |
 | `test_repositories.py` | 6 | 🟢 |
 | `test_schemas.py` | 5 | 🟢 |
+| `test_settings_service.py` | 1 | 🟢 |
 | `test_status_transitions.py` | 2 | 🟢 |
 | `test_submission_guard.py` | 2 | 🟢 |
 | `test_submission_notification.py` | 1 | 🟢 |
 | `test_submission_persistence.py` | 1 | 🟢 |
+| `test_telegram_auth.py` | 1 | 🟢 |
+| `test_telegram_token_apply.py` | 1 | 🟢 |
 | `test_week_workflow.py` | 2 | 🟢 |

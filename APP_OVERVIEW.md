@@ -3,7 +3,7 @@
 > **⚠️ מסמך זה מתעדכן בכל שינוי משמעותי באפליקציה.**
 > אם הנך מוסיף/משנה פיצ'ר — עדכן גם כאן.
 >
-> עדכון אחרון: 12 יוני 2026 (👤 מילוי אילוצים ע"י אדמין עבור מאבטח ללא טלגרם — `POST /submissions/admin` + דף `/guards/:id/constraints`)
+> עדכון אחרון: 12 יוני 2026 (⚙️ תיקון דף ההגדרות + ספי כללי-אילוץ + אזהרות רכות בטופס + החלה חיה של טוקן טלגרם)
 
 ---
 
@@ -67,6 +67,9 @@
 - ניתן להגיש **רק כאשר השבוע במצב `open`**
 - אם השבוע **נעול** (`locked`) או **סגור** (`closed`) — מוצגת הודעת נעילה
 - הגשה כפולה מעדכנת את ההגשה הקיימת (upsert)
+- **אזהרות רכות (לא חוסמות)** — אם הזמינות שסומנה חורגת מספי הכללים (מינימום משמרות/לילות/ערבים,
+  מקסימום ימים רצוף — נקבעים ע"י האדמין בהגדרות), מוצג באנר אזהרה מעל כפתור השליחה. השליחה
+  **עדיין מותרת** — האזהרה אינפורמטיבית בלבד. הספים נמשכים מ-`GET /submissions/constraint-rules`.
 
 ### Telegram Bot — התראות לשומרים
 - **הודעת פתיחת שבוע** — נשלחת לכל השומרים הפעילים כשהאדמין פותח שבוע
@@ -88,7 +91,7 @@
 | **הגשות**        | צפייה בהגשות שומרים לפי שבוע                     |
 | **אירועים**       | ניהול אירועים (חופשה, מילואים, הכשרה)            |
 | **ייצוא**        | ייצוא נתונים ל-Excel                            |
-| **הגדרות**       | הגדרות מערכת (הודעות, פרמטרים)                   |
+| **הגדרות**       | הגדרות מערכת — ברירות-מחדל למשמרות, ספי כללי-אילוץ, שדות placeholder לאוטומציה, וטוקן טלגרם עם החלה חיה |
 
 ### ניהול שומרים
 
@@ -259,6 +262,7 @@ ilutzim_app/
 | POST   | `/api/submissions`        | הגשת/עדכון זמינות         |
 | GET    | `/api/submissions/admin`  | **אדמין** קורא הגשה קיימת של מאבטח לשבוע (לעריכה) |
 | POST   | `/api/submissions/admin`  | **אדמין** ממלא אילוצים עבור מאבטח (override_lock) |
+| GET    | `/api/submissions/constraint-rules` | ספי כללי-אילוץ לטופס (אזהרות רכות) — ציבורי |
 
 ### אדמין
 | Method | Path                      | תיאור                     |
@@ -275,7 +279,9 @@ ilutzim_app/
 | GET    | `/admin/events`           | רשימת אירועים              |
 | GET    | `/admin/submissions`      | רשימת הגשות               |
 | GET    | `/admin/export/constraints/{week_id}` | ייצוא אילוצים ל-Excel |
-| GET    | `/admin/settings`         | הגדרות מערכת               |
+| GET    | `/admin/settings`         | הגדרות מערכת (רשימת `{key,value,description}`) |
+| PUT    | `/admin/settings`         | עדכון הגדרות (`{settings:{k:v}}`)  |
+| POST   | `/admin/settings/telegram/apply` | החלה חיה של טוקן טלגרם (ולידציית `getMe` + אתחול בוט) |
 
 ---
 
@@ -283,6 +289,7 @@ ilutzim_app/
 
 | תאריך     | שינוי                                                |
 |-----------|-------------------------------------------------------|
+| 12 יוני 2026 | ⚙️ **דף הגדרות + ספי כללי-אילוץ + אזהרות רכות + טוקן טלגרם חי** (ספריית פרומפטים `settings_and_constraint_rules`, 9 צעדים): (1) **דף ההגדרות היה שבור מקצה-לקצה** — ה-service קרא למתודות repo לא-קיימות (`get_all`/`upsert`/`get_by_key`) ולשדות (`row.key/value`), הקונטרולר קרא ל-`get_settings`/`update_settings` שלא היו, והסכמה הייתה הגדרה-בודדת → כל `/admin/settings` נתן 500. יושר לחוזה `[{key,value,description}]` + `PUT {settings:{k:v}}`; הפרונט (`useSettings` עם draft, `SettingsPage` עם תוויות עברית + שמירה) שוקם. (2) **ספי כללי-אילוץ** (`min_shifts_per_guard=5`, `min_nights=2`, `min_evenings=2`, `max_consecutive_days=6`) נוספו כהגדרות + `GET /submissions/constraint-rules`. (3) **אזהרות רכות בטופס השומר** — `useSubmission.computeWarnings` מציג באנר כשהזמינות חורגת מהספים (afternoon=ערב, ימים-רצוף=רצף זמינות), אך **לא חוסם** שליחה. (4) **טוקן טלגרם עם החלה חיה** — `get_effective_bot_token` (DB→env) שנתיבי ה-auth קוראים per-request (תוקף מיידי), ו-`POST /admin/settings/telegram/apply` שמאמת `getMe` לפני שנוגע בבוט, שומר ל-DB ומאתחל את הבוט (`rebuild_bot`+`restart_bot_with_token`) בלי restart לשרת; כפתור "החל טוקן" בדף. (5) שדות placeholder `auto_open_*`/`auto_lock_*` (ללא scheduler). כיסוי: backend 201 טסטים, frontend 110 טסטים. |
 | 12 יוני 2026 | 🐛 **תיקון טעינת-מראש + עריכת הגשה ע"י אדמין** — (1) טעינת ההגשה הקיימת לדף מילוי-האדמין הסתמכה על `GET /submissions/user/{id}` שקרא ל-`get_submissions_for_user` **שלא קיים** ב-`SubmissionService` (500), כך שהטעינה-מראש נבלעה בשקט ואף פעם לא עבדה. נוסף `GET /submissions/admin?user_id=&week_id=` (`require_admin_role`) המחזיר את ההגשה היחידה דרך `get_submission` הקיים — כעת האדמין רואה ועורך את מה שכבר הוגש, **כולל הגשות טלגרם של המאבטח עצמו**. (2) הובהר ש-`override_lock` מאפשר עריכה בכל סטטוס — בורר השבוע מציג את הסטטוס (פתוח/סגור/נעול/פורסם) עם רמז שניתן לערוך תמיד. API client: `fetchUserSubmissions`→`fetchGuardSubmission`. (3) לאחר שמירה מוצלחת הדף נותן `alert` אישור וחוזר ל-`/guards` (לפני כן באנר ההצלחה היה ממוקם מחוץ ל-`.guard-layout` ולכן לא היה מעוצב/נראה — נראה כאילו "לא נסגר"); באנר השגיאה הועבר פנימה. כיסוי: backend 187, frontend 95. |
 | 12 יוני 2026 | 👤 **מילוי אילוצים ע"י אדמין עבור מאבטח ללא טלגרם** — לא לכל מאבטח יש טלגרם, אז נוסף לאדמין כלי למלא עבורו. כפתור "מילוי אילוצים" בכל שורה ב-`GuardTable` → דף חדש `/guards/:guardId/constraints` (`AdminConstraintsPage` + hook `useAdminConstraints`, ממחזר את `DayRow`+`guard.css` מצד השומר): בורר שבוע, 7 ימים × 3 משמרות עם שעות, טעינת-מראש של הגשה קיימת, שמירה. Backend: `POST /submissions/admin` (`require_admin_role`, `AdminSubmissionRequest`=שומר+`user_id`) ממחזר את `_convert_guard_request` וקורא ל-`create_submission(override_lock=True)` — מותר בכל סטטוס שבוע. API client: `createGuardSubmission`+`fetchUserSubmissions`. כיסוי: backend 185 (+`test_admin_submission.py`), frontend 94 (+`useAdminConstraints.test.js`). |
 | 12 יוני 2026 | 🔒 **הקשחת אבטחה (3 חורים)**: (1) **דלת אחורית `__DEV_MODE__`** ב-`get_current_user` הייתה ללא תנאי — כל זר יכול היה להגיש אילוצים בהתחזות לשומר הראשון; כעת מגודרת ל-`ENVIRONMENT == "dev"` בלבד, אחרת 401. (2) `GET /submissions/week/{id}` ו-`/user/{id}` היו **ללא אימות** וחשפו את כל זמינות השומרים (כולל IDOR); נוסף `Depends(require_admin_role)`. (3) `validate_telegram_web_app_data` לא בדק `auth_date` — `init_data` שנדלף היה תקף לנצח; נוספה תפוגת 24 שעות (`DEFAULT_MAX_AGE_SECONDS`). נוסף `test_telegram_auth.py` + טסטי חסימה ב-`test_submission_guard.py`. כיסוי backend: 183. |
