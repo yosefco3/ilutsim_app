@@ -85,6 +85,49 @@ class TestAdminSubmission:
         assert str(created.user_id) == str(user_id)
         app.dependency_overrides.clear()
 
+    def test_admin_get_submission_returns_existing(self):
+        """GET /submissions/admin returns the guard's existing submission for edit."""
+        week_id = uuid.uuid4()
+        user_id = uuid.uuid4()
+
+        sub_svc = AsyncMock()
+        sub_svc.get_submission.return_value = _fake_submission(week_id, user_id)
+        week_svc = AsyncMock()
+
+        app = _make_app()
+        app.dependency_overrides[get_week_service] = lambda: week_svc
+        app.dependency_overrides[get_submission_service] = lambda: sub_svc
+        app.dependency_overrides[require_admin_role] = lambda: None
+        client = TestClient(app)
+
+        resp = client.get(
+            "/submissions/admin",
+            params={"user_id": str(user_id), "week_id": str(week_id)},
+        )
+        assert resp.status_code == 200, f"Got {resp.status_code}: {resp.text}"
+        sub_svc.get_submission.assert_awaited_once()
+        app.dependency_overrides.clear()
+
+    def test_admin_get_submission_null_when_none(self):
+        """GET /submissions/admin returns null when the guard hasn't submitted."""
+        sub_svc = AsyncMock()
+        sub_svc.get_submission.return_value = None
+        week_svc = AsyncMock()
+
+        app = _make_app()
+        app.dependency_overrides[get_week_service] = lambda: week_svc
+        app.dependency_overrides[get_submission_service] = lambda: sub_svc
+        app.dependency_overrides[require_admin_role] = lambda: None
+        client = TestClient(app)
+
+        resp = client.get(
+            "/submissions/admin",
+            params={"user_id": str(uuid.uuid4()), "week_id": str(uuid.uuid4())},
+        )
+        assert resp.status_code == 200
+        assert resp.json() is None
+        app.dependency_overrides.clear()
+
     def test_admin_submit_requires_user_id(self):
         """Missing user_id → 422 validation error."""
         week_id = uuid.uuid4()

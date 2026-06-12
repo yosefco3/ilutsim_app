@@ -118,6 +118,25 @@ async def submit_schedule(
     return submission
 
 
+@router.get(
+    "/admin",
+    response_model=SubmissionResponse | None,
+    dependencies=[Depends(require_admin_role)],
+)
+async def admin_get_submission(
+    user_id: uuid.UUID = Query(..., description="Guard user ID"),
+    week_id: uuid.UUID = Query(..., description="Week ID"),
+    submission_service: SubmissionService = Depends(get_submission_service),
+):
+    """Return a guard's existing submission for a week, for an admin to view and
+    edit. **Admin only.** Returns ``null`` if the guard hasn't submitted yet.
+
+    Works for any guard — including those who submitted via Telegram — so the
+    admin can load and edit whatever constraints already exist.
+    """
+    return await submission_service.get_submission(user_id, week_id)
+
+
 @router.post(
     "/admin",
     response_model=SubmissionResponse,

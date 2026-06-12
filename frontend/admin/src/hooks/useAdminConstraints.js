@@ -8,7 +8,7 @@ import { useState, useEffect, useCallback } from 'react';
 import {
   fetchGuard,
   fetchWeeks,
-  fetchUserSubmissions,
+  fetchGuardSubmission,
   createGuardSubmission,
 } from '../api/adminApiClient';
 import { get as guardGet } from '../api/guardApiClient.js';
@@ -127,10 +127,7 @@ export function useAdminConstraints(guardId) {
 
       let existing = null;
       try {
-        const subs = await fetchUserSubmissions(guardId);
-        existing = (subs || []).find(
-          (s) => String(s.week_id) === String(selectedWeekId),
-        );
+        existing = await fetchGuardSubmission(guardId, selectedWeekId);
       } catch {
         // No prior submission / fetch error → start blank.
       }

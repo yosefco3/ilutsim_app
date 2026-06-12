@@ -96,7 +96,7 @@
 - **עריכת שומר** — עדכון פרטים אישיים ותפקיד
 - **השבתת שומר** — שינוי סטטוס ללא-פעיל (soft delete). השומר לא יקבל התראות
 - **מחיקה קבועה** — מחיקת שומר לצמיתות ממסד הנתונים (hard delete)
-- **מילוי אילוצים ע"י האדמין** — כפתור "מילוי אילוצים" בכל שורה פותח דף `/guards/:id/constraints` שבו האדמין בוחר שבוע, מסמן משמרות (בוקר/ערב/לילה) עם שעות לכל יום, ושומר עבור מאבטח **שאין לו טלגרם**. נשמר כ-`weekly_submission` רגיל; מותר בכל סטטוס שבוע (`override_lock=True`). הגשה קיימת נטענת מראש לעריכה.
+- **מילוי / עריכת אילוצים ע"י האדמין** — כפתור "מילוי אילוצים" בכל שורה פותח דף `/guards/:id/constraints` שבו האדמין בוחר שבוע, מסמן משמרות (בוקר/ערב/לילה) עם שעות לכל יום, ושומר עבור **כל** מאבטח (גם כזה שאין לו טלגרם). נשמר כ-`weekly_submission` רגיל; מותר בכל סטטוס שבוע (`override_lock=True` — כולל **נעול** ו**פורסם**, בורר השבוע מציג את הסטטוס). **הגשה קיימת נטענת מראש לעריכה** — כולל הגשות שהמאבטח עצמו שלח דרך טלגרם — דרך `GET /submissions/admin?user_id=&week_id=`.
 
 ### תפקידי שומרים
 
@@ -257,6 +257,7 @@ ilutzim_app/
 |--------|---------------------------|---------------------------|
 | GET    | `/api/submissions/current`| קבלת הגשה נוכחית          |
 | POST   | `/api/submissions`        | הגשת/עדכון זמינות         |
+| GET    | `/api/submissions/admin`  | **אדמין** קורא הגשה קיימת של מאבטח לשבוע (לעריכה) |
 | POST   | `/api/submissions/admin`  | **אדמין** ממלא אילוצים עבור מאבטח (override_lock) |
 
 ### אדמין
@@ -282,6 +283,7 @@ ilutzim_app/
 
 | תאריך     | שינוי                                                |
 |-----------|-------------------------------------------------------|
+| 12 יוני 2026 | 🐛 **תיקון טעינת-מראש + עריכת הגשה ע"י אדמין** — (1) טעינת ההגשה הקיימת לדף מילוי-האדמין הסתמכה על `GET /submissions/user/{id}` שקרא ל-`get_submissions_for_user` **שלא קיים** ב-`SubmissionService` (500), כך שהטעינה-מראש נבלעה בשקט ואף פעם לא עבדה. נוסף `GET /submissions/admin?user_id=&week_id=` (`require_admin_role`) המחזיר את ההגשה היחידה דרך `get_submission` הקיים — כעת האדמין רואה ועורך את מה שכבר הוגש, **כולל הגשות טלגרם של המאבטח עצמו**. (2) הובהר ש-`override_lock` מאפשר עריכה בכל סטטוס — בורר השבוע מציג את הסטטוס (פתוח/סגור/נעול/פורסם) עם רמז שניתן לערוך תמיד. API client: `fetchUserSubmissions`→`fetchGuardSubmission`. כיסוי: backend 187, frontend 95. |
 | 12 יוני 2026 | 👤 **מילוי אילוצים ע"י אדמין עבור מאבטח ללא טלגרם** — לא לכל מאבטח יש טלגרם, אז נוסף לאדמין כלי למלא עבורו. כפתור "מילוי אילוצים" בכל שורה ב-`GuardTable` → דף חדש `/guards/:guardId/constraints` (`AdminConstraintsPage` + hook `useAdminConstraints`, ממחזר את `DayRow`+`guard.css` מצד השומר): בורר שבוע, 7 ימים × 3 משמרות עם שעות, טעינת-מראש של הגשה קיימת, שמירה. Backend: `POST /submissions/admin` (`require_admin_role`, `AdminSubmissionRequest`=שומר+`user_id`) ממחזר את `_convert_guard_request` וקורא ל-`create_submission(override_lock=True)` — מותר בכל סטטוס שבוע. API client: `createGuardSubmission`+`fetchUserSubmissions`. כיסוי: backend 185 (+`test_admin_submission.py`), frontend 94 (+`useAdminConstraints.test.js`). |
 | 12 יוני 2026 | 🔒 **הקשחת אבטחה (3 חורים)**: (1) **דלת אחורית `__DEV_MODE__`** ב-`get_current_user` הייתה ללא תנאי — כל זר יכול היה להגיש אילוצים בהתחזות לשומר הראשון; כעת מגודרת ל-`ENVIRONMENT == "dev"` בלבד, אחרת 401. (2) `GET /submissions/week/{id}` ו-`/user/{id}` היו **ללא אימות** וחשפו את כל זמינות השומרים (כולל IDOR); נוסף `Depends(require_admin_role)`. (3) `validate_telegram_web_app_data` לא בדק `auth_date` — `init_data` שנדלף היה תקף לנצח; נוספה תפוגת 24 שעות (`DEFAULT_MAX_AGE_SECONDS`). נוסף `test_telegram_auth.py` + טסטי חסימה ב-`test_submission_guard.py`. כיסוי backend: 183. |
 | 12 יוני 2026 | 🐛 **תיקון Workflow מחזור חיי שבוע** (ספריית פרומפטים `week_workflow_fixes`, 6 צעדים): (1) כל יצירת שבוע → `closed` (`create_week`/`seed` היו `open`/`locked`); (2) `auto_rotate_weeks` יוצר שבוע קרוב `closed` בלבד לפי טווח (היה `open`), והוסר פרסום-בשקט של שבועות שפגו + באג כפילות מול `_ensure_next_week`; (3) `GET /submissions/current-week` מחזיר את השבוע הרלוונטי גם כשנעול/סגור/פורסם (`get_relevant_week_with_days`, fallback תלת-שלבי: שבוע פתוח → השבוע הנוכחי שטרם הסתיים `get_current_or_upcoming_week` → השבוע האחרון) — השומר רואה באנר מצב מדויק (נעול נוכחי גובר על שבוע-הבא הסגור) במקום "אין שבוע"; (4) שומר חדש בזמן שבוע פתוח מקבל התראת פתיחה עם כפתור + תיקון באג welcome כפול; (5) הוסר נתיב הפתיחה הכפול `POST /admin/weeks/open` — נותר `{id}/open` יחיד; (6) ליטוש UI: הסתרת "מחק" לשבוע שפורסם, הסרת `draft` מת, באדג' `closed` ניטרלי. כיסוי: backend 171, frontend 91. |

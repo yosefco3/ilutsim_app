@@ -10,6 +10,13 @@ import { messages as guardMessages } from '../utils/guardMessages';
 import messages from '../utils/messages';
 import '../styles/guard.css';
 
+const WEEK_STATUS_LABELS = {
+  open: 'פתוח',
+  closed: 'סגור',
+  locked: 'נעול',
+  published: 'פורסם',
+};
+
 export default function AdminConstraintsPage() {
   const { guardId } = useParams();
   const navigate = useNavigate();
@@ -57,10 +64,11 @@ export default function AdminConstraintsPage() {
         >
           {weeks.map((w) => (
             <option key={w.id} value={w.id}>
-              {w.week_label}
+              {w.week_label} ({WEEK_STATUS_LABELS[w.status] || w.status})
             </option>
           ))}
         </select>
+        <p className="hint">ניתן למלא ולערוך אילוצים בכל סטטוס שבוע — כולל נעול ופורסם.</p>
       </div>
 
       {/* Day rows (guard-scoped CSS) */}

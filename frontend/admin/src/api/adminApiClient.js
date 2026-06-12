@@ -169,10 +169,12 @@ export function fetchSubmissionsDetailed(weekId) {
   return request(`/admin/weeks/${weekId}/submissions/detailed`);
 }
 
-// All submissions for one guard (admin-only). Used to pre-fill the
-// admin constraints form with an existing submission.
-export function fetchUserSubmissions(userId) {
-  return request(`/submissions/user/${userId}`);
+// A guard's existing submission for one week (admin-only), or null. Used to
+// pre-fill the admin constraints form so the admin can edit what the guard
+// (or a previous admin) already submitted — including Telegram submissions.
+export function fetchGuardSubmission(userId, weekId) {
+  const query = new URLSearchParams({ user_id: userId, week_id: weekId }).toString();
+  return request(`/submissions/admin?${query}`);
 }
 
 // Admin fills a guard's weekly constraints on their behalf (e.g. guards
