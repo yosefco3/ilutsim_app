@@ -29,6 +29,17 @@ FRONTEND_DIR = REPO_ROOT / "frontend"
 HISTORY_PATH = Path(__file__).resolve().parent / "test_history.json"
 MAX_HISTORY = 50
 
+
+def backend_python() -> str:
+    """Return the Python interpreter that has the backend deps installed.
+
+    The app + pytest live in ``backend/.venv`` — ``sys.executable`` may be a bare
+    system python without them (which silently yields 0 backend results).  Prefer
+    the venv interpreter, fall back to whatever is running this script.
+    """
+    venv_py = BACKEND_DIR / ".venv" / "bin" / "python"
+    return str(venv_py) if venv_py.exists() else sys.executable
+
 # ── Backend mapping ──────────────────────────────────────────
 
 BACKEND_SOURCE_DIRS = [
@@ -185,7 +196,7 @@ def run_backend_tests() -> dict[str, str]:
     results = {}
     try:
         cmd = [
-            sys.executable, "-m", "pytest",
+            backend_python(), "-m", "pytest",
             "--tb=no", "-v", "--no-header",
             str(BACKEND_DIR / "tests"),
         ]
