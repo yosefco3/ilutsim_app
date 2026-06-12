@@ -3,7 +3,7 @@
 > **⚠️ מסמך זה מתעדכן בכל שינוי משמעותי באפליקציה.**
 > אם הנך מוסיף/משנה פיצ'ר — עדכן גם כאן.
 >
-> עדכון אחרון: 12 יוני 2026 (דף הצלחה + התראת טלגרם + דף פירוט הגשות לאדמין)
+> עדכון אחרון: 12 יוני 2026 (🐛 תיקון: הגשות לא שמרו ימים/משמרות + כפתור WebApp בהתראת שבוע חדש + דף הצלחה + התראת טלגרם + דף פירוט הגשות לאדמין)
 
 ---
 
@@ -283,3 +283,6 @@ ilutzim_app/
 | 8 יוני 2026 | ✅ **ריבוי משמרות בטופס ההגשה** — שומר יכול לסמן בוקר+ערב+לילה במקביל (במקום בורר יחיד). צהריים→ערב. הסרת כפתורי אירועים (חופשה/מילואים/רענון). נוסף `GET /submissions/my` + `GuardSubmissionRequest` + `get_current_user` dependency ל-Telegram auth. |
 | 8 יוני 2026 | ✅ **שעות ברירת מחדל למשמרות** — בוקר 07:00-16:30, ערב 15:00-23:00, לילה 23:00-07:00. שעות מוזנות אוטומטית בטופס, השומר יכול לערוך. אדמין יכול לשנות דרך דף ההגדרות (`shift_default_morning/afternoon/night`). נוסף `GET /submissions/shift-defaults`. |
 | 12 יוני 2026 | ✅ **דף הצלחה + התראת הגשה + פירוט הגשות לאדמין** — דף `/submit/success` אחרי הגשה (ללא Navbar); התראת טלגרם `notify_submission_success` נשלחת לאחר הגשה (לא-קריטית, מותנית ב-`telegram_id`); endpoint `GET /admin/weeks/{id}/submissions/detailed` (`WeekSubmissionsDetailed`: submitted/missing/week_label) + `SubmissionDetailPage` + `SubmissionsTable` עם פירוט משמרות נפתח. כיסוי טסטים: backend 160, frontend 78. |
+| 12 יוני 2026 | ✅ **כפתור WebApp בהתראת "שבוע חדש"** — `notify_week_opened` שולח כעת כפתור Telegram WebApp "📅 הגשת אילוצים" (`submit_constraints_kb`) במקום קישור טקסט ל-`/submit`. `send_notification`/`broadcast_notifications` תומכים ב-`reply_markup`. |
+| 12 יוני 2026 | 🐛 **תיקון: מילוי-מראש של הגשה קיימת בטופס** — `useSubmission.js` התאים הגשה קיימת לפי `s.day_index`/`existingDay.shifts`, אבל התשובה בנויה לפי `date`/`shift_windows` (שעות `HH:MM:SS`). עכשיו ממפה יום לפי `date` מול `start_date`, קורא `shift_windows` (`start_time`/`end_time`) וגוזר ל-`HH:MM`. כך שעריכת הגשה קיימת ממלאת שוב את הבחירות הקודמות. נוסף טסט ל-`useSubmission.test.js`. |
+| 12 יוני 2026 | 🐛 **תיקון: הגשות לא נשמרו במלואן** — `SubmissionService.create_submission` התעלם מ-`data.days` ושמר רק את שורת ההגשה (general_notes), כך שהימים/המשמרות/השעות מעולם לא נכתבו ל-DB. עכשיו קורא ל-`upsert_submission` ושומר הכול. בנוסף: `SubmissionResponse.days` ממופה כעת מ-`daily_statuses` (alias) ו-`get_week_submissions_detailed` תוקן מ-`sub.days` ל-`sub.daily_statuses` (שגרם ל-500 ולכך שההגשה לא הופיעה בדף הפירוט). נוסף `test_submission_persistence.py` (טסט אינטגרציה אמיתי). |

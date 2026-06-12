@@ -82,8 +82,8 @@ async def test_notify_week_opened_continues_on_error():
 # ===========================================================================
 @pytest.mark.asyncio
 async def test_notification_message_format():
-    """Message must use DD/MM/YYYY format and include APP_URL."""
-    captured_texts: list[str] = []
+    """Message must use DD/MM/YYYY format and expose a WebApp submit button."""
+    captured: list[dict] = []
 
     with patch("app.bot.notifications.get_bot") as mock_bot_fn, \
          patch("app.config.settings") as mock_settings:
@@ -91,24 +91,26 @@ async def test_notification_message_format():
         mock_bot_fn.return_value = mock_bot
         mock_settings.APP_URL = "https://example.com/app"
 
-        def capture_send(*, chat_id, text):
-            captured_texts.append(text)
-            return asyncio.get_event_loop().create_future().set_result(None) or None
-
-        # Make send_message capture the text
+        # Make send_message capture the text and keyboard
         async def fake_send(**kwargs):
-            captured_texts.append(kwargs["text"])
+            captured.append(kwargs)
 
         mock_bot.send_message = AsyncMock(side_effect=fake_send)
 
         await notify_week_opened(date(2026, 6, 8), date(2026, 6, 14), [111])
 
-    assert len(captured_texts) == 1
-    msg = captured_texts[0]
+    assert len(captured) == 1
+    msg = captured[0]["text"]
     assert "08/06/2026" in msg
     assert "14/06/2026" in msg
-    assert "https://example.com/app" in msg
     assert "שבוע חדש נפתח להגשה" in msg
+    # URL is now exposed through a WebApp button, not the message body
+    assert "https://example.com/app" not in msg
+
+    kb = captured[0]["reply_markup"]
+    button = kb.inline_keyboard[0][0]
+    assert button.text == "📅 הגשת אילוצים"
+    assert button.web_app.url == "https://example.com/app/submit"
 
 
 # ===========================================================================

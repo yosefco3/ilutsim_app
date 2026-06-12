@@ -63,3 +63,14 @@ def submission_success_kb() -> InlineKeyboardMarkup:
             web_app=WebAppInfo(url=f"{settings.APP_URL}/submit"),
         )],
     ])
+
+
+def submit_constraints_kb() -> InlineKeyboardMarkup:
+    """Inline keyboard with a WebApp button to fill in constraints."""
+    from app.config import settings
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(
+            text="📅 הגשת אילוצים",
+            web_app=WebAppInfo(url=f"{settings.APP_URL}/submit"),
+        )],
+    ])

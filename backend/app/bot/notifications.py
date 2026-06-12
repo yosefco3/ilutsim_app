@@ -10,7 +10,7 @@ from app.bot.bot_instance import get_bot
 logger = logging.getLogger("ilutzim")
 
 
-async def send_notification(telegram_id: int, text: str) -> bool:
+async def send_notification(telegram_id: int, text: str, reply_markup=None) -> bool:
     """Send a message to a single Telegram user."""
     try:
         bot = get_bot()
@@ -18,7 +18,7 @@ async def send_notification(telegram_id: int, text: str) -> bool:
             logger.error("send_notification: bot is None — cannot send to telegram_id=%s", telegram_id)
             return False
         logger.info("send_notification: sending to telegram_id=%s (text length=%d)", telegram_id, len(text))
-        await bot.send_message(chat_id=telegram_id, text=text)
+        await bot.send_message(chat_id=telegram_id, text=text, reply_markup=reply_markup)
         logger.info("send_notification: SUCCESS for telegram_id=%s", telegram_id)
         return True
     except Exception as exc:
@@ -26,11 +26,11 @@ async def send_notification(telegram_id: int, text: str) -> bool:
         return False
 
 
-async def broadcast_notifications(telegram_ids: list[int], text: str) -> int:
+async def broadcast_notifications(telegram_ids: list[int], text: str, reply_markup=None) -> int:
     """Send the same message to multiple users. Returns success count."""
     success = 0
     for tg_id in telegram_ids:
-        if await send_notification(tg_id, text):
+        if await send_notification(tg_id, text, reply_markup=reply_markup):
             success += 1
     return success
 
@@ -41,18 +41,18 @@ async def notify_week_opened(week_start: date, week_end: date, telegram_ids: lis
     Uses DD/MM/YYYY date format and includes the webapp URL.
     Returns count of successfully notified guards.
     """
-    from app.config import settings
+    from app.bot.keyboards.inline_kb import submit_constraints_kb
 
     start_fmt = week_start.strftime("%d/%m/%Y")
     end_fmt = week_end.strftime("%d/%m/%Y")
 
     text = (
         "🔔 שבוע חדש נפתח להגשה!\n\n"
-        f"תאריכים: {start_fmt} - {end_fmt}\n\n"
-        "לחץ כאן למילוי אילוצים:\n"
-        f"{settings.APP_URL}/submit"
+        f"תאריכים: {start_fmt} - {end_fmt}"
     )
-    count = await broadcast_notifications(telegram_ids, text)
+    count = await broadcast_notifications(
+        telegram_ids, text, reply_markup=submit_constraints_kb()
+    )
     logger.info("Week-opened notification sent to %d/%d users", count, len(telegram_ids))
     return count
 

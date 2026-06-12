@@ -117,6 +117,63 @@ describe('useSubmission', () => {
     );
   });
 
+  it('should prefill an existing submission (date→day_index, shift_windows→shifts)', async () => {
+    get.mockImplementation((path) => {
+      if (path.includes('current-week')) {
+        return Promise.resolve({
+          data: {
+            id: 'w1',
+            status: 'open',
+            start_date: '2026-06-14',
+            days: [
+              { day_index: 0, blocked: false },
+              { day_index: 1, blocked: false },
+            ],
+          },
+          error: null,
+        });
+      }
+      if (path.includes('my')) {
+        return Promise.resolve({
+          data: {
+            general_notes: 'לא זמין בערב',
+            days: [
+              {
+                date: '2026-06-15', // day_index 1
+                is_available: true,
+                shift_windows: [
+                  {
+                    shift_type: 'morning',
+                    start_time: '06:00:00',
+                    end_time: '14:00:00',
+                  },
+                ],
+              },
+            ],
+          },
+          error: null,
+        });
+      }
+      return Promise.resolve({ data: null, error: null });
+    });
+
+    const { result } = renderHook(() => useSubmission(initData));
+
+    await waitFor(() => {
+      expect(result.current.loading).toBe(false);
+    });
+
+    // Day 1 has the submitted morning shift, with hours trimmed to HH:MM
+    const day1 = result.current.days[1];
+    expect(day1.shifts.morning.active).toBe(true);
+    expect(day1.shifts.morning.from_hour).toBe('06:00');
+    expect(day1.shifts.morning.to_hour).toBe('14:00');
+    // Day 0 was not submitted → stays inactive
+    expect(result.current.days[0].shifts.morning.active).toBe(false);
+    // Notes are prefilled from general_notes
+    expect(result.current.notes).toBe('לא זמין בערב');
+  });
+
   it('should handle submit error', async () => {
     get.mockResolvedValue({
       data: { id: 'w1', status: 'open', days: [] },

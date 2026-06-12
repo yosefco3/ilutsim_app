@@ -110,20 +110,35 @@ export function useSubmission(initData) {
 
       if (cancelled) return;
 
+      // The existing submission is keyed by `date` + `shift_windows`
+      // (start_time/end_time as "HH:MM:SS"), while the form is keyed by
+      // `day_index` + a shifts map ("HH:MM"). Bridge the two shapes here.
+      const weekStart = weekData.start_date
+        ? new Date(weekData.start_date)
+        : null;
+      const toHHMM = (t) => (typeof t === "string" ? t.slice(0, 5) : "");
+      const submittedByIndex = {};
+      if (weekStart && Array.isArray(subData?.days)) {
+        for (const sd of subData.days) {
+          const idx = Math.round(
+            (new Date(sd.date) - weekStart) / 86400000,
+          );
+          submittedByIndex[idx] = sd;
+        }
+      }
+
       // Build initial form state — each day gets a shifts map
       const initialDays = (weekData.days || []).map((d) => {
         const shifts = makeShifts(finalDefaults);
 
-        const existingDay = subData?.days?.find(
-          (s) => s.day_index === d.day_index,
-        );
-        if (existingDay?.shifts) {
-          for (const sh of existingDay.shifts) {
-            if (shifts[sh.shift_type]) {
-              shifts[sh.shift_type] = {
+        const existingDay = submittedByIndex[d.day_index];
+        if (existingDay?.shift_windows) {
+          for (const sw of existingDay.shift_windows) {
+            if (shifts[sw.shift_type]) {
+              shifts[sw.shift_type] = {
                 active: true,
-                from_hour: sh.from_hour ?? sh.start_time ?? "",
-                to_hour: sh.to_hour ?? sh.end_time ?? "",
+                from_hour: toHHMM(sw.start_time),
+                to_hour: toHHMM(sw.end_time),
               };
             }
           }

@@ -41,8 +41,10 @@ class SubmissionService:
     ) -> SubmissionResponse:
         """
         Submit constraints for a specific week.
-        Validates week is open (unless override_lock=True).
-        Detects deviations from thresholds.
+
+        Persists the full submission — days, shifts (with hours) and general
+        notes — via ``upsert_submission`` (creates a new submission or replaces
+        an existing one's days). Validates week is open unless override_lock=True.
         """
         # Validate user exists
         user = await self._user_repo.get_by_id(data.user_id)
@@ -57,24 +59,32 @@ class SubmissionService:
         if week.status != WeekStatus.OPEN and not override_lock:
             raise WeekLockedException()
 
-        # Create or update submission
-        existing = await self._submission_repo.get_submission(
-            data.user_id, data.week_id
-        )
-        if existing:
-            existing.general_notes = data.general_notes
-            updated = await self._submission_repo.save(existing)
-            logger.info(f"Submission updated: user={data.user_id}, week={data.week_id}")
-            return SubmissionResponse.model_validate(updated)
+        # Map the validated input → upsert payload (days + shift windows + notes)
+        upsert_data = {
+            "general_notes": data.general_notes,
+            "has_deviation": False,
+            "daily_statuses": [
+                {
+                    "date": day.date,
+                    "is_available": day.is_available,
+                    "shift_windows": [
+                        {
+                            "shift_type": shift.shift_type,
+                            "start_time": shift.start_time,
+                            "end_time": shift.end_time,
+                        }
+                        for shift in day.shifts
+                    ],
+                }
+                for day in data.days
+            ],
+        }
 
-        submission = WeeklySubmission(
-            user_id=data.user_id,
-            week_id=data.week_id,
-            general_notes=data.general_notes,
+        saved = await self._submission_repo.upsert_submission(
+            data.user_id, data.week_id, upsert_data
         )
-        created = await self._submission_repo.save(submission)
-        logger.info(f"Submission created: user={data.user_id}, week={data.week_id}")
-        return SubmissionResponse.model_validate(created)
+        logger.info(f"Submission saved: user={data.user_id}, week={data.week_id}")
+        return SubmissionResponse.model_validate(saved)
 
     async def get_submissions_for_week(
         self, week_id: uuid.UUID
@@ -138,7 +148,7 @@ class SubmissionService:
 
         for user in active_users:
             sub = sub_by_user.get(user.id)
-            if sub and sub.days:  # has actual submission with days
+            if sub and sub.daily_statuses:  # has actual submission with days
                 submission_response = SubmissionResponse.model_validate(sub)
                 submitted.append(
                     SubmissionWithName(

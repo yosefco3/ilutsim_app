@@ -4,7 +4,7 @@ import uuid
 from datetime import date, datetime, time
 from typing import Optional
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import AliasChoices, BaseModel, ConfigDict, Field, model_validator
 
 from app.constants import ShiftType, SubmissionStatus
 from app.messages import Messages
@@ -110,14 +110,18 @@ class DayStatusResponse(BaseModel):
 
 class SubmissionResponse(BaseModel):
     """Schema for submission data in API responses."""
-    model_config = ConfigDict(from_attributes=True)
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 
     id: uuid.UUID
     user_id: uuid.UUID
     week_id: uuid.UUID
     general_notes: str | None = None
     submitted_at: datetime
-    days: list[DayStatusResponse] = []
+    # ORM exposes the relation as ``daily_statuses``; the API contract is ``days``.
+    days: list[DayStatusResponse] = Field(
+        default_factory=list,
+        validation_alias=AliasChoices("daily_statuses", "days"),
+    )
 
 
 class SubmissionStatusGrid(BaseModel):
