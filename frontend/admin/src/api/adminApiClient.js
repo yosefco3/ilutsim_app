@@ -209,6 +209,13 @@ export function updateSettings(settingsMap) {
   });
 }
 
+export function applyTelegramToken(token) {
+  return request('/admin/settings/telegram/apply', {
+    method: 'POST',
+    body: JSON.stringify({ token }),
+  });
+}
+
 // ──── Admins ────
 export function fetchAdmins() {
   return request('/admin/admins');

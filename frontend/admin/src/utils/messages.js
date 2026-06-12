@@ -134,6 +134,15 @@ export default {
       min_evenings: 'מינימום ערבים',
       max_consecutive_days: 'מקסימום ימים רצוף',
     },
+    telegram: {
+      section: 'בוט טלגרם',
+      tokenLabel: 'טוקן בוט',
+      placeholder: 'הדבק טוקן חדש',
+      apply: 'החל טוקן',
+      applying: 'מחיל...',
+      applied: 'הטוקן הוחל בהצלחה — בוט', // הקומפוננטה מוסיפה @username
+      hint: 'החלפת הטוקן מאמתת מול טלגרם ומאתחלת את הבוט מיידית.',
+    },
   },
   export: {
     title: 'ייצוא אילוצים',
