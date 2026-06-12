@@ -7,7 +7,7 @@ import logging
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.dependencies import get_settings_service, require_admin_role
-from app.schemas.common_schemas import SettingsResponse, SettingsUpdate
+from app.schemas.common_schemas import SettingItem, SettingsUpdateRequest
 from app.services.settings_service import SettingsService
 
 logger = logging.getLogger("ilutzim")
@@ -19,20 +19,20 @@ router = APIRouter(
 )
 
 
-@router.get("", response_model=SettingsResponse)
+@router.get("", response_model=list[SettingItem])
 async def get_settings(
     settings_service: SettingsService = Depends(get_settings_service),
 ):
-    """Get all system settings."""
+    """Get all system settings as [{key, value, description}]."""
     return await settings_service.get_settings()
 
 
-@router.patch("", response_model=SettingsResponse)
+@router.put("", response_model=list[SettingItem])
 async def update_settings(
-    data: SettingsUpdate,
+    data: SettingsUpdateRequest,
     settings_service: SettingsService = Depends(get_settings_service),
 ):
-    """Update system settings."""
+    """Apply a partial {settings: {key: value}} update; returns the full list."""
     try:
         return await settings_service.update_settings(data)
     except Exception as e:

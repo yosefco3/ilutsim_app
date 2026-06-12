@@ -3,13 +3,11 @@ SettingsService — business logic for system settings management.
 """
 
 import logging
-from typing import Any, Optional
+from typing import Any
 
 from app.exceptions import ValidationException
-from app.messages import Messages
-from app.models.system_setting import SystemSetting
 from app.repositories.system_settings_repository import SystemSettingsRepository
-from app.schemas.common_schemas import SettingsResponse
+from app.schemas.common_schemas import SettingItem, SettingsUpdateRequest
 
 logger = logging.getLogger("ilutzim")
 
@@ -33,35 +31,52 @@ class SettingsService:
     def __init__(self, settings_repo: SystemSettingsRepository) -> None:
         self._settings_repo = settings_repo
 
-    async def get_all_settings(self) -> SettingsResponse:
-        """Return all settings as a flat dict."""
-        rows = await self._settings_repo.get_all()
-        settings_map = {row.key: row.value for row in rows}
-        # Fill defaults for missing keys
-        for key, default in SETTINGS_DEFAULTS.items():
-            if key not in settings_map:
-                settings_map[key] = default
-        return SettingsResponse(settings=settings_map)
+    @staticmethod
+    def _to_str(value: Any) -> str:
+        """Serialize a setting value to the string form stored/returned by the API."""
+        if isinstance(value, bool):
+            return "true" if value else "false"
+        return str(value)
 
-    async def update_setting(self, key: str, value: Any) -> dict[str, Any]:
-        """Update or create a single setting."""
-        if key not in SETTINGS_DEFAULTS:
-            raise ValidationException(f"Unknown setting: {key}")
-        await self._settings_repo.upsert(key, value)
-        logger.info(f"Setting updated: {key}={value}")
-        return {"key": key, "value": value}
+    async def get_settings(self) -> list[SettingItem]:
+        """Return every known setting as {key, value, description}.
+
+        DB rows override the defaults; missing keys fall back to SETTINGS_DEFAULTS.
+        Order follows SETTINGS_DEFAULTS so the admin page is stable.
+        """
+        rows = await self._settings_repo.get_all_settings()
+        overrides = {row.setting_key: row for row in rows}
+        items: list[SettingItem] = []
+        for key, default in SETTINGS_DEFAULTS.items():
+            row = overrides.get(key)
+            if row is not None:
+                items.append(
+                    SettingItem(key=key, value=row.setting_value, description=row.description)
+                )
+            else:
+                items.append(SettingItem(key=key, value=self._to_str(default)))
+        return items
+
+    async def update_settings(self, req: SettingsUpdateRequest) -> list[SettingItem]:
+        """Apply a partial {key: value} update and return the full settings list."""
+        for key, value in req.settings.items():
+            if key not in SETTINGS_DEFAULTS:
+                raise ValidationException(f"Unknown setting: {key}")
+            await self._settings_repo.set(key, str(value))
+            logger.info("Setting updated: %s", key)
+        return await self.get_settings()
 
     async def get_setting(self, key: str) -> Any:
-        """Get a single setting value."""
-        row = await self._settings_repo.get_by_key(key)
-        if row is not None:
-            return row.value
+        """Get a single setting value (DB value, else the default)."""
+        value = await self._settings_repo.get(key)
+        if value is not None:
+            return value
         return SETTINGS_DEFAULTS.get(key)
 
     async def ensure_defaults(self) -> None:
         """Seed any missing default settings on startup."""
         for key, default in SETTINGS_DEFAULTS.items():
-            existing = await self._settings_repo.get_by_key(key)
+            existing = await self._settings_repo.get(key)
             if existing is None:
-                await self._settings_repo.upsert(key, default)
+                await self._settings_repo.set(key, self._to_str(default))
                 logger.info(f"Default setting seeded: {key}={default}")

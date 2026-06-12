@@ -2,9 +2,7 @@
 
 from typing import Any
 
-from datetime import datetime
-
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel
 
 
 class ApiResponse(BaseModel):
@@ -29,18 +27,13 @@ class TokenResponse(BaseModel):
 # ── Settings schemas ──────────────────────────────────────────────────────────
 
 
-class SettingsUpdate(BaseModel):
-    """Schema for updating system settings."""
-    setting_value: str
+class SettingItem(BaseModel):
+    """A single system setting as returned by the API."""
+    key: str
+    value: str
     description: str | None = None
 
 
-class SettingsResponse(BaseModel):
-    """Schema for system setting in API responses."""
-    model_config = ConfigDict(from_attributes=True)
-
-    setting_key: str
-    setting_value: str
-    description: str | None = None
-    created_at: datetime | None = None
-    updated_at: datetime | None = None
+class SettingsUpdateRequest(BaseModel):
+    """Partial update of system settings: {key: value, ...}."""
+    settings: dict[str, str]
