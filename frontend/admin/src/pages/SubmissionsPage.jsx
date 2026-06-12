@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useWeeks } from '../hooks/useWeeks';
 import { useSubmissions } from '../hooks/useSubmissions';
 import StatusGrid from '../components/StatusGrid';
@@ -27,7 +28,14 @@ export default function SubmissionsPage() {
       {loading ? (
         <div className="loading">{messages.common.loading}</div>
       ) : selectedWeek ? (
-        <StatusGrid submissions={submissions} />
+        <>
+          <div className="form-group">
+            <Link to={`/submissions/${selectedWeek}`} className="btn btn-primary btn-sm">
+              {messages.submissions.viewDetails}
+            </Link>
+          </div>
+          <StatusGrid submissions={submissions} />
+        </>
       ) : (
         <p className="empty-state">{messages.submissions.selectWeekPrompt}</p>
       )}

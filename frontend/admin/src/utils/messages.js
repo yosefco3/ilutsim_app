@@ -104,6 +104,12 @@ export default {
     submittedAt: 'תאריך הגשה',
     noSubmissions: 'אין דיווחים',
     selectWeek: 'בחר שבוע',
+    chooseWeek: '— בחר שבוע —',
+    selectWeekPrompt: 'בחר שבוע כדי לראות מי שלח אילוצים ומי לא',
+    empty: 'אין דיווחים לשבוע זה',
+    submitted: 'שלח',
+    missing: 'לא שלח',
+    viewDetails: 'צפה בפירוט',
   },
   settings: {
     title: 'הגדרות מערכת',

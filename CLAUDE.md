@@ -86,28 +86,21 @@
 - Before committing final results.
 - The script outputs results to `TEST_GRAPH.md` for easy review.
 
+> **Graph tooling note:** This project uses the **`code-review-graph` CLI only**
+> (see Graph CLI Reference below). The old `codegraph` MCP server has been removed
+> — do **not** call `codegraph_*` MCP tools; they no longer exist here.
+
 ### When Starting a New Coding Task:
 1. **Get minimal context first**:
-   - `codegraph_context` (codegraph MCP) to understand the current graph state around the task.
-   - `APP_OVERVIEW.md` to understand the app purpose etc.
-2. **Before reading files manually**, try these codegraph MCP tools to locate code faster:
-   - `codegraph_search` — Find functions/classes by name or description
-   - `codegraph_callers` / `codegraph_callees` — Trace relationships (who calls this / what this calls)
-   - `codegraph_files` — Get all nodes in a file/directory without reading it
-   - `codegraph_impact` — Understand blast radius before making changes
-   - `codegraph_trace` — Understand execution paths from X to Y
+   - `APP_OVERVIEW.md` to understand the app purpose, models, endpoints, and workflow.
+   - `code-review-graph status` for a quick health/size check of the graph.
    - `_PROGRESS.md` if you are inside a prompts directory.
+2. **To locate code**, use the standard search tools (`Grep`, `Glob`, `Read`) and the
+   `code-review-graph` CLI. Keep `Grep` → `Read` chains tight and targeted.
 
 ### When Doing Code Review:
-- Use `codegraph_impact` for risk-scored change analysis
-- Use `codegraph_trace` to see which execution paths are impacted
-- Use `codegraph_context` for comprehensive review context
-
-### Preferred Search Pattern:
-Instead of `Grep` → `Read` chains, prefer:
-1. `codegraph_context` / `codegraph_search` to find the target
-2. `codegraph_callers` / `codegraph_callees` / `codegraph_trace` to understand relationships
-3. Only then `Read` if you need the full source
+- Read `APP_OVERVIEW.md` for architecture/endpoint context.
+- Use `Grep`/`Read` to trace callers/callees and understand blast radius before changing code.
 
 ### Graph CLI Reference:
 - **Full rebuild:** `/home/yosef/.local/bin/code-review-graph build`
