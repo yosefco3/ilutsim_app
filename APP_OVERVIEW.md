@@ -3,7 +3,7 @@
 > **⚠️ מסמך זה מתעדכן בכל שינוי משמעותי באפליקציה.**
 > אם הנך מוסיף/משנה פיצ'ר — עדכן גם כאן.
 >
-> עדכון אחרון: 12 יוני 2026 (⚙️ תיקון דף ההגדרות + ספי כללי-אילוץ + אזהרות רכות בטופס + החלה חיה של טוקן טלגרם)
+> עדכון אחרון: 12 יוני 2026 (🎨 עיצוב Dark Indigo מחדש לדשבורד + מערכת Toast במקום alert נייטיבי)
 
 ---
 
@@ -315,3 +315,5 @@ ilutzim_app/
 | 12 יוני 2026 | 🐛 **תיקון: דף הדיווחים לא היה נגיש מהאדמין** — הראוט `/submissions` היה קיים ועבד אך **לא היה אליו קישור ב-`Navbar`** (וגם "אירועים"/"ייצוא" חסרו) — נגיש רק בהקלדת URL ידנית. נוספו קישורי ניווט. כן הושלמו מפתחות טקסט חסרים ב-`messages.js` (`chooseWeek`, `selectWeekPrompt`, `empty`, `submitted`, `missing`, `viewDetails`) שגרמו ל-`undefined` בבאדג'ים, ונוסף כפתור "צפה בפירוט" מ-`SubmissionsPage` אל `/submissions/:weekId`. נוסף `navbarLinks.test.jsx`. |
 | 12 יוני 2026 | 🐛 **תיקון דף הייצוא + ייצוא אילוצים מעוצב** — הכפתור היה "שבור" כי `ExportPage` השתמש במפתחות `messages.export.download/exporting/chooseWeek` שלא היו קיימים (טקסט `undefined`), והקריאה פנתה ל-`/admin/export/excel?week_id=` שלא קיים בבק (הראוט `/admin/export/week/{id}`) — כך שלא נוצר קובץ. נוסף Endpoint חדש `GET /admin/export/constraints/{week_id}` + `ExcelExportService.export_constraints_report` שמייצר אקסל RTL מעוצב של כל מי ששלח אילוצים (זמינות + שעות משמרות + הערות, ממוין לפי שם). תוקנו מפתחות הטקסט, ה-URL ב-`adminApiClient`, וזיהוי ה-blob (`/export/`). נוספו `exportPage.test.jsx` + טסטים ל-`export_constraints_report`. |
 | 12 יוני 2026 | 🐛 **תיקון 3 ה-Excel exports הישנים** — `export_weekly_schedule`/`export_deviation_report`/`export_guard_history` קראו לשדות `week.week_start`/`week_end` (האמיתיים: `start_date`/`end_date`) ולמתודות repo לא-קיימות (`get_by_week`→`get_submissions_for_week`, `event_repo.get_by_user`→`get_events_for_user`). היו קורסים ב-500 בכל קריאה אמיתית; הבדיקות לא תפסו כי `MagicMock` מחזיר כל attribute. נוסף `SubmissionRepository.get_by_user`. ה-mock של השבוע בטסטים מגדיר עכשיו `start_date`/`end_date`. |
+| 12 יוני 2026 | 🎨 **עיצוב מחדש — Dark Indigo** — בנייה מחדש של `admin.css` כ-design system כהה ומינימליסטי: משטחים כהים בשכבות, מבטא Indigo, badges/alerts בגרסת soft, ליטוש Navbar/כרטיסים/טבלאות/scrollbar. הושלמו classes שהיו בשימוש ב-JSX בלי הגדרה (`alert`, `btn-block/outline/ghost/success`, `badge-success/secondary/warning/danger`, `form-actions`, `actions-cell`) — מה שתיקן בפרט את **דף ניהול השומרים**. צד המאבטחים (`guard.css`) ממשיך לעקוב אחרי theme של טלגרם. |
+| 12 יוני 2026 | ✅ **מערכת Toast במקום `alert()` נייטיבי** — `ToastProvider`/`useToast` ללא תלויות (variants: success/error/warning/info, auto-dismiss + סגירה בלחיצה), עטיפה ב-`App` root. הוחלפו כל 6 קריאות ה-`alert()` ב-`GuardsPage` ו-`AdminConstraintsPage`; שמירת שומר מציגה כעת Toast הצלחה מפורש. נוסף `toast.test.jsx`. |
