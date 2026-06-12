@@ -47,7 +47,7 @@ describe('Navbar', () => {
       </MemoryRouter>
     );
     expect(screen.getByText('ניהול מערכת אילוצים')).toBeInTheDocument();
-    expect(screen.getByText('שומרים')).toBeInTheDocument();
+    expect(screen.getByText('מאבטחים')).toBeInTheDocument();
     expect(screen.getByText('שבועות')).toBeInTheDocument();
   });
 

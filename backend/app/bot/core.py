@@ -186,7 +186,7 @@ async def process_phone(message: Message, state: FSMContext):
         return
 
     # Success — send welcome notification via the shared helper
-    display_name = user.first_name or message.from_user.first_name or "שומר"
+    display_name = user.first_name or message.from_user.first_name or "מאבטח"
     try:
         from app.bot.notifications import notify_guard_welcome
         await notify_guard_welcome(
@@ -294,7 +294,7 @@ async def _show_main_menu(message: Message, display_name: str):
 async def cb_menu(callback: CallbackQuery, state: FSMContext):
     await state.clear()
     # Re-use the same smart menu logic
-    display_name = callback.from_user.first_name or "שומר"
+    display_name = callback.from_user.first_name or "מאבטח"
     await _show_main_menu(callback.message, display_name)
     await callback.answer()
 

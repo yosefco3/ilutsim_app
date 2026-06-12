@@ -315,7 +315,7 @@ class ExcelExportService:
         ws.cell(
             row=2,
             column=1,
-            value=f"סך הכל הגישו: {len(submissions)} שומרים",
+            value=f"סך הכל הגישו: {len(submissions)} מאבטחים",
         ).alignment = _CENTER
 
         # Headers
@@ -555,7 +555,7 @@ class ExcelExportService:
         ws.title = "Guard History"
 
         # Title
-        title_text = f"היסטוריית שומר — {user.full_name}"
+        title_text = f"היסטוריית מאבטח — {user.full_name}"
         ws.merge_cells(start_row=1, start_column=1, end_row=1, end_column=4)
         title_cell = ws.cell(row=1, column=1, value=title_text)
         title_cell.font = _TITLE_FONT
