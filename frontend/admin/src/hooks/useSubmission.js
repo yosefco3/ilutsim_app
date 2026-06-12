@@ -27,7 +27,6 @@ function makeShifts(defaults) {
 export function useSubmission(initData) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [success, setSuccess] = useState(null);
   const [week, setWeek] = useState(null);
   const [days, setDays] = useState([]);
   const [notes, setNotes] = useState("");
@@ -192,7 +191,6 @@ export function useSubmission(initData) {
     if (!week) return;
 
     setError(null);
-    setSuccess(null);
 
     const payload = {
       week_id: week.id,
@@ -219,7 +217,7 @@ export function useSubmission(initData) {
     if (submitErr) {
       setError(submitErr);
     } else {
-      setSuccess(true);
+      window.location.href = '/submit/success';
     }
   }, [week, days, notes, initData]);
 
@@ -230,7 +228,6 @@ export function useSubmission(initData) {
   return {
     loading,
     error,
-    success,
     week,
     days,
     notes,

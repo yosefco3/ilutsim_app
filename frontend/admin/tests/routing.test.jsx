@@ -8,6 +8,14 @@ vi.mock('../src/pages/SubmitPage', () => ({
   default: () => <div data-testid="submit-page">Submit Page</div>,
 }));
 
+vi.mock('../src/pages/SuccessPage', () => ({
+  default: () => <div data-testid="success-page">Success Page</div>,
+}));
+
+vi.mock('../src/pages/SubmissionDetailPage', () => ({
+  default: () => <div data-testid="submission-detail-page">Submission Detail Page</div>,
+}));
+
 vi.mock('../src/pages/LoginPage', () => ({
   default: () => <div data-testid="login-page">Login Page</div>,
 }));
@@ -21,6 +29,8 @@ vi.mock('../src/components/ProtectedRoute', () => ({
 }));
 
 import SubmitPage from '../src/pages/SubmitPage';
+import SuccessPage from '../src/pages/SuccessPage';
+import SubmissionDetailPage from '../src/pages/SubmissionDetailPage';
 import LoginPage from '../src/pages/LoginPage';
 
 describe('Routing', () => {
@@ -35,7 +45,20 @@ describe('Routing', () => {
       </MemoryRouter>,
     );
     expect(screen.getByTestId('submit-page')).toBeInTheDocument();
-    // Not wrapped in protected
+    expect(screen.queryByTestId('protected')).toBeNull();
+  });
+
+  it('should render SuccessPage at /submit/success without protection', () => {
+    render(
+      <MemoryRouter initialEntries={['/submit/success']}>
+        <Routes>
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/submit/success" element={<SuccessPage />} />
+          <Route path="*" element={<Navigate to="/login" replace />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+    expect(screen.getByTestId('success-page')).toBeInTheDocument();
     expect(screen.queryByTestId('protected')).toBeNull();
   });
 
@@ -52,6 +75,19 @@ describe('Routing', () => {
     expect(screen.getByTestId('login-page')).toBeInTheDocument();
   });
 
+  it('should render SubmissionDetailPage at /submissions/:weekId inside ProtectedRoute', () => {
+    render(
+      <MemoryRouter initialEntries={['/submissions/w1']}>
+        <Routes>
+          <Route path="/submissions/:weekId" element={<div data-testid="protected"><SubmissionDetailPage /></div>} />
+          <Route path="*" element={<Navigate to="/login" replace />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+    expect(screen.getByTestId('submission-detail-page')).toBeInTheDocument();
+    expect(screen.getByTestId('protected')).toBeInTheDocument();
+  });
+
   it('should render SubmitPage content directly (no ProtectedRoute wrapper)', () => {
     const { container } = render(
       <MemoryRouter initialEntries={['/submit']}>
@@ -62,7 +98,6 @@ describe('Routing', () => {
         </Routes>
       </MemoryRouter>,
     );
-    // SubmitPage should NOT be inside a protected wrapper
     expect(container.querySelector('[data-testid="protected"]')).toBeNull();
     expect(screen.getByTestId('submit-page')).toBeInTheDocument();
   });

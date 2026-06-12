@@ -24,18 +24,13 @@ describe('SubmissionForm', () => {
     useSubmission.mockReturnValue({
       loading: true,
       days: [],
-      canSubmit: false,
       isLocked: false,
       weekStatus: null,
       week: null,
       error: null,
-      success: false,
       notes: '',
-      events: [],
-      toggleAvailable: vi.fn(),
-      setShiftType: vi.fn(),
-      setHours: vi.fn(),
-      toggleEvent: vi.fn(),
+      toggleShift: vi.fn(),
+      setShiftHours: vi.fn(),
       setNotes: vi.fn(),
       submit: vi.fn(),
     });
@@ -48,18 +43,13 @@ describe('SubmissionForm', () => {
     useSubmission.mockReturnValue({
       loading: false,
       days: [],
-      canSubmit: false,
       isLocked: true,
       weekStatus: 'locked',
-      week: { week_id: 'w1', week_label: 'שבוע 1', status: 'locked' },
+      week: { id: 'w1', week_label: 'שבוע 1', status: 'locked' },
       error: null,
-      success: false,
       notes: '',
-      events: [],
-      toggleAvailable: vi.fn(),
-      setShiftType: vi.fn(),
-      setHours: vi.fn(),
-      toggleEvent: vi.fn(),
+      toggleShift: vi.fn(),
+      setShiftHours: vi.fn(),
       setNotes: vi.fn(),
       submit: vi.fn(),
     });
@@ -72,21 +62,16 @@ describe('SubmissionForm', () => {
     useSubmission.mockReturnValue({
       loading: false,
       days: [
-        { day_index: 0, available: true, shift_type: null, from_hour: '', to_hour: '', blocked: false },
-        { day_index: 1, available: false, shift_type: null, from_hour: '', to_hour: '', blocked: false },
+        { day_index: 0, blocked: false, shifts: { morning: { active: false, from_hour: '', to_hour: '' }, afternoon: { active: false, from_hour: '', to_hour: '' }, night: { active: false, from_hour: '', to_hour: '' } } },
+        { day_index: 1, blocked: false, shifts: { morning: { active: false, from_hour: '', to_hour: '' }, afternoon: { active: false, from_hour: '', to_hour: '' }, night: { active: false, from_hour: '', to_hour: '' } } },
       ],
-      canSubmit: true,
       isLocked: false,
       weekStatus: 'open',
-      week: { week_id: 'w1', week_label: 'שבוע 1', status: 'open' },
+      week: { id: 'w1', week_label: 'שבוע 1', status: 'open' },
       error: null,
-      success: false,
       notes: '',
-      events: [],
-      toggleAvailable: vi.fn(),
-      setShiftType: vi.fn(),
-      setHours: vi.fn(),
-      toggleEvent: vi.fn(),
+      toggleShift: vi.fn(),
+      setShiftHours: vi.fn(),
       setNotes: vi.fn(),
       submit: vi.fn(),
     });
@@ -97,46 +82,17 @@ describe('SubmissionForm', () => {
     expect(screen.getByText(/שבוע 1/)).toBeInTheDocument();
   });
 
-  it('should show success message after submission', () => {
-    useSubmission.mockReturnValue({
-      loading: false,
-      days: [],
-      canSubmit: false,
-      isLocked: false,
-      weekStatus: 'open',
-      week: { week_id: 'w1', week_label: 'שבוע 1', status: 'open' },
-      error: null,
-      success: true,
-      notes: '',
-      events: [],
-      toggleAvailable: vi.fn(),
-      setShiftType: vi.fn(),
-      setHours: vi.fn(),
-      toggleEvent: vi.fn(),
-      setNotes: vi.fn(),
-      submit: vi.fn(),
-    });
-
-    render(<SubmissionForm />);
-    expect(screen.getByText(/נשלח|הוגש/)).toBeInTheDocument();
-  });
-
   it('should show error message on error', () => {
     useSubmission.mockReturnValue({
       loading: false,
       days: [],
-      canSubmit: true,
       isLocked: false,
       weekStatus: 'open',
-      week: { week_id: 'w1', week_label: 'שבוע 1', status: 'open' },
+      week: { id: 'w1', week_label: 'שבוע 1', status: 'open' },
       error: 'שגיאת תקשורת',
-      success: false,
       notes: '',
-      events: [],
-      toggleAvailable: vi.fn(),
-      setShiftType: vi.fn(),
-      setHours: vi.fn(),
-      toggleEvent: vi.fn(),
+      toggleShift: vi.fn(),
+      setShiftHours: vi.fn(),
       setNotes: vi.fn(),
       submit: vi.fn(),
     });
@@ -147,11 +103,17 @@ describe('SubmissionForm', () => {
 
   it('should wrap content in guard-layout div', () => {
     useSubmission.mockReturnValue({
-      loading: true, days: [], canSubmit: false, isLocked: false,
-      weekStatus: null, week: null, error: null, success: false, notes: '',
-      events: [],
-      toggleAvailable: vi.fn(), setShiftType: vi.fn(), setHours: vi.fn(),
-      toggleEvent: vi.fn(), setNotes: vi.fn(), submit: vi.fn(),
+      loading: true,
+      days: [],
+      isLocked: false,
+      weekStatus: null,
+      week: null,
+      error: null,
+      notes: '',
+      toggleShift: vi.fn(),
+      setShiftHours: vi.fn(),
+      setNotes: vi.fn(),
+      submit: vi.fn(),
     });
 
     const { container } = render(<SubmissionForm />);

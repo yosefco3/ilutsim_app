@@ -128,6 +128,25 @@ class SubmissionStatusGrid(BaseModel):
     submitted_at: datetime | None = None
 
 
+class MissingGuardInfo(BaseModel):
+    """Info about a guard who hasn't submitted."""
+    user_id: str
+    full_name: str
+    phone_number: str
+
+
+class SubmissionWithName(SubmissionResponse):
+    """Submission response with the guard's full name included."""
+    full_name: str
+
+
+class WeekSubmissionsDetailed(BaseModel):
+    """Full submission details for a week."""
+    submitted: list[SubmissionWithName]
+    missing: list[MissingGuardInfo]
+    week_label: str
+
+
 class DeviationDetail(BaseModel):
     """Detail of a single deviation rule violation."""
     rule_name: str

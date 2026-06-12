@@ -2,7 +2,7 @@
 Inline keyboards for the Telegram bot (Hebrew UI).
 """
 
-from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
+from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, WebAppInfo
 
 # Hebrew weekday names
 DAY_NAMES = ["ראשון", "שני", "שלישי", "רביעי", "חמישי", "שישי", "שבת"]
@@ -50,5 +50,16 @@ def availability_kb(week_id: str, day_index: int) -> InlineKeyboardMarkup:
         [InlineKeyboardButton(
             text="🔙 חזרה לימים",
             callback_data=f"backdays:{week_id}",
+        )],
+    ])
+
+
+def submission_success_kb() -> InlineKeyboardMarkup:
+    """Inline keyboard shown after successful submission."""
+    from app.config import settings
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(
+            text="✏️ ערוך אילוצים",
+            web_app=WebAppInfo(url=f"{settings.APP_URL}/submit"),
         )],
     ])

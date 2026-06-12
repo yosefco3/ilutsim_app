@@ -164,6 +164,10 @@ export function fetchSubmissions(weekId) {
   return request(`/admin/weeks/${weekId}/submissions`);
 }
 
+export function fetchSubmissionsDetailed(weekId) {
+  return request(`/admin/weeks/${weekId}/submissions/detailed`);
+}
+
 // ──── Notifications ────
 export function sendNotifications(weekId) {
   return request(`/admin/notifications/week/${weekId}`, { method: 'POST' });
@@ -225,6 +229,7 @@ export default {
   updateEvent,
   deleteEvent,
   fetchSubmissions,
+  fetchSubmissionsDetailed,
   sendNotifications,
   exportWeekExcel,
   fetchSettings,

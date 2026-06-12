@@ -1,14 +1,16 @@
 import { useState, useEffect } from 'react';
-import { fetchSubmissions } from '../api/adminApiClient';
+import { fetchSubmissions, fetchSubmissionsDetailed } from '../api/adminApiClient';
 
-export function useSubmissions(weekId) {
+export function useSubmissions(weekId, { detailed = false } = {}) {
   const [submissions, setSubmissions] = useState([]);
+  const [detailedData, setDetailedData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
   useEffect(() => {
     if (!weekId) {
       setSubmissions([]);
+      setDetailedData(null);
       return;
     }
     let cancelled = false;
@@ -16,9 +18,17 @@ export function useSubmissions(weekId) {
       try {
         setLoading(true);
         setError(null);
+
         const data = await fetchSubmissions(weekId);
         if (!cancelled) {
           setSubmissions(Array.isArray(data) ? data : data.items || []);
+        }
+
+        if (detailed) {
+          const detailedResult = await fetchSubmissionsDetailed(weekId);
+          if (!cancelled) {
+            setDetailedData(detailedResult);
+          }
         }
       } catch (err) {
         if (!cancelled) setError(err.message);
@@ -28,7 +38,7 @@ export function useSubmissions(weekId) {
     }
     load();
     return () => { cancelled = true; };
-  }, [weekId]);
+  }, [weekId, detailed]);
 
-  return { submissions, loading, error };
+  return { submissions, detailedData, loading, error };
 }

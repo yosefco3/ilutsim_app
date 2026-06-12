@@ -16,6 +16,27 @@
 - If something goes wrong, only the last step needs to be fixed.
 - The user can review progress and adjust direction between steps.
 
+## Step Budget — Hard Limit
+
+- Every task has a hard limit of **8 tool uses**.
+- If you reach 8 tool uses without completing the task, you MUST stop and report:
+  - What was accomplished so far
+  - What is blocking completion
+  - What you need from the user
+- Do NOT use a 9th tool without explicit user permission.
+
+## Progress Checkpoints
+
+- After every **3 tool uses**, append a one-line status to your response.
+  Format: `[Step X/Y] Done: ... | Next: ...`
+- This keeps the user informed and prevents silent spiraling.
+
+## Think-Before-Act, Not Think-Instead-Of-Act
+
+- Before using a tool, you may think for at most 2-3 sentences.
+- If you need longer analysis, output it visibly as part of your response — do not hide it in internal reasoning.
+- If you catch yourself writing more than 5 `<thinking>` paragraphs, STOP and ask the user for direction.
+
 ## Code Review Graph — Mandatory Workflow
 
 ### After Every Coding Mission (when code files were created or modified):
@@ -97,17 +118,17 @@ Instead of `search_files` → `read_file` chains, prefer:
 - Deleting executed prompts keeps the directory clean — only pending prompts remain.
 - `.clinerules` stays focused on workflows only — no status data here.
 
-## חשיבה תקועה — כלל עצירה
+## חשיבה תקועה — כלל עצירה (מחוזק)
 
 ### אם אתה מזהה אחד מהתסמינים הבאים בחשיבה שלך:
-1. **לולאת ניסיונות** — ניסית 3+ גישות שונות לאותה בעיה וכולן נכשלו
-2. **אי-ודאות מצטברת** — הניתוח מתרחב ומסתעף במקום להתכנס לפתרון
-3. **תלות במידע חסר** — אתה צריך מידע שלא מצאת בקוד ולא ביקשת מהמשתמש
-4. **מורכבות יתר** — הפתרון דורש יותר מ-4 קבצים או שינויים ארכיטקטוריים משמעותיים שלא תוכננו
+1. **לולאת ניסיונות** — ניסית 2+ גישות שונות לאותה בעיה וכולן נכשלו (הוחמר מ-3)
+2. **קריאת קבצים מוגזמת** — אתה שוקל לקרוא יותר מ-5 קבצים לאותו task
+3. **ניתוח מתארך** — אתה כותב ניתוח של יותר מ-3 פסקאות ב-`<thinking>`
+4. **מורכבות יתר** — עברו 6+ tool uses ואתה עדיין רחוק מפתרון
 
 ### מה לעשות:
 - **עצור מיד** — אל תמשיך לחשוב / לנסות
-- **כתוב למשתמש** סיכום ברור של: מה ניסית, מה נכשל, ומה חסר
+- **כתוב למשתמש** סיכום ברור של: מה ניסית, מה נכשל, מה חסר, מה אתה צריך
 - **הצע מסלולים אפשריים** — בקש עזרה, הצע לפרק את הבעיה, או הצע גישה חלופית
 - **אל תנחש** — אל תמשיך עם פתרון שאתה לא בטוח בו
 

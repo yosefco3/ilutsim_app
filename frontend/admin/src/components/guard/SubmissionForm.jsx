@@ -15,7 +15,6 @@ export default function SubmissionForm() {
   const {
     loading,
     error,
-    success,
     week,
     days,
     notes,
@@ -48,9 +47,6 @@ export default function SubmissionForm() {
       {isLocked && <LockBanner status={weekStatus} />}
 
       {error && <div className="error-banner">{error}</div>}
-      {success && (
-        <div className="success-banner">{messages.SUCCESS_SUBMITTED}</div>
-      )}
 
       {/* Week info */}
       {week && (

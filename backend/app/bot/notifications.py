@@ -103,3 +103,29 @@ async def notify_closing_reminder(week_start: date, deadline_text: str, telegram
     count = await broadcast_notifications(telegram_ids, text)
     logger.info("Closing reminder sent to %d/%d users", count, len(telegram_ids))
     return count
+
+
+async def notify_submission_success(telegram_id: int, week_label: str) -> bool:
+    """Notify a guard that their submission was received successfully."""
+    from app.bot.keyboards.inline_kb import submission_success_kb
+
+    text = (
+        "✅ האילוצים נשלחו בהצלחה!\n\n"
+        f"שבוע: {week_label}\n\n"
+        "ניתן לערוך את האילוצים כל עוד השבוע פתוח."
+    )
+    try:
+        bot = get_bot()
+        if bot is None:
+            logger.error("notify_submission_success: bot is None")
+            return False
+        await bot.send_message(
+            chat_id=telegram_id,
+            text=text,
+            reply_markup=submission_success_kb(),
+        )
+        logger.info("Submission success notification sent to telegram_id=%s", telegram_id)
+        return True
+    except Exception as exc:
+        logger.error("notify_submission_success: FAILED for telegram_id=%s — %s", telegram_id, exc)
+        return False

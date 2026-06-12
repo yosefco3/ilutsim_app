@@ -15,6 +15,9 @@ describe('useSubmission', () => {
 
   beforeEach(() => {
     vi.resetAllMocks();
+    // Reset window.location.href
+    delete window.location;
+    window.location = { href: '' };
   });
 
   it('should start in loading state', () => {
@@ -70,7 +73,7 @@ describe('useSubmission', () => {
     expect(result.current.isLocked).toBe(true);
   });
 
-  it('should toggle day availability', async () => {
+  it('should toggle shift on a day', async () => {
     get.mockResolvedValue({
       data: { id: 'w1', status: 'open', days: [{ day_index: 0, blocked: false }] },
       error: null,
@@ -83,13 +86,13 @@ describe('useSubmission', () => {
     });
 
     act(() => {
-      result.current.toggleAvailable(0);
+      result.current.toggleShift(0, 'morning');
     });
 
-    expect(result.current.days[0].available).toBe(false);
+    expect(result.current.days[0].shifts.morning.active).toBe(true);
   });
 
-  it('should submit and set success', async () => {
+  it('should navigate to /submit/success on successful submit', async () => {
     get.mockResolvedValue({
       data: { id: 'w1', status: 'open', days: [{ day_index: 0, blocked: false }] },
       error: null,
@@ -106,9 +109,9 @@ describe('useSubmission', () => {
       await result.current.submit();
     });
 
-    expect(result.current.success).toBe(true);
+    expect(window.location.href).toBe('/submit/success');
     expect(post).toHaveBeenCalledWith(
-      expect.stringContaining('submit'),
+      expect.stringContaining('submissions'),
       expect.objectContaining({ week_id: 'w1' }),
       initData,
     );

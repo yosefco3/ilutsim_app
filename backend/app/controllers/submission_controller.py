@@ -89,13 +89,23 @@ async def submit_schedule(
 
     try:
         submission = await submission_service.create_submission(submission_create)
-        return submission
     except Exception as e:
         logger.error(f"Submission failed: {e}")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e),
         )
+
+    # Send Telegram success notification (non-critical — failure is logged but not returned)
+    if current_user.telegram_id:
+        try:
+            from app.bot.notifications import notify_submission_success
+            week_label = f"{open_week.start_date.strftime('%d/%m/%Y')} - {open_week.end_date.strftime('%d/%m/%Y')}"
+            await notify_submission_success(int(current_user.telegram_id), week_label)
+        except Exception as e:
+            logger.warning(f"Failed to send submission success notification: {e}")
+
+    return submission
 
 
 @router.get("/shift-defaults")

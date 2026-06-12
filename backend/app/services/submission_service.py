@@ -12,7 +12,13 @@ from app.models.weekly_submission import WeeklySubmission
 from app.repositories.submission_repository import SubmissionRepository
 from app.repositories.user_repository import UserRepository
 from app.repositories.schedule_week_repository import ScheduleWeekRepository
-from app.schemas.submission_schemas import SubmissionCreate, SubmissionResponse, SubmissionStatusGrid
+from app.schemas.submission_schemas import (
+    SubmissionCreate,
+    SubmissionResponse,
+    SubmissionStatusGrid,
+    SubmissionWithName,
+    MissingGuardInfo,
+)
 
 logger = logging.getLogger("ilutzim")
 
@@ -106,6 +112,56 @@ class SubmissionService:
             )
 
         return result
+
+    async def get_week_submissions_detailed(
+        self, week_id: uuid.UUID
+    ) -> dict:
+        """
+        Return full submission details for a week grouped by status.
+
+        Returns:
+            {
+                "submitted": list[SubmissionWithName],  # guards who submitted
+                "missing": list[MissingGuardInfo],       # guards who didn't submit
+                "week_label": str,                        # week display label
+            }
+        """
+        submissions = await self._submission_repo.get_submissions_for_week(week_id)
+        active_users = await self._user_repo.get_active_users()
+        week = await self._week_repo.get_by_id(week_id)
+
+        sub_by_user = {s.user_id: s for s in submissions}
+        user_by_id = {u.id: u for u in active_users}
+
+        submitted = []
+        missing = []
+
+        for user in active_users:
+            sub = sub_by_user.get(user.id)
+            if sub and sub.days:  # has actual submission with days
+                submission_response = SubmissionResponse.model_validate(sub)
+                submitted.append(
+                    SubmissionWithName(
+                        **submission_response.model_dump(),
+                        full_name=user.full_name,
+                    )
+                )
+            else:
+                missing.append(
+                    MissingGuardInfo(
+                        user_id=str(user.id),
+                        full_name=user.full_name,
+                        phone_number=user.phone_number or "",
+                    )
+                )
+
+        week_label = f"{week.start_date.strftime('%d/%m/%Y')} - {week.end_date.strftime('%d/%m/%Y')}"
+
+        return {
+            "submitted": submitted,
+            "missing": missing,
+            "week_label": week_label,
+        }
 
     async def mark_auto_absence(self, week_id: uuid.UUID) -> int:
         """
