@@ -24,11 +24,12 @@ class TestGetCurrentWeek:
         """Returns the open week data."""
         week_id = str(uuid.uuid4())
         mock_svc = AsyncMock()
-        mock_svc.get_current_open_week.return_value = {
+        mock_svc.get_current_open_week_with_days.return_value = {
             "id": week_id,
             "start_date": date(2025, 1, 6),
             "end_date": date(2025, 1, 12),
             "status": "open",
+            "days": [{"day_index": i, "blocked": False} for i in range(7)],
         }
 
         app = _make_app()
@@ -47,7 +48,7 @@ class TestGetCurrentWeek:
     def test_get_current_week_none_when_locked(self):
         """Returns null when week is locked."""
         mock_svc = AsyncMock()
-        mock_svc.get_current_open_week.return_value = None
+        mock_svc.get_current_open_week_with_days.return_value = None
 
         app = _make_app()
         app.dependency_overrides[get_week_service] = lambda: mock_svc
@@ -61,7 +62,7 @@ class TestGetCurrentWeek:
     def test_get_current_week_none_when_no_weeks(self):
         """Returns null when no weeks exist."""
         mock_svc = AsyncMock()
-        mock_svc.get_current_open_week.return_value = None
+        mock_svc.get_current_open_week_with_days.return_value = None
 
         app = _make_app()
         app.dependency_overrides[get_week_service] = lambda: mock_svc
@@ -75,7 +76,7 @@ class TestGetCurrentWeek:
     def test_get_current_week_none_when_published(self):
         """Returns null when week is published (not open)."""
         mock_svc = AsyncMock()
-        mock_svc.get_current_open_week.return_value = None
+        mock_svc.get_current_open_week_with_days.return_value = None
 
         app = _make_app()
         app.dependency_overrides[get_week_service] = lambda: mock_svc

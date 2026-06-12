@@ -6,8 +6,8 @@ Also covers invalid transitions and notification verification.
 """
 
 import uuid
-from datetime import datetime, timezone
-from unittest.mock import AsyncMock, patch
+from datetime import date, datetime, timezone
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from fastapi import FastAPI
@@ -17,6 +17,7 @@ from app.constants import WeekStatus
 from app.controllers.admin_weeks_controller import router as admin_weeks_router
 from app.controllers.submission_controller import router as submission_router
 from app.dependencies import (
+    get_current_user,
     get_submission_service,
     get_week_service,
     require_admin_role,
@@ -48,14 +49,21 @@ def _admin_headers():
     return {"Authorization": "Bearer faketoken"}
 
 
-def _valid_day(date_str="2026-06-08"):
+def _valid_day(day_index=0):
     return {
-        "date": date_str,
-        "is_available": True,
+        "day_index": day_index,
         "shifts": [
-            {"shift_type": "morning", "start_time": "07:00", "end_time": "15:00"}
+            {"shift_type": "morning", "from_hour": "07:00", "to_hour": "15:00"}
         ],
     }
+
+
+def _mock_user(user_id=None):
+    """Fake authenticated guard. telegram_id=None skips the notification path."""
+    user = MagicMock()
+    user.id = user_id or uuid.uuid4()
+    user.telegram_id = None
+    return user
 
 
 def _week_obj(
@@ -72,8 +80,32 @@ def _week_obj(
         {
             "id": wid,
             "status": status,
-            "start_date": start_date,
-            "end_date": end_date,
+            "start_date": date.fromisoformat(start_date),
+            "end_date": date.fromisoformat(end_date),
+        },
+    )()
+
+
+def _week_with_days_obj(
+    week_id=None,
+    status=WeekStatus.OPEN,
+    start_date="2026-06-08",
+    end_date="2026-06-14",
+):
+    """Build a week-like object with the 7 days the submission form expects."""
+    wid = week_id or uuid.uuid4()
+    return type(
+        "WeekWithDays",
+        (),
+        {
+            "id": wid,
+            "status": status,
+            "start_date": date.fromisoformat(start_date),
+            "end_date": date.fromisoformat(end_date),
+            "days": [
+                type("Day", (), {"day_index": i, "blocked": False})()
+                for i in range(7)
+            ],
         },
     )()
 
@@ -95,6 +127,7 @@ def _setup_app(week_svc, sub_svc=None):
     """Create app with dependency overrides pre-configured."""
     app = _make_app()
     app.dependency_overrides[require_admin_role] = lambda: _admin_payload()
+    app.dependency_overrides[get_current_user] = lambda: _mock_user()
     app.dependency_overrides[get_week_service] = lambda: week_svc
     if sub_svc is not None:
         app.dependency_overrides[get_submission_service] = lambda: sub_svc
@@ -115,16 +148,19 @@ class TestFullWeekLifecycle:
         week_svc = AsyncMock()
         sub_svc = AsyncMock()
 
-        # --- configure get_current_open_week call sequence ---
-        # Route /submissions/current-week calls get_current_open_week
-        # Route POST /submissions also calls get_current_open_week (guard check)
+        # --- configure current-week call sequence ---
+        # Route GET /submissions/current-week calls get_current_open_week_with_days
+        week_svc.get_current_open_week_with_days.side_effect = [
+            None,                                # Step 1: no open week
+            _week_with_days_obj(week_id),        # Step 4: after open (current-week)
+            None,                                # Step 7: after lock (current-week)
+        ]
+
+        # Route POST /submissions calls get_current_open_week (guard check)
         week_svc.get_current_open_week.side_effect = [
-            None,                          # Step 1: no open week
-            _week_obj(week_id),            # Step 3: after open (current-week)
-            _week_obj(week_id),            # Step 4: submit guard check
-            _week_obj(week_id),            # Step 5: current-week (still open)
-            None,                          # Step 7: after lock (current-week)
-            None,                          # Step 8: submission blocked
+            None,                          # Step 2: submission blocked (no open week)
+            _week_obj(week_id),            # Step 5: submit guard check (week open)
+            None,                          # Step 8: submission blocked (locked)
         ]
 
         # open_new_week returns
@@ -133,7 +169,7 @@ class TestFullWeekLifecycle:
             _week_obj(next_week_id, start_date="2026-06-15", end_date="2026-06-21"),  # Step 10
         ]
 
-        sub_svc.submit.return_value = _submission_obj(sub_id, week_id)
+        sub_svc.create_submission.return_value = _submission_obj(sub_id, week_id)
 
         # lock + publish transitions (controller calls change_week_status)
         week_svc.change_week_status.side_effect = [

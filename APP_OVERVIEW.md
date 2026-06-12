@@ -3,7 +3,7 @@
 > **⚠️ מסמך זה מתעדכן בכל שינוי משמעותי באפליקציה.**
 > אם הנך מוסיף/משנה פיצ'ר — עדכן גם כאן.
 >
-> עדכון אחרון: 8 יוני 2026 (עדכון טופס הגשה — ריבוי משמרות, צהריים→ערב, הסרת אירועים)
+> עדכון אחרון: 12 יוני 2026 (דף הצלחה + התראת טלגרם + דף פירוט הגשות לאדמין)
 
 ---
 
@@ -282,3 +282,4 @@ ilutzim_app/
 | 8 יוני 2026 | 🐛 **תיקון "שבוע undefined"** — תוקן באג בדף ההגשה: `week_label` נוסף כ-property ב-`WeekResponse`, הוסרה קריאת API מיותרת ל-`/weeks/current` (נתיב שלא קיים), תוקן `week_id`←`id` ב-`useSubmission.js` ו-`SubmissionForm.jsx` |
 | 8 יוני 2026 | ✅ **ריבוי משמרות בטופס ההגשה** — שומר יכול לסמן בוקר+ערב+לילה במקביל (במקום בורר יחיד). צהריים→ערב. הסרת כפתורי אירועים (חופשה/מילואים/רענון). נוסף `GET /submissions/my` + `GuardSubmissionRequest` + `get_current_user` dependency ל-Telegram auth. |
 | 8 יוני 2026 | ✅ **שעות ברירת מחדל למשמרות** — בוקר 07:00-16:30, ערב 15:00-23:00, לילה 23:00-07:00. שעות מוזנות אוטומטית בטופס, השומר יכול לערוך. אדמין יכול לשנות דרך דף ההגדרות (`shift_default_morning/afternoon/night`). נוסף `GET /submissions/shift-defaults`. |
+| 12 יוני 2026 | ✅ **דף הצלחה + התראת הגשה + פירוט הגשות לאדמין** — דף `/submit/success` אחרי הגשה (ללא Navbar); התראת טלגרם `notify_submission_success` נשלחת לאחר הגשה (לא-קריטית, מותנית ב-`telegram_id`); endpoint `GET /admin/weeks/{id}/submissions/detailed` (`WeekSubmissionsDetailed`: submitted/missing/week_label) + `SubmissionDetailPage` + `SubmissionsTable` עם פירוט משמרות נפתח. כיסוי טסטים: backend 160, frontend 78. |

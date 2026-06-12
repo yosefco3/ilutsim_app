@@ -44,9 +44,9 @@ describe('guard.css', () => {
   it('should include all major component styles', () => {
     expect(cssContent).toContain('.day-row');
     expect(cssContent).toContain('.day-shifts');
-    expect(cssContent).toContain('.toggle-btn');
-    expect(cssContent).toContain('.shift-btn');
-    expect(cssContent).toContain('.event-btn');
+    expect(cssContent).toContain('.shift-row');
+    expect(cssContent).toContain('.shift-toggle-btn');
+    expect(cssContent).toContain('.shift-hours');
     expect(cssContent).toContain('.notes-input');
     expect(cssContent).toContain('.submit-btn');
     expect(cssContent).toContain('.lock-banner');

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { messages, DAY_NAMES, SHIFT_LABELS, EVENT_LABELS } from '../src/utils/guardMessages';
+import { messages, DAY_NAMES, SHIFT_LABELS, SHIFT_DEFAULTS } from '../src/utils/guardMessages';
 
 describe('guardMessages', () => {
   it('should export messages object with required keys', () => {
@@ -28,10 +28,12 @@ describe('guardMessages', () => {
     expect(SHIFT_LABELS.night).toBeDefined();
   });
 
-  it('should export EVENT_LABELS with vacation/military/firearms', () => {
-    expect(EVENT_LABELS.vacation).toBeDefined();
-    expect(EVENT_LABELS.military).toBeDefined();
-    expect(EVENT_LABELS.firearms).toBeDefined();
+  it('should export SHIFT_DEFAULTS with from_hour/to_hour per shift', () => {
+    ['morning', 'afternoon', 'night'].forEach((shift) => {
+      expect(SHIFT_DEFAULTS[shift]).toBeDefined();
+      expect(typeof SHIFT_DEFAULTS[shift].from_hour).toBe('string');
+      expect(typeof SHIFT_DEFAULTS[shift].to_hour).toBe('string');
+    });
   });
 
   it('should not conflict with admin messages', () => {
