@@ -136,15 +136,6 @@ export default {
       auto_lock_weekday: 'יום נעילה אוטומטית',
       auto_lock_time: 'שעת נעילה אוטומטית',
     },
-    telegram: {
-      section: 'בוט טלגרם',
-      tokenLabel: 'טוקן בוט',
-      placeholder: 'הדבק טוקן חדש',
-      apply: 'החל טוקן',
-      applying: 'מחיל...',
-      applied: 'הטוקן הוחל בהצלחה — בוט', // הקומפוננטה מוסיפה @username
-      hint: 'החלפת הטוקן מאמתת מול טלגרם ומאתחלת את הבוט מיידית.',
-    },
   },
   export: {
     title: 'ייצוא אילוצים',
