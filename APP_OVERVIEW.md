@@ -3,7 +3,7 @@
 > **⚠️ מסמך זה מתעדכן בכל שינוי משמעותי באפליקציה.**
 > אם הנך מוסיף/משנה פיצ'ר — עדכן גם כאן.
 >
-> עדכון אחרון: 12 יוני 2026 (🎛️ פירוט אילוצים פר-מאבטח בשורה בדף הדיווחים)
+> עדכון אחרון: 13 יוני 2026 (🔑 טוקן טלגרם הפך ל-env-only — הוסר עדכון מה-UI)
 
 ---
 
@@ -91,7 +91,7 @@
 | **הגשות**        | צפייה בהגשות שומרים לפי שבוע                     |
 | **אירועים**       | ניהול אירועים (חופשה, מילואים, הכשרה)            |
 | **ייצוא**        | ייצוא נתונים ל-Excel                            |
-| **הגדרות**       | הגדרות מערכת — ברירות-מחדל למשמרות, ספי כללי-אילוץ, שדות placeholder לאוטומציה, וטוקן טלגרם עם החלה חיה |
+| **הגדרות**       | הגדרות מערכת — ברירות-מחדל למשמרות, ספי כללי-אילוץ, ושדות placeholder לאוטומציה (טוקן טלגרם הוא env-only, לא נערך מכאן) |
 
 ### ניהול שומרים
 
@@ -281,7 +281,6 @@ ilutzim_app/
 | GET    | `/admin/export/constraints/{week_id}` | ייצוא אילוצים ל-Excel |
 | GET    | `/admin/settings`         | הגדרות מערכת (רשימת `{key,value,description}`) |
 | PUT    | `/admin/settings`         | עדכון הגדרות (`{settings:{k:v}}`)  |
-| POST   | `/admin/settings/telegram/apply` | החלה חיה של טוקן טלגרם (ולידציית `getMe` + אתחול בוט) |
 
 ---
 
@@ -289,6 +288,7 @@ ilutzim_app/
 
 | תאריך     | שינוי                                                |
 |-----------|-------------------------------------------------------|
+| 13 יוני 2026 | 🔑 **טוקן טלגרם הפך ל-env-only** — בעבר ניתן היה לעדכן את טוקן הבוט מדף ההגדרות (נשמר ב-DB + ולידציית `getMe` + אתחול בוט חי). לפי בקשת המשתמש הטוקן מגיע כעת **אך ורק** ממשתנה הסביבה `TELEGRAM_BOT_TOKEN`: (1) `get_effective_bot_token` קורא ישירות מ-env (ללא DB); הוסר `telegram_bot_token` מ-`SETTINGS_DEFAULTS`. (2) הוסר `POST /admin/settings/telegram/apply` + מודל `TelegramTokenApply`. (3) הוסר קוד ה-hot-swap המת (`rebuild_bot`, `restart_bot_with_token`). (4) מיגרציה `b2c3d4e5f6a7` מוחקת את שורת הטוקן מ-`system_settings` (ניקוי סוד). (5) Frontend: הוסר סקשן הטלגרם מ-`SettingsPage`, `applyTelegramToken`, ובלוק ההודעות. עדכון טוקן מצריך כעת restart לשרת. כיסוי: backend 23, frontend 21 קבצי-טסט (0 כשלים). |
 | 12 יוני 2026 | 🎛️ **פירוט אילוצים פר-מאבטח בדף הדיווחים** — עד כה בדף `/submissions` היה כפתור יחיד "צפה בפירוט" שניווט לעמוד נפרד (`/submissions/:weekId`) שפתח את כל המאבטחים ביחד. כעת `SubmissionsPage` טוען נתונים מפורטים (`useSubmissions(week, {detailed:true})`) ובונה מפת `detailsByUser`; ל-`StatusGrid` נוספה עמודת "צפה בפירוט" עם כפתור הצג/הסתר **בשורה של כל מאבטח** שהגיש — מרחיב אינליין את הזמינות/משמרות/הערות שלו בלבד. הקישור היחיד הישן הוסר. עמוד הפירוט המלא והראוט נשארו זמינים. |
 | 12 יוני 2026 | ⚙️ **דף הגדרות + ספי כללי-אילוץ + אזהרות רכות + טוקן טלגרם חי** (ספריית פרומפטים `settings_and_constraint_rules`, 9 צעדים): (1) **דף ההגדרות היה שבור מקצה-לקצה** — ה-service קרא למתודות repo לא-קיימות (`get_all`/`upsert`/`get_by_key`) ולשדות (`row.key/value`), הקונטרולר קרא ל-`get_settings`/`update_settings` שלא היו, והסכמה הייתה הגדרה-בודדת → כל `/admin/settings` נתן 500. יושר לחוזה `[{key,value,description}]` + `PUT {settings:{k:v}}`; הפרונט (`useSettings` עם draft, `SettingsPage` עם תוויות עברית + שמירה) שוקם. (2) **ספי כללי-אילוץ** (`min_shifts_per_guard=5`, `min_nights=2`, `min_evenings=2`, `max_consecutive_days=6`) נוספו כהגדרות + `GET /submissions/constraint-rules`. (3) **אזהרות רכות בטופס השומר** — `useSubmission.computeWarnings` מציג באנר כשהזמינות חורגת מהספים (afternoon=ערב, ימים-רצוף=רצף זמינות), אך **לא חוסם** שליחה. (4) **טוקן טלגרם עם החלה חיה** — `get_effective_bot_token` (DB→env) שנתיבי ה-auth קוראים per-request (תוקף מיידי), ו-`POST /admin/settings/telegram/apply` שמאמת `getMe` לפני שנוגע בבוט, שומר ל-DB ומאתחל את הבוט (`rebuild_bot`+`restart_bot_with_token`) בלי restart לשרת; כפתור "החל טוקן" בדף. (5) שדות placeholder `auto_open_*`/`auto_lock_*` (ללא scheduler). כיסוי: backend 201 טסטים, frontend 110 טסטים. |
 | 12 יוני 2026 | 🐛 **תיקון טעינת-מראש + עריכת הגשה ע"י אדמין** — (1) טעינת ההגשה הקיימת לדף מילוי-האדמין הסתמכה על `GET /submissions/user/{id}` שקרא ל-`get_submissions_for_user` **שלא קיים** ב-`SubmissionService` (500), כך שהטעינה-מראש נבלעה בשקט ואף פעם לא עבדה. נוסף `GET /submissions/admin?user_id=&week_id=` (`require_admin_role`) המחזיר את ההגשה היחידה דרך `get_submission` הקיים — כעת האדמין רואה ועורך את מה שכבר הוגש, **כולל הגשות טלגרם של המאבטח עצמו**. (2) הובהר ש-`override_lock` מאפשר עריכה בכל סטטוס — בורר השבוע מציג את הסטטוס (פתוח/סגור/נעול/פורסם) עם רמז שניתן לערוך תמיד. API client: `fetchUserSubmissions`→`fetchGuardSubmission`. (3) לאחר שמירה מוצלחת הדף נותן `alert` אישור וחוזר ל-`/guards` (לפני כן באנר ההצלחה היה ממוקם מחוץ ל-`.guard-layout` ולכן לא היה מעוצב/נראה — נראה כאילו "לא נסגר"); באנר השגיאה הועבר פנימה. כיסוי: backend 187, frontend 95. |
