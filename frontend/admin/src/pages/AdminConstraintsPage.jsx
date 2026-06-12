@@ -24,7 +24,6 @@ export default function AdminConstraintsPage() {
     loading,
     error,
     saving,
-    saved,
     guard,
     weeks,
     selectedWeekId,
@@ -41,6 +40,15 @@ export default function AdminConstraintsPage() {
 
   const guardName = guard ? `${guard.first_name} ${guard.last_name}` : '';
 
+  // On a successful save, confirm and return to the guards list (closes the form).
+  const handleSubmit = async () => {
+    const ok = await submit();
+    if (ok) {
+      alert(`${messages.common.success} — ${guardName}`);
+      navigate('/guards');
+    }
+  };
+
   return (
     <div className="page">
       <div className="page-header">
@@ -51,9 +59,6 @@ export default function AdminConstraintsPage() {
           {messages.common.back || 'חזרה'}
         </button>
       </div>
-
-      {error && <div className="error-banner">{error}</div>}
-      {saved && <div className="success-banner">{messages.common.success}</div>}
 
       {/* Week selector */}
       <div className="form-group">
@@ -73,6 +78,8 @@ export default function AdminConstraintsPage() {
 
       {/* Day rows (guard-scoped CSS) */}
       <div className="guard-layout">
+        {error && <div className="error-banner">{error}</div>}
+
         <div className="days-list">
           {days.map((day) => (
             <DayRow
@@ -99,7 +106,7 @@ export default function AdminConstraintsPage() {
           type="button"
           className="submit-btn"
           disabled={saving || !selectedWeekId}
-          onClick={submit}
+          onClick={handleSubmit}
         >
           {saving ? messages.common.loading : guardMessages.LABEL_SUBMIT}
         </button>

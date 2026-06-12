@@ -174,7 +174,7 @@ export function useAdminConstraints(guardId) {
   }, []);
 
   const submit = useCallback(async () => {
-    if (!selectedWeekId) return;
+    if (!selectedWeekId) return false;
     setError(null);
     setSaved(false);
     setSaving(true);
@@ -198,8 +198,10 @@ export function useAdminConstraints(guardId) {
     try {
       await createGuardSubmission(payload);
       setSaved(true);
+      return true;
     } catch (err) {
       setError(err.message);
+      return false;
     } finally {
       setSaving(false);
     }
