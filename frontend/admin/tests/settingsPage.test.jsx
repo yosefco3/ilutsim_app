@@ -15,10 +15,10 @@ import SettingsPage from '../src/pages/SettingsPage';
 function mockHook(overrides = {}) {
   useSettings.mockReturnValue({
     settings: [
-      { key: 'min_guard_coverage', value: '2', description: null },
+      { key: 'min_nights', value: '2', description: null },
       { key: 'telegram_bot_token', value: 'secret', description: null },
     ],
-    draft: { min_guard_coverage: '2', telegram_bot_token: 'secret' },
+    draft: { min_nights: '2', telegram_bot_token: 'secret' },
     loading: false,
     saving: false,
     error: null,
@@ -38,8 +38,8 @@ describe('SettingsPage', () => {
 
   it('renders Hebrew labels, not raw keys', () => {
     render(<SettingsPage />);
-    expect(screen.getByText('כיסוי שומרים מינימלי')).toBeInTheDocument();
-    expect(screen.queryByText('min_guard_coverage')).not.toBeInTheDocument();
+    expect(screen.getByText('מינימום לילות')).toBeInTheDocument();
+    expect(screen.queryByText('min_nights')).not.toBeInTheDocument();
   });
 
   it('hides the telegram_bot_token secret from the generic list', () => {

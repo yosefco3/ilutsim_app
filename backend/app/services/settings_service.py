@@ -13,10 +13,6 @@ logger = logging.getLogger("ilutzim")
 
 # Default settings keys and their types
 SETTINGS_DEFAULTS: dict[str, Any] = {
-    "submission_deadline_hour": 20,
-    "submission_deadline_minute": 0,
-    "min_guard_coverage": 2,
-    "auto_absence_enabled": True,
     "telegram_bot_token": "",
     "notifications_enabled": True,
     "shift_default_morning": "07:00-16:30",

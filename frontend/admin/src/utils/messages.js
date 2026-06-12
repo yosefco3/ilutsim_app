@@ -121,10 +121,6 @@ export default {
     reminderTime: 'שעת תזכורת',
     weekStartDay: 'יום תחילת שבוע',
     labels: {
-      submission_deadline_hour: 'שעת דדליין הגשה',
-      submission_deadline_minute: 'דקת דדליין הגשה',
-      min_guard_coverage: 'כיסוי שומרים מינימלי',
-      auto_absence_enabled: 'היעדרות אוטומטית',
       notifications_enabled: 'התראות פעילות',
       shift_default_morning: 'ברירת מחדל — בוקר',
       shift_default_afternoon: 'ברירת מחדל — ערב',

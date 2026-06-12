@@ -72,13 +72,13 @@ async def test_auto_open_lock_placeholders_present():
 async def test_db_row_overrides_default():
     """A DB row's value/description override the default for that key."""
     repo = AsyncMock()
-    repo.get_all_settings.return_value = [_row("min_guard_coverage", "9", "כיסוי")]
+    repo.get_all_settings.return_value = [_row("min_nights", "9", "לילות")]
 
     svc = SettingsService(repo)
     items = {i.key: i for i in await svc.get_settings()}
 
-    assert items["min_guard_coverage"].value == "9"
-    assert items["min_guard_coverage"].description == "כיסוי"
+    assert items["min_nights"].value == "9"
+    assert items["min_nights"].description == "לילות"
 
 
 @pytest.mark.asyncio
@@ -101,10 +101,10 @@ async def test_update_settings_persists_and_returns_full_list():
 
     svc = SettingsService(repo)
     result = await svc.update_settings(
-        SettingsUpdateRequest(settings={"min_guard_coverage": "3"})
+        SettingsUpdateRequest(settings={"min_nights": "3"})
     )
 
-    repo.set.assert_awaited_once_with("min_guard_coverage", "3")
+    repo.set.assert_awaited_once_with("min_nights", "3")
     assert {i.key for i in result} == set(SETTINGS_DEFAULTS.keys())
 
 
@@ -125,7 +125,7 @@ async def test_get_setting_falls_back_to_default():
     repo = AsyncMock()
     repo.get.return_value = None
     svc = SettingsService(repo)
-    assert await svc.get_setting("min_guard_coverage") == SETTINGS_DEFAULTS["min_guard_coverage"]
+    assert await svc.get_setting("min_nights") == SETTINGS_DEFAULTS["min_nights"]
 
     repo.get.return_value = "07:00-16:30"
     assert await svc.get_setting("shift_default_morning") == "07:00-16:30"

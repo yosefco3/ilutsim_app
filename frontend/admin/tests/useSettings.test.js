@@ -10,7 +10,7 @@ import { fetchSettings, updateSettings } from '../src/api/adminApiClient';
 import { useSettings } from '../src/hooks/useSettings';
 
 const LIST = [
-  { key: 'min_guard_coverage', value: '2', description: null },
+  { key: 'min_nights', value: '2', description: null },
   { key: 'shift_default_morning', value: '07:00-16:30', description: null },
 ];
 
@@ -28,7 +28,7 @@ describe('useSettings', () => {
     await waitFor(() => expect(result.current.loading).toBe(false));
 
     expect(result.current.settings).toHaveLength(2);
-    expect(result.current.draft.min_guard_coverage).toBe('2');
+    expect(result.current.draft.min_nights).toBe('2');
     expect(result.current.dirty).toBe(false);
   });
 
@@ -36,9 +36,9 @@ describe('useSettings', () => {
     const { result } = renderHook(() => useSettings());
     await waitFor(() => expect(result.current.loading).toBe(false));
 
-    act(() => result.current.setValue('min_guard_coverage', '5'));
+    act(() => result.current.setValue('min_nights', '5'));
 
-    expect(result.current.draft.min_guard_coverage).toBe('5');
+    expect(result.current.draft.min_nights).toBe('5');
     expect(result.current.dirty).toBe(true);
   });
 
@@ -46,11 +46,11 @@ describe('useSettings', () => {
     const { result } = renderHook(() => useSettings());
     await waitFor(() => expect(result.current.loading).toBe(false));
 
-    act(() => result.current.setValue('min_guard_coverage', '5'));
+    act(() => result.current.setValue('min_nights', '5'));
     await act(async () => { await result.current.save(); });
 
-    expect(updateSettings).toHaveBeenCalledWith({ min_guard_coverage: '5' });
-    expect(result.current.draft.min_guard_coverage).toBe('5');
+    expect(updateSettings).toHaveBeenCalledWith({ min_nights: '5' });
+    expect(result.current.draft.min_nights).toBe('5');
     expect(result.current.dirty).toBe(false);
   });
 
