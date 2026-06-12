@@ -7,7 +7,12 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
 from app.controllers.submission_controller import router as submission_router
-from app.dependencies import get_week_service, get_submission_service, get_current_user
+from app.dependencies import (
+    get_week_service,
+    get_submission_service,
+    get_current_user,
+    require_admin_role,
+)
 from datetime import datetime, timezone, date
 
 from app.messages import Messages
@@ -144,8 +149,8 @@ class TestSubmissionStatusGuard:
         assert resp.status_code == 200
         app.dependency_overrides.clear()
 
-    def test_get_submissions_always_allowed(self):
-        """GET /submissions/user/{id} works regardless of week status."""
+    def test_get_submissions_for_user_admin_allowed(self):
+        """GET /submissions/user/{id} works for an authenticated admin."""
         sub_svc = AsyncMock()
         sub_svc.get_submissions_for_user.return_value = []
 
@@ -154,8 +159,25 @@ class TestSubmissionStatusGuard:
         app = _make_app()
         app.dependency_overrides[get_week_service] = lambda: week_svc
         app.dependency_overrides[get_submission_service] = lambda: sub_svc
+        app.dependency_overrides[require_admin_role] = lambda: {"role": "admin"}
         client = TestClient(app)
 
         resp = client.get(f"/submissions/user/{uuid.uuid4()}")
         assert resp.status_code == 200
         app.dependency_overrides.clear()
+
+    def test_get_submissions_for_user_requires_admin(self):
+        """GET /submissions/user/{id} is rejected without admin auth (no token → 403)."""
+        app = _make_app()
+        client = TestClient(app)
+
+        resp = client.get(f"/submissions/user/{uuid.uuid4()}")
+        assert resp.status_code in (401, 403)
+
+    def test_get_submissions_for_week_requires_admin(self):
+        """GET /submissions/week/{id} is rejected without admin auth (no token → 403)."""
+        app = _make_app()
+        client = TestClient(app)
+
+        resp = client.get(f"/submissions/week/{uuid.uuid4()}")
+        assert resp.status_code in (401, 403)

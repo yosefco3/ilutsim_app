@@ -174,9 +174,11 @@ async def get_current_user(
     """Authenticate a guard via Telegram WebApp init data header.
 
     Returns the User model or raises 401.
-    In dev mode (init_data == '__DEV_MODE__'), returns the first active user.
+    The '__DEV_MODE__' bypass returns the first active user, but ONLY when
+    ENVIRONMENT == 'dev'. In any other environment the literal is treated as
+    invalid Telegram data and rejected (no auth bypass in production).
     """
-    if x_telegram_init_data == "__DEV_MODE__":
+    if x_telegram_init_data == "__DEV_MODE__" and settings.ENVIRONMENT == "dev":
         users = await user_repo.get_active_users()
         if not users:
             raise HTTPException(

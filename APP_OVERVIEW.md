@@ -3,7 +3,7 @@
 > **⚠️ מסמך זה מתעדכן בכל שינוי משמעותי באפליקציה.**
 > אם הנך מוסיף/משנה פיצ'ר — עדכן גם כאן.
 >
-> עדכון אחרון: 12 יוני 2026 (🐛 תיקון Workflow מחזור חיי שבוע — שבוע נוצר תמיד `closed`, באנר נעול/פורסם לשומר, התראה לשומר חדש, איחוד נתיב פתיחה)
+> עדכון אחרון: 12 יוני 2026 (🔒 הקשחת אבטחה — גידור `__DEV_MODE__` ל-dev, הגנת אדמין על קריאות הגשות, תפוגת `auth_date` ב-Telegram)
 
 ---
 
@@ -239,6 +239,14 @@ ilutzim_app/
 - **ללא wildcard** — `allow_origins` לעולם לא `*`
 - **`allow_credentials=True`** — תומך ב-cookies / Authorization headers
 
+### הרשאות גישה (Authorization)
+
+- **אדמין** — כל `/admin/*` מוגן ברמת ה-router ב-`Depends(require_admin_role)`: דורש JWT חתום (HS256) + תפקיד `admin`/`super_admin`. ניהול אדמינים דורש `require_super_admin`.
+- **שומר** — מילוי/קריאת אילוצים (`POST /submissions`, `GET /submissions/my`) דורש `get_current_user`: אימות Telegram WebApp `init_data` ב-HMAC-SHA256 + השומר חייב להתקיים ב-DB לפי `telegram_id`.
+- **בקרת רעננות (replay protection)** — `init_data` עם `auth_date` ישן מ-24 שעות נדחה גם אם ה-HMAC תקין (`telegram_auth.py`, `DEFAULT_MAX_AGE_SECONDS`).
+- **`__DEV_MODE__`** — עקיפת אימות השומר פעילה **רק** כש-`ENVIRONMENT == "dev"`; בכל סביבה אחרת היא נדחית כ-401 (אין דלת אחורית בפרודקשן).
+- **קריאות הגשות מרובות** (`GET /submissions/week/{id}`, `GET /submissions/user/{id}`) — **אדמין בלבד** (`require_admin_role`), מונע דליפת זמינות שומרים ו-IDOR.
+
 ---
 
 ## API Endpoints (עיקריים)
@@ -272,6 +280,7 @@ ilutzim_app/
 
 | תאריך     | שינוי                                                |
 |-----------|-------------------------------------------------------|
+| 12 יוני 2026 | 🔒 **הקשחת אבטחה (3 חורים)**: (1) **דלת אחורית `__DEV_MODE__`** ב-`get_current_user` הייתה ללא תנאי — כל זר יכול היה להגיש אילוצים בהתחזות לשומר הראשון; כעת מגודרת ל-`ENVIRONMENT == "dev"` בלבד, אחרת 401. (2) `GET /submissions/week/{id}` ו-`/user/{id}` היו **ללא אימות** וחשפו את כל זמינות השומרים (כולל IDOR); נוסף `Depends(require_admin_role)`. (3) `validate_telegram_web_app_data` לא בדק `auth_date` — `init_data` שנדלף היה תקף לנצח; נוספה תפוגת 24 שעות (`DEFAULT_MAX_AGE_SECONDS`). נוסף `test_telegram_auth.py` + טסטי חסימה ב-`test_submission_guard.py`. כיסוי backend: 183. |
 | 12 יוני 2026 | 🐛 **תיקון Workflow מחזור חיי שבוע** (ספריית פרומפטים `week_workflow_fixes`, 6 צעדים): (1) כל יצירת שבוע → `closed` (`create_week`/`seed` היו `open`/`locked`); (2) `auto_rotate_weeks` יוצר שבוע קרוב `closed` בלבד לפי טווח (היה `open`), והוסר פרסום-בשקט של שבועות שפגו + באג כפילות מול `_ensure_next_week`; (3) `GET /submissions/current-week` מחזיר את השבוע הרלוונטי גם כשנעול/סגור/פורסם (`get_relevant_week_with_days`, fallback תלת-שלבי: שבוע פתוח → השבוע הנוכחי שטרם הסתיים `get_current_or_upcoming_week` → השבוע האחרון) — השומר רואה באנר מצב מדויק (נעול נוכחי גובר על שבוע-הבא הסגור) במקום "אין שבוע"; (4) שומר חדש בזמן שבוע פתוח מקבל התראת פתיחה עם כפתור + תיקון באג welcome כפול; (5) הוסר נתיב הפתיחה הכפול `POST /admin/weeks/open` — נותר `{id}/open` יחיד; (6) ליטוש UI: הסתרת "מחק" לשבוע שפורסם, הסרת `draft` מת, באדג' `closed` ניטרלי. כיסוי: backend 171, frontend 91. |
 | 8 יוני 2026 | ✅ **רוטציה אוטומטית + מחיקת שבועות + תיקון enum** — `auto_rotate_weeks()` בכל טעינה, `DELETE /admin/weeks/{id}`, הוספת `CLOSED` ל-enum ב-DB, תיקון `useWeeks` rename bug |
 | יוני 2026 | ✅ **מחיקה קבופה של שומרים** — endpoint `DELETE /admin/users/{id}` |

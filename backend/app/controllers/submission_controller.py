@@ -8,7 +8,13 @@ from datetime import date, time, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
-from app.dependencies import get_current_user, get_settings_service, get_submission_service, get_week_service
+from app.dependencies import (
+    get_current_user,
+    get_settings_service,
+    get_submission_service,
+    get_week_service,
+    require_admin_role,
+)
 from app.messages import Messages
 from app.models.user import User
 from app.schemas.submission_schemas import (
@@ -132,21 +138,31 @@ async def get_shift_defaults(
     return result
 
 
-@router.get("/week/{week_id}", response_model=list[SubmissionResponse])
+@router.get(
+    "/week/{week_id}",
+    response_model=list[SubmissionResponse],
+    dependencies=[Depends(require_admin_role)],
+)
 async def get_submissions_for_week(
     week_id: uuid.UUID,
     submission_service: SubmissionService = Depends(get_submission_service),
 ):
-    """Get all submissions for a specific week."""
+    """Get all submissions for a specific week. **Admin only** — exposes every
+    guard's availability for the week."""
     return await submission_service.get_submissions_for_week(week_id)
 
 
-@router.get("/user/{user_id}", response_model=list[SubmissionResponse])
+@router.get(
+    "/user/{user_id}",
+    response_model=list[SubmissionResponse],
+    dependencies=[Depends(require_admin_role)],
+)
 async def get_submissions_for_user(
     user_id: uuid.UUID,
     submission_service: SubmissionService = Depends(get_submission_service),
 ):
-    """Get all submissions for a specific user."""
+    """Get all submissions for a specific user. **Admin only** — prevents IDOR
+    enumeration of other guards' submissions."""
     return await submission_service.get_submissions_for_user(user_id)
 
 
