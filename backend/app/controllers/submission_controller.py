@@ -32,12 +32,15 @@ router = APIRouter(prefix="/submissions", tags=["Submissions"])
 async def get_current_open_week(
     week_service: WeekService = Depends(get_week_service),
 ):
-    """Get the currently open week for submissions.
+    """Get the week guards should see for the submission form.
 
-    Returns the open week data with 7 days for the submission form,
-    or ``null`` when no week is open.
+    Returns the open week when one exists; otherwise the latest relevant week
+    (closed/locked/published) **with its status**, so the UI can show a status
+    banner instead of a generic "no week" error. Returns ``null`` only when no
+    week exists at all. Submitting is still gated on the week being OPEN in the
+    POST handler below.
     """
-    return await week_service.get_current_open_week_with_days()
+    return await week_service.get_relevant_week_with_days()
 
 
 @router.get("/my", response_model=SubmissionResponse | None)

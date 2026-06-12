@@ -5,6 +5,7 @@
 import { messages } from "../../utils/guardMessages.js";
 
 const STATUS_MESSAGES = {
+  closed: messages.LOCK_STATUS_CLOSED,
   locked: messages.LOCK_STATUS_LOCKED,
   published: messages.LOCK_STATUS_PUBLISHED,
 };

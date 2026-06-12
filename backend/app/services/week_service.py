@@ -127,9 +127,17 @@ class WeekService:
             return None
         return WeekResponse.model_validate(week)
 
-    async def get_current_open_week_with_days(self) -> Optional[WeekWithDaysResponse]:
-        """Return the currently open week with 7 days for the submission form."""
+    async def get_relevant_week_with_days(self) -> Optional[WeekWithDaysResponse]:
+        """Return the week guards should see, with its status.
+
+        Prefers the open week (where guards can actually submit); when none is
+        open it falls back to the latest week (the upcoming closed/locked week,
+        or a freshly published one) so the UI can show a status banner instead
+        of a generic "no week" error. Returns ``None`` only when no week exists.
+        """
         week = await self._week_repo.get_current_open_week()
+        if week is None:
+            week = await self._week_repo.get_latest_week()
         if week is None:
             return None
         days = [DayItem(day_index=i, blocked=False) for i in range(7)]

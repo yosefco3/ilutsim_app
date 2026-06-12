@@ -25,7 +25,8 @@ export const messages = {
   LABEL_LOADING: "טוען...",
 
   LOCK_BANNER: "השבוע נעול — לא ניתן לעדכן אילוצים",
-  LOCK_STATUS_LOCKED: "השבוע עדיין לא נפתח להגשה",
+  LOCK_STATUS_CLOSED: "השבוע טרם נפתח להגשה",
+  LOCK_STATUS_LOCKED: "ההגשה נסגרה — לא ניתן עוד לעדכן אילוצים",
   LOCK_STATUS_PUBLISHED: "סידור העבודה כבר פורסם",
   LOCK_NO_WEEK: "אין שבוע פעיל",
 

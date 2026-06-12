@@ -149,11 +149,11 @@ class TestFullWeekLifecycle:
         sub_svc = AsyncMock()
 
         # --- configure current-week call sequence ---
-        # Route GET /submissions/current-week calls get_current_open_week_with_days
-        week_svc.get_current_open_week_with_days.side_effect = [
-            None,                                # Step 1: no open week
-            _week_with_days_obj(week_id),        # Step 4: after open (current-week)
-            None,                                # Step 7: after lock (current-week)
+        # Route GET /submissions/current-week calls get_relevant_week_with_days
+        week_svc.get_relevant_week_with_days.side_effect = [
+            None,                                              # Step 1: no week yet
+            _week_with_days_obj(week_id),                      # Step 4: after open → open week
+            _week_with_days_obj(week_id, WeekStatus.LOCKED),   # Step 7: after lock → locked week (with status)
         ]
 
         # Route POST /submissions calls get_current_open_week (guard check)
@@ -218,10 +218,11 @@ class TestFullWeekLifecycle:
         )
         assert resp.status_code == 200
 
-        # Step 7: Get current week returns null (locked = not open)
+        # Step 7: Get current week now returns the locked week WITH its status
+        # (so the guard UI can show a "locked" banner instead of "no week").
         resp = client.get("/submissions/current-week")
         assert resp.status_code == 200
-        assert resp.json() is None
+        assert resp.json()["status"] == "locked"
 
         # Step 8: Guard cannot submit anymore
         resp = client.post(

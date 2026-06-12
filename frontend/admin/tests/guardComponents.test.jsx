@@ -6,7 +6,12 @@ import DayRow from '../src/components/guard/DayRow';
 describe('LockBanner', () => {
   it('should render locked message', () => {
     render(<LockBanner status="locked" />);
-    expect(screen.getByText(/נעול|לא נפתח/)).toBeInTheDocument();
+    expect(screen.getByText(/נסגרה|נעול|לא נפתח/)).toBeInTheDocument();
+  });
+
+  it('should render closed (not-yet-opened) message', () => {
+    render(<LockBanner status="closed" />);
+    expect(screen.getByText(/טרם נפתח|לא נפתח/)).toBeInTheDocument();
   });
 
   it('should render published message', () => {

@@ -55,7 +55,7 @@ describe('SubmissionForm', () => {
     });
 
     render(<SubmissionForm />);
-    expect(screen.getByText(/לא נפתח|נעול/)).toBeInTheDocument();
+    expect(screen.getByText(/נסגרה|לא נפתח|נעול/)).toBeInTheDocument();
   });
 
   it('should show form with days when week is open', () => {

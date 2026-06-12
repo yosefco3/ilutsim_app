@@ -125,7 +125,7 @@ class TestSubmissionController:
     def test_get_current_week_no_data(self):
         """GET /submissions/current-week returns 200 + null when no active week."""
         mock_svc = AsyncMock()
-        mock_svc.get_current_open_week_with_days.return_value = None
+        mock_svc.get_relevant_week_with_days.return_value = None
 
         app = _make_app()
         app.dependency_overrides[get_week_service] = lambda: mock_svc
@@ -141,7 +141,7 @@ class TestSubmissionController:
         from datetime import date
 
         mock_svc = AsyncMock()
-        mock_svc.get_current_open_week_with_days.return_value = {
+        mock_svc.get_relevant_week_with_days.return_value = {
             "id": str(uuid.uuid4()),
             "start_date": date(2025, 1, 6),
             "end_date": date(2025, 1, 12),
