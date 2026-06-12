@@ -4,11 +4,13 @@ import { useGuards } from '../hooks/useGuards';
 import GuardTable from '../components/GuardTable';
 import GuardForm from '../components/GuardForm';
 import ConfirmDialog from '../components/ConfirmDialog';
+import { useToast } from '../components/Toast';
 import messages from '../utils/messages';
 
 export default function GuardsPage() {
   const { guards, loading, createGuard, updateGuard, toggleGuard, deleteGuard } = useGuards();
   const navigate = useNavigate();
+  const toast = useToast();
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState(null);
   const [confirmDelete, setConfirmDelete] = useState(null);
@@ -25,8 +27,9 @@ export default function GuardsPage() {
       }
       setShowForm(false);
       setEditing(null);
+      toast.success(messages.common.success);
     } catch (err) {
-      alert(messages.common.error + ': ' + err.message);
+      toast.error(messages.common.error + ': ' + err.message);
     } finally {
       setSaving(false);
     }
@@ -40,9 +43,9 @@ export default function GuardsPage() {
   const handleToggle = async (guard) => {
     try {
       await toggleGuard(guard.id, !guard.is_active);
-      alert(messages.common.success);
+      toast.success(messages.common.success);
     } catch (err) {
-      alert(messages.common.error + ': ' + err.message);
+      toast.error(messages.common.error + ': ' + err.message);
     }
   };
 
@@ -51,9 +54,9 @@ export default function GuardsPage() {
       try {
         await deleteGuard(confirmDelete.id);
         setConfirmDelete(null);
-        alert(messages.common.success);
+        toast.success(messages.common.success);
       } catch (err) {
-        alert(messages.common.error + ': ' + err.message);
+        toast.error(messages.common.error + ': ' + err.message);
       }
     }
   };

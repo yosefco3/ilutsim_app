@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import ProtectedRoute from './components/ProtectedRoute';
+import { ToastProvider } from './components/Toast';
 import LoginPage from './pages/LoginPage';
 import SubmitPage from './pages/SubmitPage';
 import SuccessPage from './pages/SuccessPage';
@@ -17,7 +18,9 @@ import './styles/admin.css';
 export default function App() {
   return (
     <BrowserRouter>
-      <AppContent />
+      <ToastProvider>
+        <AppContent />
+      </ToastProvider>
     </BrowserRouter>
   );
 }

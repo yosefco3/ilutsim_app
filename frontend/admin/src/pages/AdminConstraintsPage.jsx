@@ -6,6 +6,7 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAdminConstraints } from '../hooks/useAdminConstraints';
 import DayRow from '../components/guard/DayRow';
+import { useToast } from '../components/Toast';
 import { messages as guardMessages } from '../utils/guardMessages';
 import messages from '../utils/messages';
 import '../styles/guard.css';
@@ -20,6 +21,7 @@ const WEEK_STATUS_LABELS = {
 export default function AdminConstraintsPage() {
   const { guardId } = useParams();
   const navigate = useNavigate();
+  const toast = useToast();
   const {
     loading,
     error,
@@ -44,7 +46,7 @@ export default function AdminConstraintsPage() {
   const handleSubmit = async () => {
     const ok = await submit();
     if (ok) {
-      alert(`${messages.common.success} — ${guardName}`);
+      toast.success(`${messages.common.success} — ${guardName}`);
       navigate('/guards');
     }
   };
