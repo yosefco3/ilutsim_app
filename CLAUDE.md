@@ -90,6 +90,30 @@
 > (see Graph CLI Reference below). The old `codegraph` MCP server has been removed
 > — do **not** call `codegraph_*` MCP tools; they no longer exist here.
 
+## Commit at End of Task — Mandatory Workflow
+
+> The user trusts you to commit finished work without asking each time.
+
+### When a coding task is complete (code files created or modified):
+1. **Commit automatically** — once tests pass and the graph/`APP_OVERVIEW.md`
+   are updated, create the commit yourself. Do **not** wait for the user to
+   ask "please commit".
+2. **Prefer small, scoped commits** — one logical change per commit (see "Prefer
+   many small commits" above). Split unrelated changes into separate commits.
+3. **Write a clear message** — Conventional-Commits style
+   (`fix(export): ...`, `feat: ...`, `test: ...`), a short imperative summary,
+   and a body explaining *why* when the change isn't obvious.
+4. **Stay on the working branch** — this repo's active branch is `master`; commit
+   there directly. Only branch first if explicitly on the default branch (`main`).
+5. **Do NOT push** — commit only. Push only when the user explicitly asks.
+6. **Report what you committed** — show the resulting `git log --oneline` so the
+   user can see the commit(s) you made.
+
+### When to skip:
+- Pure exploration / read-only tasks where no source files changed.
+- The working tree contains unrelated changes you didn't make — surface them
+  and ask before bundling, rather than committing someone else's work.
+
 ### When Starting a New Coding Task:
 1. **Get minimal context first**:
    - `APP_OVERVIEW.md` to understand the app purpose, models, endpoints, and workflow.
