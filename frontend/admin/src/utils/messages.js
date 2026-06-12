@@ -120,10 +120,13 @@ export default {
     weekStartDay: 'יום תחילת שבוע',
   },
   export: {
-    title: 'ייצוא נתונים',
+    title: 'ייצוא אילוצים',
     downloadExcel: 'הורד Excel',
+    download: 'הורד קובץ Excel',
     selectWeek: 'בחר שבוע',
+    chooseWeek: '— בחר שבוע —',
     downloading: 'מוריד...',
+    exporting: 'מייצא...',
   },
   common: {
     save: 'שמור',

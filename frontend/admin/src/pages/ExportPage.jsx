@@ -16,7 +16,7 @@ export default function ExportPage() {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `schedule_${selectedWeek}.xlsx`;
+      a.download = `constraints_${selectedWeek}.xlsx`;
       document.body.appendChild(a);
       a.click();
       a.remove();

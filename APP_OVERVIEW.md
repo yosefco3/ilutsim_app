@@ -3,7 +3,7 @@
 > **⚠️ מסמך זה מתעדכן בכל שינוי משמעותי באפליקציה.**
 > אם הנך מוסיף/משנה פיצ'ר — עדכן גם כאן.
 >
-> עדכון אחרון: 12 יוני 2026 (🐛 תיקון: דף הדיווחים לא היה נגיש מה-Navbar + מפתחות טקסט חסרים + קישור לפירוט)
+> עדכון אחרון: 12 יוני 2026 (🐛 תיקון דף הייצוא — כפתור שבור + URL שגוי + ייצוא אילוצים מעוצב חדש)
 
 ---
 
@@ -166,8 +166,11 @@
 
 ## ייצוא נתונים
 
-- **ייצוא Excel** — ניתן לייצא את נתוני ההגשות לקובץ Excel
-- כולל: פרטי שומר, ימים, משמרות, סטיות, אירועים
+- **ייצוא אילוצים (Excel)** — דף "ייצוא" מייצר קובץ Excel מעוצב (RTL) של **כל מי ששלח אילוצים** לשבוע נבחר
+- שורה לכל שומר שהגיש: שם, טלפון, זמינות לכל יום (ראשון–שבת) עם **שעות המשמרות בפועל** (`בוקר 06:00–14:00`), והערות כלליות
+- ימים ללא זמינות מסומנים "לא זמין"; השורות ממוינות לפי שם
+- Endpoint: `GET /admin/export/constraints/{week_id}` → `export_constraints_report` ב-`ExcelExportService`
+- קיימים גם דוחות נוספים ב-`ExcelExportService`: גריד שבועי, דוח חריגות, היסטוריית שומר
 
 ---
 
@@ -259,7 +262,7 @@ ilutzim_app/
 | DELETE | `/admin/weeks/{id}`       | **מחיקת שבוע** (לא פורסם)  |
 | GET    | `/admin/events`           | רשימת אירועים              |
 | GET    | `/admin/submissions`      | רשימת הגשות               |
-| GET    | `/admin/export/excel`     | ייצוא Excel                |
+| GET    | `/admin/export/constraints/{week_id}` | ייצוא אילוצים ל-Excel |
 | GET    | `/admin/settings`         | הגדרות מערכת               |
 
 ---
@@ -287,3 +290,4 @@ ilutzim_app/
 | 12 יוני 2026 | 🐛 **תיקון: מילוי-מראש של הגשה קיימת בטופס** — `useSubmission.js` התאים הגשה קיימת לפי `s.day_index`/`existingDay.shifts`, אבל התשובה בנויה לפי `date`/`shift_windows` (שעות `HH:MM:SS`). עכשיו ממפה יום לפי `date` מול `start_date`, קורא `shift_windows` (`start_time`/`end_time`) וגוזר ל-`HH:MM`. כך שעריכת הגשה קיימת ממלאת שוב את הבחירות הקודמות. נוסף טסט ל-`useSubmission.test.js`. |
 | 12 יוני 2026 | 🐛 **תיקון: הגשות לא נשמרו במלואן** — `SubmissionService.create_submission` התעלם מ-`data.days` ושמר רק את שורת ההגשה (general_notes), כך שהימים/המשמרות/השעות מעולם לא נכתבו ל-DB. עכשיו קורא ל-`upsert_submission` ושומר הכול. בנוסף: `SubmissionResponse.days` ממופה כעת מ-`daily_statuses` (alias) ו-`get_week_submissions_detailed` תוקן מ-`sub.days` ל-`sub.daily_statuses` (שגרם ל-500 ולכך שההגשה לא הופיעה בדף הפירוט). נוסף `test_submission_persistence.py` (טסט אינטגרציה אמיתי). |
 | 12 יוני 2026 | 🐛 **תיקון: דף הדיווחים לא היה נגיש מהאדמין** — הראוט `/submissions` היה קיים ועבד אך **לא היה אליו קישור ב-`Navbar`** (וגם "אירועים"/"ייצוא" חסרו) — נגיש רק בהקלדת URL ידנית. נוספו קישורי ניווט. כן הושלמו מפתחות טקסט חסרים ב-`messages.js` (`chooseWeek`, `selectWeekPrompt`, `empty`, `submitted`, `missing`, `viewDetails`) שגרמו ל-`undefined` בבאדג'ים, ונוסף כפתור "צפה בפירוט" מ-`SubmissionsPage` אל `/submissions/:weekId`. נוסף `navbarLinks.test.jsx`. |
+| 12 יוני 2026 | 🐛 **תיקון דף הייצוא + ייצוא אילוצים מעוצב** — הכפתור היה "שבור" כי `ExportPage` השתמש במפתחות `messages.export.download/exporting/chooseWeek` שלא היו קיימים (טקסט `undefined`), והקריאה פנתה ל-`/admin/export/excel?week_id=` שלא קיים בבק (הראוט `/admin/export/week/{id}`) — כך שלא נוצר קובץ. נוסף Endpoint חדש `GET /admin/export/constraints/{week_id}` + `ExcelExportService.export_constraints_report` שמייצר אקסל RTL מעוצב של כל מי ששלח אילוצים (זמינות + שעות משמרות + הערות, ממוין לפי שם). תוקנו מפתחות הטקסט, ה-URL ב-`adminApiClient`, וזיהוי ה-blob (`/export/`). נוספו `exportPage.test.jsx` + טסטים ל-`export_constraints_report`. |

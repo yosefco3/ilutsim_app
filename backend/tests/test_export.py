@@ -71,6 +71,7 @@ def _create_service(
     week_repo.get_by_id.return_value = week
     user_repo.get_active_users.return_value = users or []
     sub_repo.get_by_week.return_value = submissions or []
+    sub_repo.get_submissions_for_week.return_value = submissions or []
     sub_repo.get_by_user.return_value = submissions or []
     event_repo.get_by_user.return_value = events or []
     user_repo.get_by_id.return_value = users[0] if users else None
@@ -154,6 +155,132 @@ async def test_export_weekly_no_openpyxl():
     with patch("app.services.excel_export_service.HAS_OPENPYXL", False):
         with pytest.raises(RuntimeError, match="openpyxl"):
             await svc.export_weekly_schedule(svc._week_repo.get_by_id.return_value.id)
+
+
+# ── Constraints report tests ────────────────────────────────────────
+
+
+def _make_shift_window(shift_type, start, end):
+    sw = MagicMock()
+    sw.shift_type = shift_type
+    sw.start_time = start
+    sw.end_time = end
+    return sw
+
+
+def _make_daily_status(day, is_available, shift_windows=None):
+    ds = MagicMock()
+    ds.date = day
+    ds.is_available = is_available
+    ds.shift_windows = shift_windows or []
+    return ds
+
+
+def _make_constraint_submission(user_id, week_id, daily_statuses=None, notes=None):
+    sub = _make_submission(user_id, week_id)
+    sub.daily_statuses = daily_statuses or []
+    sub.general_notes = notes
+    return sub
+
+
+@pytest.mark.asyncio
+async def test_export_constraints_basic():
+    """Constraints report with one submitting guard."""
+    from datetime import time
+
+    user = _make_user(full_name="בני לוי", phone="0502222222")
+    week = _make_week(week_start=date(2025, 1, 5))
+    ds = _make_daily_status(
+        date(2025, 1, 5),
+        True,
+        [_make_shift_window(ShiftType.MORNING, time(6, 0), time(14, 0))],
+    )
+    sub = _make_constraint_submission(
+        user.id, week.id, [ds], notes="זמין רק בבקרים"
+    )
+
+    svc = _create_service(week=week, users=[user], submissions=[sub])
+
+    with patch("app.services.excel_export_service.HAS_OPENPYXL", True):
+        data = await svc.export_constraints_report(week.id)
+
+    assert isinstance(data, bytes)
+    assert data[:2] == b"PK"
+
+
+@pytest.mark.asyncio
+async def test_export_constraints_week_not_found():
+    """Raises ValueError for unknown week ID."""
+    svc = _create_service()
+
+    with pytest.raises(ValueError, match="not found"):
+        await svc.export_constraints_report(uuid.uuid4())
+
+
+@pytest.mark.asyncio
+async def test_export_constraints_no_openpyxl():
+    """Raises RuntimeError when openpyxl is not installed."""
+    svc = _create_service(week=_make_week())
+
+    with patch("app.services.excel_export_service.HAS_OPENPYXL", False):
+        with pytest.raises(RuntimeError, match="openpyxl"):
+            await svc.export_constraints_report(
+                svc._week_repo.get_by_id.return_value.id
+            )
+
+
+@pytest.mark.asyncio
+async def test_constraints_excel_has_shift_times_and_notes():
+    """Verify the constraints Excel shows shift windows and notes."""
+    try:
+        import openpyxl
+    except ImportError:
+        pytest.skip("openpyxl not installed")
+
+    from datetime import time
+
+    user = _make_user(full_name="בני לוי", phone="0502222222")
+    week = _make_week(week_start=date(2025, 1, 5))
+    ds_sun = _make_daily_status(
+        date(2025, 1, 5),
+        True,
+        [
+            _make_shift_window(ShiftType.NIGHT, time(22, 0), time(6, 0)),
+            _make_shift_window(ShiftType.MORNING, time(6, 0), time(14, 0)),
+        ],
+    )
+    ds_mon = _make_daily_status(date(2025, 1, 6), False)
+    sub = _make_constraint_submission(
+        user.id, week.id, [ds_sun, ds_mon], notes="הערה כללית"
+    )
+
+    svc = _create_service(week=week, users=[user], submissions=[sub])
+
+    with patch("app.services.excel_export_service.HAS_OPENPYXL", True):
+        data = await svc.export_constraints_report(week.id)
+
+    wb = openpyxl.load_workbook(io.BytesIO(data))
+    ws = wb.active
+
+    # RTL sheet for Hebrew
+    assert ws.sheet_view.rightToLeft is True
+
+    # Header row (row 4): name, phone, then days, then notes
+    assert ws.cell(row=4, column=1).value == Messages.EXCEL_HEADER_NAME
+    assert ws.cell(row=4, column=2).value == Messages.EXCEL_HEADER_PHONE
+    assert ws.cell(row=4, column=10).value == "הערות"
+
+    # Data row
+    assert ws.cell(row=5, column=1).value == "בני לוי"
+    # Sunday cell: shifts sorted by start time → morning first
+    sunday = ws.cell(row=5, column=3).value
+    assert "בוקר 06:00" in sunday
+    assert "לילה 22:00" in sunday
+    assert sunday.index("בוקר") < sunday.index("לילה")
+    # Monday cell: not available
+    assert ws.cell(row=5, column=4).value == "לא זמין"
+    # Notes
+    assert ws.cell(row=5, column=10).value == "הערה כללית"
 
 
 # ── Deviation report tests ──────────────────────────────────────────

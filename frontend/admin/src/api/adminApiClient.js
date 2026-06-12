@@ -49,7 +49,7 @@ async function request(endpoint, options = {}) {
   }
 
   // Handle blob responses (Excel export)
-  if (endpoint.includes('/export/excel')) {
+  if (endpoint.includes('/export/')) {
     return res.blob();
   }
 
@@ -175,7 +175,7 @@ export function sendNotifications(weekId) {
 
 // ──── Export ────
 export async function exportWeekExcel(weekId) {
-  const blob = await request(`/admin/export/excel?week_id=${weekId}`);
+  const blob = await request(`/admin/export/constraints/${weekId}`);
   return blob;
 }
 

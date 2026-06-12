@@ -61,6 +61,41 @@ async def export_week_excel(
         )
 
 
+@router.get("/constraints/{week_id}")
+async def export_constraints_excel(
+    week_id: uuid.UUID,
+    export_service: ExcelExportService = Depends(get_excel_export_service),
+):
+    """
+    Export all submitted constraints for a week as an Excel (.xlsx) file.
+
+    One row per guard who submitted, showing per-day availability,
+    the exact shift windows chosen, and their general notes.
+    """
+    try:
+        data = await export_service.export_constraints_report(week_id)
+        return StreamingResponse(
+            iter([data]),
+            media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            headers={
+                "Content-Disposition": (
+                    f"attachment; filename=constraints_{week_id}.xlsx"
+                )
+            },
+        )
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(e),
+        )
+    except Exception as e:
+        logger.error(f"Excel constraints export failed: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        )
+
+
 @router.get("/deviation/{week_id}")
 async def export_deviation_excel(
     week_id: uuid.UUID,
