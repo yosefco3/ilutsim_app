@@ -207,51 +207,34 @@ class WeekService:
         logger.info(f"Week {week_id} deleted (was {week.status})")
 
     async def auto_rotate_weeks(self) -> None:
-        """Auto-rotate expired weeks and create next week if needed.
+        """Ensure the upcoming week always exists, created CLOSED.
 
-        For any week whose end_date < today and is not yet PUBLISHED:
-          - Set status to PUBLISHED (archive it).
-        If no open week exists for the current period:
-          - Create a new OPEN week for the upcoming schedule period.
+        Runs on every weeks-list load and on startup. It does NOT change the
+        status of existing weeks — every transition (open / lock / publish) is a
+        deliberate admin action. Its single job: if no week exists yet for the
+        upcoming Sun–Sat range, create it as CLOSED so the admin always has a
+        next week ready to open.
+
+        Dedup is by date range (``get_by_date_range``), so it never duplicates a
+        week already created by ``_ensure_next_week`` after a publish.
         """
-        from sqlalchemy import select
-
         today = date.today()
+        ws, we = week_range(today)  # upcoming Sunday..Saturday
 
-        # Find expired weeks (end_date < today) that are not PUBLISHED
-        all_weeks = await self._week_repo.get_all()
-        rotated_any = False
-
-        for week in all_weeks:
-            if week.end_date < today and week.status != WeekStatus.PUBLISHED:
-                old_status = week.status
-                await self._week_repo.update(week.id, status=WeekStatus.PUBLISHED)
-                logger.info(
-                    f"Auto-rotated expired week {week.id} "
-                    f"({week.start_date} – {week.end_date}): "
-                    f"{old_status} → PUBLISHED"
+        try:
+            existing = await self._week_repo.get_by_date_range(ws, we)
+            if existing is None:
+                new_week = ScheduleWeek(
+                    start_date=ws,
+                    end_date=we,
+                    status=WeekStatus.CLOSED,
                 )
-                rotated_any = True
-
-        # If no current open week, create one for the upcoming period
-        current_open = await self._week_repo.get_current_open_week()
-        if current_open is None:
-            try:
-                ws, we = week_range(today)
-                # Check if a week for this range already exists
-                existing = await self._week_repo.get_by_date_range(ws, we)
-                if existing is None:
-                    new_week = ScheduleWeek(
-                        start_date=ws,
-                        end_date=we,
-                        status=WeekStatus.OPEN,
-                    )
-                    created = await self._week_repo.save(new_week)
-                    logger.info(
-                        f"Auto-created new open week: {ws} – {we} (id={created.id})"
-                    )
-            except Exception as exc:
-                logger.warning(f"Failed to auto-create current week: {exc}")
+                created = await self._week_repo.save(new_week)
+                logger.info(
+                    f"Auto-created upcoming week (closed): {ws} – {we} (id={created.id})"
+                )
+        except Exception as exc:
+            logger.warning(f"Failed to auto-create upcoming week: {exc}")
 
     # ── Internal helpers ──────────────────────────────────────────────────
 
