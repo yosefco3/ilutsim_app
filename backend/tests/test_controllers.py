@@ -198,6 +198,97 @@ class TestAdminUsersController:
         assert resp.status_code == 404
         app.dependency_overrides.clear()
 
+    # ── new-guard open-week notification ─────────────────────────────────
+
+    def _user_obj(self, telegram_id="555"):
+        from datetime import datetime, timezone
+        return type("U", (), {
+            "id": uuid.uuid4(),
+            "phone_number": "0500000000",
+            "first_name": "דנה",
+            "last_name": "כהן",
+            "full_name": "דנה כהן",
+            "role": "BASIC_GUARD",
+            "is_active": True,
+            "telegram_id": telegram_id,
+            "exemptions_notes": None,
+            "min_total_shifts": 0,
+            "min_night_shifts": 0,
+            "min_evening_shifts": 0,
+            "created_at": datetime.now(timezone.utc),
+        })()
+
+    def _open_week(self):
+        from datetime import date
+        return type("W", (), {
+            "start_date": date(2026, 6, 8),
+            "end_date": date(2026, 6, 14),
+        })()
+
+    def _post_payload(self):
+        return {
+            "phone_number": "0500000000",
+            "first_name": "דנה",
+            "last_name": "כהן",
+            "role": "BASIC_GUARD",
+        }
+
+    @patch("app.bot.notifications.notify_week_opened", new_callable=AsyncMock)
+    def test_create_user_notifies_when_week_open(self, mock_notify):
+        user_svc = AsyncMock()
+        user_svc.create_user.return_value = self._user_obj(telegram_id="555")
+        week_svc = AsyncMock()
+        week_svc.get_current_open_week.return_value = self._open_week()
+
+        app = _make_app()
+        app.dependency_overrides[require_admin_role] = _mock_admin_payload
+        app.dependency_overrides[get_user_service] = lambda: user_svc
+        app.dependency_overrides[get_week_service] = lambda: week_svc
+        client = TestClient(app)
+
+        resp = client.post("/admin/users", json=self._post_payload())
+        assert resp.status_code == 201
+        mock_notify.assert_awaited_once()
+        # called with the new guard's telegram_id in the recipients list
+        assert mock_notify.await_args.args[2] == [555]
+        app.dependency_overrides.clear()
+
+    @patch("app.bot.notifications.notify_week_opened", new_callable=AsyncMock)
+    def test_create_user_no_notice_when_no_open_week(self, mock_notify):
+        user_svc = AsyncMock()
+        user_svc.create_user.return_value = self._user_obj(telegram_id="555")
+        week_svc = AsyncMock()
+        week_svc.get_current_open_week.return_value = None
+
+        app = _make_app()
+        app.dependency_overrides[require_admin_role] = _mock_admin_payload
+        app.dependency_overrides[get_user_service] = lambda: user_svc
+        app.dependency_overrides[get_week_service] = lambda: week_svc
+        client = TestClient(app)
+
+        resp = client.post("/admin/users", json=self._post_payload())
+        assert resp.status_code == 201
+        mock_notify.assert_not_awaited()
+        app.dependency_overrides.clear()
+
+    @patch("app.bot.notifications.notify_week_opened", new_callable=AsyncMock)
+    def test_create_user_no_notice_without_telegram_id(self, mock_notify):
+        user_svc = AsyncMock()
+        user_svc.create_user.return_value = self._user_obj(telegram_id=None)
+        week_svc = AsyncMock()
+        week_svc.get_current_open_week.return_value = self._open_week()
+
+        app = _make_app()
+        app.dependency_overrides[require_admin_role] = _mock_admin_payload
+        app.dependency_overrides[get_user_service] = lambda: user_svc
+        app.dependency_overrides[get_week_service] = lambda: week_svc
+        client = TestClient(app)
+
+        resp = client.post("/admin/users", json=self._post_payload())
+        assert resp.status_code == 201
+        mock_notify.assert_not_awaited()
+        app.dependency_overrides.clear()
+
 
 # ---------------------------------------------------------------------------
 # Admin Weeks Controller Tests

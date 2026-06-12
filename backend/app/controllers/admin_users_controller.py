@@ -8,9 +8,10 @@ import uuid
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.exc import IntegrityError
 
-from app.dependencies import get_user_service, require_admin_role
+from app.dependencies import get_user_service, get_week_service, require_admin_role
 from app.schemas.user_schemas import UserCreate, UserResponse, UserUpdate
 from app.services.user_service import UserService
+from app.services.week_service import WeekService
 
 logger = logging.getLogger("ilutzim")
 
@@ -47,8 +48,15 @@ async def list_users(
 async def create_user(
     data: UserCreate,
     user_service: UserService = Depends(get_user_service),
+    week_service: WeekService = Depends(get_week_service),
 ):
-    """Create a new guard user and send a welcome message if telegram_id is known."""
+    """Create a new guard user.
+
+    ``user_service.create_user`` already sends the welcome notification (when a
+    telegram_id is known). On top of that, if a week is currently OPEN for
+    submissions, notify the new guard right away — with the submit button — so a
+    guard added mid-week isn't left out of the open round.
+    """
     logger.info(
         "create_user endpoint called: phone=%s, first_name=%s, last_name=%s",
         data.phone_number, data.first_name, data.last_name,
@@ -60,30 +68,26 @@ async def create_user(
             user.id, user.phone_number, user.telegram_id,
         )
 
-        # Attempt to send a welcome notification if the user already has a telegram_id
+        # If a week is open right now, prompt the new guard to submit (with button).
         if user.telegram_id:
             try:
-                from app.bot.notifications import notify_guard_welcome
-                await notify_guard_welcome(
-                    int(user.telegram_id),
-                    user.first_name or "",
-                    user.last_name or "",
-                )
-                logger.info(
-                    "Welcome notification sent to new guard telegram_id=%s",
-                    user.telegram_id,
-                )
+                open_week = await week_service.get_current_open_week()
+                if open_week is not None:
+                    from app.bot.notifications import notify_week_opened
+                    await notify_week_opened(
+                        open_week.start_date,
+                        open_week.end_date,
+                        [int(user.telegram_id)],
+                    )
+                    logger.info(
+                        "Open-week notice sent to new guard telegram_id=%s",
+                        user.telegram_id,
+                    )
             except Exception as notif_exc:
                 logger.warning(
-                    "Could not send welcome notification to telegram_id=%s: %s",
+                    "Could not send open-week notice to telegram_id=%s: %s",
                     user.telegram_id, notif_exc,
                 )
-        else:
-            logger.info(
-                "New guard %s has no telegram_id — skipping welcome notification. "
-                "They will be verified when they send /start to the bot.",
-                user.id,
-            )
 
         return user
     except IntegrityError as e:
