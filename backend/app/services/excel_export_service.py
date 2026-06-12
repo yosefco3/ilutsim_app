@@ -75,12 +75,12 @@ _SHIFT_PERIODS: list[tuple[str, str, PatternFill]] = [
     ),
     (
         ShiftType.AFTERNOON.value,
-        "צהריים",
+        "ערב",
         PatternFill(start_color="FCE4D6", end_color="FCE4D6", fill_type="solid"),
     ),
     (
         ShiftType.NIGHT.value,
-        "ערב",
+        "לילה",
         PatternFill(start_color="D9E1F2", end_color="D9E1F2", fill_type="solid"),
     ),
 ]
@@ -275,8 +275,8 @@ class ExcelExportService:
         """
         Generate a nicely-formatted Excel of all submitted constraints.
 
-        Each guard who submitted occupies three stacked rows — בוקר / צהריים /
-        ערב — so every shift period gets its own line per day instead of being
+        Each guard who submitted occupies three stacked rows — בוקר / ערב /
+        לילה — so every shift period gets its own line per day instead of being
         crammed into a single cell. Name, phone and notes are merged across the
         three rows. Sheet is rendered right-to-left for Hebrew readability.
         """

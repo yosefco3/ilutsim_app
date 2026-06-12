@@ -282,13 +282,13 @@ async def test_constraints_excel_has_shift_times_and_notes():
     # Each guard spans three rows (בוקר / צהריים / ערב), starting at row 5.
     assert ws.cell(row=5, column=1).value == "בני לוי"
     assert ws.cell(row=5, column=3).value == "בוקר"
-    assert ws.cell(row=6, column=3).value == "צהריים"
-    assert ws.cell(row=7, column=3).value == "ערב"
+    assert ws.cell(row=6, column=3).value == "ערב"
+    assert ws.cell(row=7, column=3).value == "לילה"
 
-    # Sunday (col 4): morning window in the בוקר row, night window in the ערב row.
+    # Sunday (col 4): morning window in the בוקר row, night window in the לילה row.
     assert "06:00" in ws.cell(row=5, column=4).value
     assert "22:00" in ws.cell(row=7, column=4).value
-    # Afternoon row has no window that day → empty.
+    # Afternoon (ערב) row has no window that day → empty.
     assert not ws.cell(row=6, column=4).value
     # Monday (col 5): not available → merged "לא זמין" on the top row.
     assert ws.cell(row=5, column=5).value == "לא זמין"
