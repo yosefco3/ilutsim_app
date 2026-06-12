@@ -273,22 +273,27 @@ async def test_constraints_excel_has_shift_times_and_notes():
     # RTL sheet for Hebrew
     assert ws.sheet_view.rightToLeft is True
 
-    # Header row (row 4): name, phone, then days, then notes
+    # Header row (row 4): name, phone, period, then days, then notes
     assert ws.cell(row=4, column=1).value == Messages.EXCEL_HEADER_NAME
     assert ws.cell(row=4, column=2).value == Messages.EXCEL_HEADER_PHONE
-    assert ws.cell(row=4, column=10).value == "הערות"
+    assert ws.cell(row=4, column=3).value == "משמרת"
+    assert ws.cell(row=4, column=11).value == "הערות"
 
-    # Data row
+    # Each guard spans three rows (בוקר / צהריים / ערב), starting at row 5.
     assert ws.cell(row=5, column=1).value == "בני לוי"
-    # Sunday cell: shifts sorted by start time → morning first
-    sunday = ws.cell(row=5, column=3).value
-    assert "בוקר 06:00" in sunday
-    assert "לילה 22:00" in sunday
-    assert sunday.index("בוקר") < sunday.index("לילה")
-    # Monday cell: not available
-    assert ws.cell(row=5, column=4).value == "לא זמין"
-    # Notes
-    assert ws.cell(row=5, column=10).value == "הערה כללית"
+    assert ws.cell(row=5, column=3).value == "בוקר"
+    assert ws.cell(row=6, column=3).value == "צהריים"
+    assert ws.cell(row=7, column=3).value == "ערב"
+
+    # Sunday (col 4): morning window in the בוקר row, night window in the ערב row.
+    assert "06:00" in ws.cell(row=5, column=4).value
+    assert "22:00" in ws.cell(row=7, column=4).value
+    # Afternoon row has no window that day → empty.
+    assert not ws.cell(row=6, column=4).value
+    # Monday (col 5): not available → merged "לא זמין" on the top row.
+    assert ws.cell(row=5, column=5).value == "לא זמין"
+    # Notes merged across the three rows, anchored on the top row.
+    assert ws.cell(row=5, column=11).value == "הערה כללית"
 
 
 # ── Deviation report tests ──────────────────────────────────────────

@@ -60,6 +60,30 @@ _YELLOW_FILL = PatternFill(
 _GREEN_FILL = PatternFill(
     start_color="C6EFCE", end_color="C6EFCE", fill_type="solid"
 )
+# Neutral light fill for an available day where this period was not chosen
+_EMPTY_FILL = PatternFill(
+    start_color="F2F2F2", end_color="F2F2F2", fill_type="solid"
+)
+
+# Three daily shift periods, in display order, with their own accent colour
+# for the "משמרת" column so the sheet reads clearly at a glance.
+_SHIFT_PERIODS: list[tuple[str, str, PatternFill]] = [
+    (
+        ShiftType.MORNING.value,
+        "בוקר",
+        PatternFill(start_color="FFF2CC", end_color="FFF2CC", fill_type="solid"),
+    ),
+    (
+        ShiftType.AFTERNOON.value,
+        "צהריים",
+        PatternFill(start_color="FCE4D6", end_color="FCE4D6", fill_type="solid"),
+    ),
+    (
+        ShiftType.NIGHT.value,
+        "ערב",
+        PatternFill(start_color="D9E1F2", end_color="D9E1F2", fill_type="solid"),
+    ),
+]
 
 # Hebrew weekday order (Sunday=0 … Saturday=6)
 _DAY_NAMES_HE = [
@@ -96,6 +120,33 @@ def _apply_header_style(cell: Any) -> None:
 def _apply_cell_style(cell: Any, center: bool = True) -> None:
     cell.border = _THIN_BORDER
     cell.alignment = _CENTER if center else Alignment(vertical="center")
+
+
+def _merge_vertical(
+    ws: Any,
+    row: int,
+    col: int,
+    span: int,
+    value: Any,
+    fill: Any = None,
+    alignment: Any = None,
+) -> Any:
+    """Merge ``span`` cells down a single column and style the whole block.
+
+    openpyxl only keeps the top-left cell's value, but borders/fill must be set
+    on every underlying cell for the merged region to render as one boxed cell.
+    """
+    ws.merge_cells(
+        start_row=row, start_column=col, end_row=row + span - 1, end_column=col
+    )
+    for r in range(row, row + span):
+        c = ws.cell(row=r, column=col)
+        c.border = _THIN_BORDER
+        if fill is not None:
+            c.fill = fill
+    top = ws.cell(row=row, column=col, value=value)
+    top.alignment = alignment or _CENTER
+    return top
 
 
 class ExcelExportService:
@@ -224,9 +275,10 @@ class ExcelExportService:
         """
         Generate a nicely-formatted Excel of all submitted constraints.
 
-        One row per guard who submitted, with per-day availability and the
-        exact shift windows they chose, plus their general notes.
-        Sheet is rendered right-to-left for Hebrew readability.
+        Each guard who submitted occupies three stacked rows — בוקר / צהריים /
+        ערב — so every shift period gets its own line per day instead of being
+        crammed into a single cell. Name, phone and notes are merged across the
+        three rows. Sheet is rendered right-to-left for Hebrew readability.
         """
         if not HAS_OPENPYXL:
             raise RuntimeError("openpyxl is required for Excel export")
@@ -244,7 +296,11 @@ class ExcelExportService:
         ws.title = "אילוצים"
         ws.sheet_view.rightToLeft = True
 
-        n_cols = 10  # name + phone + 7 days + notes
+        # Layout: name | phone | period | 7 days | notes
+        _PERIOD_COL = 3
+        _FIRST_DAY_COL = 4
+        _NOTES_COL = 11
+        n_cols = 11
 
         # Title
         title_text = f"אילוצים שהוגשו — {week.start_date} עד {week.end_date}"
@@ -263,7 +319,7 @@ class ExcelExportService:
 
         # Headers
         headers = (
-            [Messages.EXCEL_HEADER_NAME, Messages.EXCEL_HEADER_PHONE]
+            [Messages.EXCEL_HEADER_NAME, Messages.EXCEL_HEADER_PHONE, "משמרת"]
             + _DAY_NAMES_HE
             + ["הערות"]
         )
@@ -277,6 +333,7 @@ class ExcelExportService:
 
         ordered = sorted(submissions, key=_sub_name)
 
+        _SPAN = len(_SHIFT_PERIODS)  # three rows per guard
         row_num = 5
         for sub in ordered:
             user = user_map.get(sub.user_id)
@@ -290,66 +347,86 @@ class ExcelExportService:
                 ds.date: ds for ds in sub.daily_statuses
             }
 
-            name_cell = ws.cell(row=row_num, column=1, value=full_name)
-            _apply_cell_style(name_cell, center=False)
-            phone_cell = ws.cell(row=row_num, column=2, value=phone)
-            _apply_cell_style(phone_cell)
+            # Name / phone / notes span the guard's three period rows
+            _merge_vertical(ws, row_num, 1, _SPAN, full_name)
+            _merge_vertical(ws, row_num, 2, _SPAN, phone)
+            _merge_vertical(
+                ws,
+                row_num,
+                _NOTES_COL,
+                _SPAN,
+                sub.general_notes or "",
+                alignment=Alignment(
+                    horizontal="right", vertical="center", wrap_text=True
+                ),
+            )
+
+            # "משמרת" label column — one coloured row per period
+            for p, (_type, label, accent) in enumerate(_SHIFT_PERIODS):
+                cell = ws.cell(row=row_num + p, column=_PERIOD_COL, value=label)
+                cell.border = _THIN_BORDER
+                cell.alignment = _CENTER
+                cell.fill = accent
+                cell.font = Font(bold=True)
 
             for day_offset in range(7):
-                col = day_offset + 3
+                col = _FIRST_DAY_COL + day_offset
                 current_date = week.start_date + timedelta(days=day_offset)
                 ds = status_by_date.get(current_date)
 
+                # Unavailable day, or available with no chosen windows →
+                # a single merged cell spanning the three period rows.
                 if ds is None or not ds.is_available:
-                    cell_value = "לא זמין"
-                    cell_fill = _RED_FILL
-                else:
-                    windows = sorted(
-                        ds.shift_windows, key=lambda w: w.start_time
+                    _merge_vertical(
+                        ws, row_num, col, _SPAN, "לא זמין", fill=_RED_FILL
                     )
-                    if windows:
-                        parts = []
-                        for w in windows:
-                            label = _SHIFT_LABELS.get(
-                                getattr(w.shift_type, "value", w.shift_type),
-                                "",
-                            )
-                            parts.append(
-                                f"{label} {w.start_time:%H:%M}–{w.end_time:%H:%M}".strip()
-                            )
-                        cell_value = "\n".join(parts)
+                    continue
+
+                windows_by_type: dict[str, list[Any]] = {}
+                for w in ds.shift_windows:
+                    t = getattr(w.shift_type, "value", w.shift_type)
+                    windows_by_type.setdefault(t, []).append(w)
+
+                if not windows_by_type:
+                    _merge_vertical(
+                        ws, row_num, col, _SPAN, "זמין", fill=_GREEN_FILL
+                    )
+                    continue
+
+                # One row per period, showing that period's time windows.
+                for p, (shift_type, _label, _accent) in enumerate(_SHIFT_PERIODS):
+                    cell = ws.cell(row=row_num + p, column=col)
+                    cell.border = _THIN_BORDER
+                    cell.alignment = _CENTER_WRAP
+                    wins = sorted(
+                        windows_by_type.get(shift_type, []),
+                        key=lambda w: w.start_time,
+                    )
+                    if wins:
+                        cell.value = "\n".join(
+                            f"{w.start_time:%H:%M}–{w.end_time:%H:%M}"
+                            for w in wins
+                        )
+                        cell.fill = _GREEN_FILL
                     else:
-                        cell_value = "זמין"
-                    cell_fill = _GREEN_FILL
+                        cell.fill = _EMPTY_FILL
 
-                cell = ws.cell(row=row_num, column=col, value=cell_value)
-                cell.border = _THIN_BORDER
-                cell.alignment = _CENTER_WRAP
-                cell.fill = cell_fill
-
-            notes_cell = ws.cell(
-                row=row_num, column=10, value=sub.general_notes or ""
-            )
-            notes_cell.border = _THIN_BORDER
-            notes_cell.alignment = Alignment(
-                horizontal="right", vertical="center", wrap_text=True
-            )
-
-            row_num += 1
+            row_num += _SPAN
 
         # Column widths: name + notes wider, days medium
         ws.column_dimensions[get_column_letter(1)].width = 20  # name
         ws.column_dimensions[get_column_letter(2)].width = 16  # phone
-        for col in range(3, 10):  # days
-            ws.column_dimensions[get_column_letter(col)].width = 18
-        ws.column_dimensions[get_column_letter(10)].width = 30  # notes
+        ws.column_dimensions[get_column_letter(_PERIOD_COL)].width = 10  # period
+        for col in range(_FIRST_DAY_COL, _NOTES_COL):  # days
+            ws.column_dimensions[get_column_letter(col)].width = 14
+        ws.column_dimensions[get_column_letter(_NOTES_COL)].width = 30  # notes
 
         buffer = io.BytesIO()
         wb.save(buffer)
         buffer.seek(0)
         logger.info(
             f"Excel constraints report exported for week {week_id}: "
-            f"{row_num - 5} rows"
+            f"{len(ordered)} guards"
         )
         return buffer.read()
 
