@@ -38,6 +38,15 @@ class GuardSubmissionRequest(BaseModel):
         return self
 
 
+class AdminSubmissionRequest(GuardSubmissionRequest):
+    """Payload sent by an admin filling constraints on behalf of a guard.
+
+    Same shape as a guard submission, plus the target ``user_id`` (the admin
+    is authenticated separately, so the guard is identified explicitly).
+    """
+    user_id: uuid.UUID
+
+
 # ── Internal schemas (used by service layer) ─────────────────────────────────
 
 class ShiftWindowInput(BaseModel):

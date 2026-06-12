@@ -18,6 +18,7 @@ from app.dependencies import (
 from app.messages import Messages
 from app.models.user import User
 from app.schemas.submission_schemas import (
+    AdminSubmissionRequest,
     GuardSubmissionRequest,
     ShiftWindowInput,
     DayStatusInput,
@@ -113,6 +114,49 @@ async def submit_schedule(
             await notify_submission_success(int(current_user.telegram_id), week_label)
         except Exception as e:
             logger.warning(f"Failed to send submission success notification: {e}")
+
+    return submission
+
+
+@router.post(
+    "/admin",
+    response_model=SubmissionResponse,
+    status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(require_admin_role)],
+)
+async def admin_submit_schedule(
+    data: AdminSubmissionRequest,
+    submission_service: SubmissionService = Depends(get_submission_service),
+    week_service: WeekService = Depends(get_week_service),
+):
+    """Submit a guard's weekly schedule on the guard's behalf. **Admin only.**
+
+    For guards without Telegram, an admin fills the constraints from the
+    dashboard. Unlike the guard endpoint, this is allowed regardless of the
+    week's status (``override_lock=True``) — the admin can fill constraints for
+    a closed/locked week as well.
+    """
+    # Raises UserNotFoundException (404) via the global handler if missing.
+    week = await week_service.get_week(data.week_id)
+
+    try:
+        submission_create = _convert_guard_request(data, week.start_date, data.user_id)
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=str(e),
+        )
+
+    try:
+        submission = await submission_service.create_submission(
+            submission_create, override_lock=True
+        )
+    except Exception as e:
+        logger.error(f"Admin submission failed: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        )
 
     return submission
 
