@@ -173,8 +173,23 @@ body {
 .btn-outline:hover:not(:disabled) { color: var(--text); border-color: var(--text-dim); background: rgba(255,255,255,.03); }
 .btn-ghost { background: transparent; color: var(--text-muted); }
 .btn-ghost:hover:not(:disabled) { color: var(--text); background: rgba(255,255,255,.05); }
+.btn-success { background: var(--success); color: #0a2e16; }
+.btn-success:hover:not(:disabled) { background: #2dd46a; }
 .btn-block { width: 100%; }
 .btn-sm { padding: 0.3rem 0.65rem; font-size: 0.8rem; }
+
+/* Row of form buttons (save / cancel) */
+.form-actions {
+  display: flex;
+  gap: 0.6rem;
+  margin-top: 1.25rem;
+  flex-wrap: wrap;
+}
+
+/* Table actions column */
+.actions-cell { white-space: nowrap; }
+.actions-cell .btn { margin-inline-start: 0.4rem; margin-block: 0.15rem; }
+.actions-cell .btn:first-child { margin-inline-start: 0; }
 
 /* Cards */
 .card {
@@ -281,6 +296,11 @@ body {
 .badge-inactive  { background: var(--surface-3);    color: var(--text-dim); border-color: var(--border-strong); }
 .badge-submitted { background: var(--success-soft); color: #86efac; border-color: rgba(34,197,94,.25); }
 .badge-missing   { background: var(--danger-soft);  color: #fca5a5; border-color: rgba(239,68,68,.25); }
+/* Generic semantic badges */
+.badge-success   { background: var(--success-soft); color: #86efac; border-color: rgba(34,197,94,.25); }
+.badge-warning   { background: var(--warning-soft); color: #fcd34d; border-color: rgba(245,158,11,.25); }
+.badge-danger    { background: var(--danger-soft);  color: #fca5a5; border-color: rgba(239,68,68,.25); }
+.badge-secondary { background: var(--surface-3);    color: var(--text-muted); border-color: var(--border-strong); }
 
 /* Confirm Dialog */
 .overlay {
