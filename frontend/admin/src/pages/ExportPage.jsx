@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useWeeks } from '../hooks/useWeeks';
 import { exportExcel } from '../api/adminApiClient';
 import messages from '../utils/messages';
@@ -7,6 +7,17 @@ export default function ExportPage() {
   const { weeks, loading } = useWeeks();
   const [selectedWeek, setSelectedWeek] = useState('');
   const [exporting, setExporting] = useState(false);
+
+  // Default the week selector to the relevant week (the single 'open' one) once
+  // weeks load, so the admin can export it without picking a week first. Runs
+  // once; if no week is open, stay on the "choose week" prompt.
+  const didInitWeek = useRef(false);
+  useEffect(() => {
+    if (didInitWeek.current || !weeks.length) return;
+    didInitWeek.current = true;
+    const open = weeks.find((w) => w.status === 'open');
+    if (open) setSelectedWeek(String(open.id));
+  }, [weeks]);
 
   const handleExport = async () => {
     if (!selectedWeek) return;

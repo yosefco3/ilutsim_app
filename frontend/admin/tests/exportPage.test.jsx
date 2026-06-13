@@ -47,6 +47,22 @@ describe('ExportPage', () => {
     expect(screen.getByRole('button')).toBeDisabled();
   });
 
+  it('defaults the selector to the relevant (open) week and enables export', async () => {
+    useWeeks.mockReturnValue({
+      weeks: [
+        { id: 'week-1', week_label: 'שבוע ישן', status: 'published' },
+        { id: 'week-2', week_label: 'שבוע רלוונטי', status: 'open' },
+      ],
+      loading: false,
+    });
+    renderPage();
+
+    await waitFor(() =>
+      expect(screen.getByRole('combobox')).toHaveValue('week-2'),
+    );
+    expect(screen.getByRole('button')).toBeEnabled();
+  });
+
   it('calls exportExcel with the selected week id on click', async () => {
     exportExcel.mockResolvedValue(new Blob(['xlsx']));
     renderPage();
