@@ -103,14 +103,19 @@ class SubmissionService:
         return SubmissionResponse.model_validate(sub)
 
     async def get_week_submissions_grid(self, week_id: uuid.UUID) -> list[SubmissionStatusGrid]:
-        """Return submission status for all active users for a week."""
+        """Return submission status for all users (active and inactive) for a week.
+
+        The ``is_active`` flag lets the admin UI show active guards by default
+        and list inactive guards separately. Reminders still target only the
+        active guards (see the notifications controller).
+        """
         submissions = await self._submission_repo.get_submissions_for_week(week_id)
-        active_users = await self._user_repo.get_active_users()
+        users = await self._user_repo.get_all_users()
 
         sub_by_user = {s.user_id: s for s in submissions}
 
         result = []
-        for user in active_users:
+        for user in users:
             sub = sub_by_user.get(user.id)
             result.append(
                 SubmissionStatusGrid(
@@ -118,6 +123,7 @@ class SubmissionService:
                     full_name=user.full_name,
                     phone_number=user.phone_number or "",
                     submitted_at=sub.submitted_at if sub else None,
+                    is_active=user.is_active,
                 )
             )
 
@@ -137,16 +143,18 @@ class SubmissionService:
             }
         """
         submissions = await self._submission_repo.get_submissions_for_week(week_id)
-        active_users = await self._user_repo.get_active_users()
+        # All users (active + inactive) so the admin UI can show submission
+        # details for inactive guards too; the grid carries the is_active flag.
+        users = await self._user_repo.get_all_users()
         week = await self._week_repo.get_by_id(week_id)
 
         sub_by_user = {s.user_id: s for s in submissions}
-        user_by_id = {u.id: u for u in active_users}
+        user_by_id = {u.id: u for u in users}
 
         submitted = []
         missing = []
 
-        for user in active_users:
+        for user in users:
             sub = sub_by_user.get(user.id)
             if sub and sub.daily_statuses:  # has actual submission with days
                 submission_response = SubmissionResponse.model_validate(sub)

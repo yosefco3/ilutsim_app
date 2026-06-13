@@ -13,6 +13,8 @@ export default function SubmissionsPage() {
   const toast = useToast();
   const [reminding, setReminding] = useState(false);
 
+  const [showInactive, setShowInactive] = useState(false);
+
   const loading = weeksLoading || subsLoading;
 
   // Map each guard's user_id to their detailed submission (days + notes)
@@ -21,7 +23,13 @@ export default function SubmissionsPage() {
     detailsByUser[s.user_id] = s;
   }
 
-  const missingCount = submissions.filter((s) => !s.submitted_at).length;
+  // Active guards are the default view; inactive guards live in a separate,
+  // collapsible list. (Older API responses without is_active count as active.)
+  const activeSubmissions = submissions.filter((s) => s.is_active !== false);
+  const inactiveSubmissions = submissions.filter((s) => s.is_active === false);
+
+  // Only active guards receive reminders, so count missing among them only.
+  const missingCount = activeSubmissions.filter((s) => !s.submitted_at).length;
 
   async function handleRemind() {
     if (!selectedWeek || reminding) return;
@@ -68,7 +76,24 @@ export default function SubmissionsPage() {
               </button>
             </div>
           )}
-          <StatusGrid submissions={submissions} detailsByUser={detailsByUser} />
+          <StatusGrid submissions={activeSubmissions} detailsByUser={detailsByUser} />
+
+          {inactiveSubmissions.length > 0 && (
+            <div className="inactive-section">
+              <button
+                type="button"
+                className="btn btn-outline inactive-toggle"
+                onClick={() => setShowInactive((v) => !v)}
+                aria-expanded={showInactive}
+              >
+                <span aria-hidden="true">{showInactive ? '▾' : '▸'}</span>
+                {messages.submissions.inactiveToggle} ({inactiveSubmissions.length})
+              </button>
+              {showInactive && (
+                <StatusGrid submissions={inactiveSubmissions} detailsByUser={detailsByUser} />
+              )}
+            </div>
+          )}
         </>
       ) : (
         <p className="empty-state">{messages.submissions.selectWeekPrompt}</p>

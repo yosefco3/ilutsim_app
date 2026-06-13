@@ -190,3 +190,27 @@ async def test_resubmit_replaces_days_without_duplicating(
     )
     assert sub_count == 1  # replaced, not duplicated
     assert resp.days[0].shift_windows[0].shift_type == ShiftType.NIGHT
+
+
+@pytest.mark.asyncio
+async def test_grid_includes_inactive_guards_with_flag(
+    db_session, service, user, open_week
+):
+    # `user` is active; add a second, inactive guard.
+    inactive = User(
+        phone_number="0500000001",
+        first_name="רון",
+        last_name="לוי",
+        role=UserRole.BASIC_GUARD,
+        is_active=False,
+    )
+    db_session.add(inactive)
+    await db_session.commit()
+    await db_session.refresh(inactive)
+
+    grid = await service.get_week_submissions_grid(open_week.id)
+
+    by_id = {row.user_id: row for row in grid}
+    # Both active and inactive guards appear, each with the correct flag.
+    assert by_id[user.id].is_active is True
+    assert by_id[inactive.id].is_active is False

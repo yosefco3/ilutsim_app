@@ -139,6 +139,7 @@ class SubmissionStatusGrid(BaseModel):
     full_name: str
     phone_number: str
     submitted_at: datetime | None = None
+    is_active: bool = True
 
 
 class MissingGuardInfo(BaseModel):
