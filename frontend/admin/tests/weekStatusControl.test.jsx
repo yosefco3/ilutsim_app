@@ -27,7 +27,7 @@ describe('WeekStatusControl', () => {
 
   it('offers "open for submission" on a closed week', () => {
     renderWeek('closed');
-    expect(screen.getByText(/פתוח להגשה/)).toBeInTheDocument();
+    expect(screen.getByText(/פתח להגשה/)).toBeInTheDocument();
   });
 
   it('does not crash on an unknown status (falls back)', () => {
