@@ -39,28 +39,33 @@ async def send_submission_reminder(
 
     users = await user_service.get_all_active_users()
 
-    # Collect telegram IDs of active users who haven't submitted yet.
-    telegram_ids: list[int] = []
+    # Collect active guards who haven't submitted yet, keeping their name so the
+    # reminder can greet each one personally.
+    recipients: list[dict] = []
     for user in users:
         submission = await submission_service.get_submission(user.id, week_id)
         if submission is None and user.telegram_id:
             try:
-                telegram_ids.append(int(user.telegram_id))
+                telegram_id = int(user.telegram_id)
             except (TypeError, ValueError):
                 logger.warning("Skipping invalid telegram_id for user %s", user.id)
+                continue
+            name = (getattr(user, "full_name", None)
+                    or f"{user.first_name} {user.last_name}").strip()
+            recipients.append({"telegram_id": telegram_id, "name": name})
 
     # Send via bot
     sent_count = 0
-    if telegram_ids:
+    if recipients:
         try:
             from app.bot.notifications import notify_closing_reminder
 
-            await notify_closing_reminder(
+            sent_count = await notify_closing_reminder(
                 week_start=week.start_date,
+                week_end=getattr(week, "end_date", None),
                 deadline_text="בקרוב",
-                telegram_ids=telegram_ids,
+                recipients=recipients,
             )
-            sent_count = len(telegram_ids)
         except Exception as exc:
             logger.error("Failed to send reminders: %s", exc)
             raise HTTPException(

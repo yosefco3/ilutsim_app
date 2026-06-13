@@ -336,13 +336,22 @@ class TestAdminNotificationsController:
         from types import SimpleNamespace
 
         week_id = uuid.uuid4()
-        submitted = SimpleNamespace(id=uuid.uuid4(), telegram_id="111")
-        missing = SimpleNamespace(id=uuid.uuid4(), telegram_id="222")
-        no_telegram = SimpleNamespace(id=uuid.uuid4(), telegram_id=None)
+        submitted = SimpleNamespace(
+            id=uuid.uuid4(), telegram_id="111",
+            first_name="A", last_name="A", full_name="A A",
+        )
+        missing = SimpleNamespace(
+            id=uuid.uuid4(), telegram_id="222",
+            first_name="יוסף", last_name="כהן", full_name="יוסף כהן",
+        )
+        no_telegram = SimpleNamespace(
+            id=uuid.uuid4(), telegram_id=None,
+            first_name="B", last_name="B", full_name="B B",
+        )
 
         week_svc = AsyncMock()
         week_svc.get_week.return_value = SimpleNamespace(
-            id=week_id, start_date=date(2025, 6, 14)
+            id=week_id, start_date=date(2025, 6, 14), end_date=date(2025, 6, 20)
         )
         user_svc = AsyncMock()
         user_svc.get_all_active_users.return_value = [submitted, missing, no_telegram]
@@ -351,6 +360,9 @@ class TestAdminNotificationsController:
         sub_svc.get_submission.side_effect = lambda uid, wid: (
             object() if uid == submitted.id else None
         )
+
+        # The reminder helper returns the number of guards actually notified.
+        mock_notify.return_value = 1
 
         app = _make_app()
         app.dependency_overrides[require_admin_role] = _mock_admin_payload
@@ -365,8 +377,9 @@ class TestAdminNotificationsController:
         assert body["reminded"] == 1
         assert body["total_active"] == 3
         mock_notify.assert_awaited_once()
-        # Only the missing guard WITH a telegram_id is reminded (as an int).
-        assert mock_notify.await_args.kwargs["telegram_ids"] == [222]
+        # Only the missing guard WITH a telegram_id is reminded, greeted by name.
+        recipients = mock_notify.await_args.kwargs["recipients"]
+        assert recipients == [{"telegram_id": 222, "name": "יוסף כהן"}]
         app.dependency_overrides.clear()
 
 

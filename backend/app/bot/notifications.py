@@ -92,16 +92,41 @@ async def notify_week_published(week_start: date, week_end: date, telegram_ids: 
     return count
 
 
-async def notify_closing_reminder(week_start: date, deadline_text: str, telegram_ids: list[int]):
-    """Remind users to submit before deadline."""
-    text = (
-        f"⏰ <b>תזכורת!</b>\n\n"
-        f"שבוע {week_start} – ההגשה תיסגר {deadline_text}.\n"
-        f"אם טרם הגשת, הגש עכשיו!\n\n"
-        f"שלח /start להתחלה."
-    )
-    count = await broadcast_notifications(telegram_ids, text)
-    logger.info("Closing reminder sent to %d/%d users", count, len(telegram_ids))
+async def notify_closing_reminder(
+    week_start: date,
+    deadline_text: str,
+    recipients: list[dict],
+    week_end: date | None = None,
+):
+    """Remind guards who haven't submitted yet to submit before the deadline.
+
+    ``recipients`` is a list of ``{"telegram_id": int, "name": str}`` dicts so the
+    message can greet each registered guard by name. The message includes a WebApp
+    button to submit directly — registered guards never need to send ``/start``.
+    Returns count of successfully notified guards.
+    """
+    from app.bot.keyboards.inline_kb import submit_constraints_kb
+
+    start_fmt = week_start.strftime("%d/%m/%Y")
+    week_range = start_fmt
+    if week_end is not None:
+        week_range = f"{start_fmt} - {week_end.strftime('%d/%m/%Y')}"
+
+    keyboard = submit_constraints_kb()
+    count = 0
+    for recipient in recipients:
+        name = (recipient.get("name") or "").strip()
+        greeting = f"שלום {name}! 👋\n\n" if name else ""
+        text = (
+            f"⏰ <b>תזכורת!</b>\n\n"
+            f"{greeting}"
+            f"טרם הגשת את האילוצים לשבוע {week_range}.\n"
+            f"ההגשה תיסגר {deadline_text}.\n\n"
+            f"אנא הגש עכשיו דרך הכפתור למטה 👇"
+        )
+        if await send_notification(recipient["telegram_id"], text, reply_markup=keyboard):
+            count += 1
+    logger.info("Closing reminder sent to %d/%d users", count, len(recipients))
     return count
 
 
