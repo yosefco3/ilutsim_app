@@ -103,6 +103,25 @@ describe('DayRow', () => {
     expect(onSetShiftHours).toHaveBeenCalledWith(0, 'morning', '08:00', '16:00');
   });
 
+  it('should render hours as half-hour dropdowns (no free-text input)', () => {
+    const day = {
+      ...baseDay,
+      shifts: makeShifts({
+        morning: { active: true, from_hour: '07:00', to_hour: '16:30' },
+      }),
+    };
+    const { container } = renderRow(day);
+    const selects = container.querySelectorAll('select.hour-input');
+    expect(selects).toHaveLength(2);
+    // No free-text time inputs remain.
+    expect(container.querySelector('input.hour-input')).toBeNull();
+    // 48 half-hour slots are offered, from 00:00 to 23:30.
+    const options = [...selects[0].options].map((o) => o.value);
+    expect(options).toContain('00:00');
+    expect(options).toContain('23:30');
+    expect(options).not.toContain('07:15');
+  });
+
   it('should disable all buttons when disabled=true', () => {
     renderRow(baseDay, { disabled: true });
     const buttons = screen.getAllByRole('button');

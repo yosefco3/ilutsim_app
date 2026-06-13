@@ -72,3 +72,14 @@ export const SHIFT_DEFAULTS = {
   afternoon: { from_hour: "15:00", to_hour: "23:00" },
   night: { from_hour: "23:00", to_hour: "07:00" },
 };
+
+/**
+ * All half-hour time slots from "00:00" to "23:30" (48 values).
+ * Used to populate the time dropdowns so guards/admins pick a value
+ * instead of typing — no ":" to type, and only half-hour multiples are selectable.
+ */
+export const HALF_HOUR_OPTIONS = Array.from({ length: 48 }, (_, i) => {
+  const h = String(Math.floor(i / 2)).padStart(2, "0");
+  const m = i % 2 === 0 ? "00" : "30";
+  return `${h}:${m}`;
+});

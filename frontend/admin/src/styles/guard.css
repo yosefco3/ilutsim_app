@@ -193,6 +193,11 @@
   max-width: 100px;
 }
 
+/* Time dropdowns reuse .hour-input but need a pointer + room for the arrow. */
+select.hour-input {
+  cursor: pointer;
+}
+
 /* ── Notes ───────────────────────────────────────────────── */
 .guard-layout .notes-section {
   margin-top: 14px;

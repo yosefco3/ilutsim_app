@@ -2,9 +2,37 @@
  * Single day row — three shift toggles (morning / afternoon / night),
  * each with its own custom hours inputs.  Mobile-first.
  */
-import { messages, DAY_NAMES, SHIFT_LABELS } from "../../utils/guardMessages.js";
+import {
+  messages,
+  DAY_NAMES,
+  SHIFT_LABELS,
+  HALF_HOUR_OPTIONS,
+} from "../../utils/guardMessages.js";
 
 const SHIFT_TYPES = ["morning", "afternoon", "night"];
+
+/**
+ * Build the <option> list for a time dropdown. If the current value isn't a
+ * half-hour slot (e.g. legacy data), it's prepended so it still displays
+ * instead of being silently changed to the first slot.
+ */
+function timeOptions(value) {
+  const opts = HALF_HOUR_OPTIONS;
+  const list = value && !opts.includes(value) ? [value, ...opts] : opts;
+  return [
+    // Keep an empty slot so a blank value shows as blank (not a wrong slot).
+    !value && (
+      <option key="" value="">
+        --
+      </option>
+    ),
+    ...list.map((t) => (
+      <option key={t} value={t}>
+        {t}
+      </option>
+    )),
+  ];
+}
 
 /**
  * @param {object} props
@@ -58,11 +86,8 @@ export default function DayRow({
                   <div className="shift-hours">
                     <label className="hour-label">
                       {messages.LABEL_FROM}
-                      <input
-                        type="text"
-                        inputMode="numeric"
+                      <select
                         className="hour-input"
-                        placeholder="HH:MM"
                         value={shift.from_hour}
                         disabled={isDisabled}
                         onChange={(e) =>
@@ -73,15 +98,14 @@ export default function DayRow({
                             shift.to_hour,
                           )
                         }
-                      />
+                      >
+                        {timeOptions(shift.from_hour)}
+                      </select>
                     </label>
                     <label className="hour-label">
                       {messages.LABEL_TO}
-                      <input
-                        type="text"
-                        inputMode="numeric"
+                      <select
                         className="hour-input"
-                        placeholder="HH:MM"
                         value={shift.to_hour}
                         disabled={isDisabled}
                         onChange={(e) =>
@@ -92,7 +116,9 @@ export default function DayRow({
                             e.target.value,
                           )
                         }
-                      />
+                      >
+                        {timeOptions(shift.to_hour)}
+                      </select>
                     </label>
                   </div>
                 )}

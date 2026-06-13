@@ -3,7 +3,7 @@
 > **⚠️ מסמך זה מתעדכן בכל שינוי משמעותי באפליקציה.**
 > אם הנך מוסיף/משנה פיצ'ר — עדכן גם כאן.
 >
-> עדכון אחרון: 13 יוני 2026 (🗑️ הסרת פיצ'ר האירועים מהאדמין ומהבאקאנד)
+> עדכון אחרון: 13 יוני 2026 (🕐 בורר שעות בכפולות חצי שעה בטופס האילוצים)
 
 ---
 
@@ -361,3 +361,4 @@ ilutzim_app/
 | 12 יוני 2026 | 🐛 **תיקון 3 ה-Excel exports הישנים** — `export_weekly_schedule`/`export_deviation_report`/`export_guard_history` קראו לשדות `week.week_start`/`week_end` (האמיתיים: `start_date`/`end_date`) ולמתודות repo לא-קיימות (`get_by_week`→`get_submissions_for_week`, `event_repo.get_by_user`→`get_events_for_user`). היו קורסים ב-500 בכל קריאה אמיתית; הבדיקות לא תפסו כי `MagicMock` מחזיר כל attribute. נוסף `SubmissionRepository.get_by_user`. ה-mock של השבוע בטסטים מגדיר עכשיו `start_date`/`end_date`. |
 | 12 יוני 2026 | 🎨 **עיצוב מחדש — Dark Indigo** — בנייה מחדש של `admin.css` כ-design system כהה ומינימליסטי: משטחים כהים בשכבות, מבטא Indigo, badges/alerts בגרסת soft, ליטוש Navbar/כרטיסים/טבלאות/scrollbar. הושלמו classes שהיו בשימוש ב-JSX בלי הגדרה (`alert`, `btn-block/outline/ghost/success`, `badge-success/secondary/warning/danger`, `form-actions`, `actions-cell`) — מה שתיקן בפרט את **דף ניהול השומרים**. צד המאבטחים (`guard.css`) ממשיך לעקוב אחרי theme של טלגרם. |
 | 12 יוני 2026 | ✅ **מערכת Toast במקום `alert()` נייטיבי** — `ToastProvider`/`useToast` ללא תלויות (variants: success/error/warning/info, auto-dismiss + סגירה בלחיצה), עטיפה ב-`App` root. הוחלפו כל 6 קריאות ה-`alert()` ב-`GuardsPage` ו-`AdminConstraintsPage`; שמירת שומר מציגה כעת Toast הצלחה מפורש. נוסף `toast.test.jsx`. |
+| 13 יוני 2026 | 🕐 **בורר שעות בכפולות חצי שעה** — שדות השעה בטופס האילוצים (`DayRow.jsx`, משותף לטופס המאבטח ולטופס האדמין) הוחלפו מ-`<input>` טקסט חופשי (`HH:MM`) ל-`<select>` עם 48 ערכים קבועים (`00:00`–`23:30`). אין צורך להקליד `:`, וניתן לבחור רק כפולות של חצי שעה. נוסף `HALF_HOUR_OPTIONS` ב-`guardMessages.js`. הערך הנשמר נשאר מחרוזת `HH:MM` — אין שינוי ב-backend/API/מודלים. נוסף טסט ל-`guardComponents.test.jsx`. |
