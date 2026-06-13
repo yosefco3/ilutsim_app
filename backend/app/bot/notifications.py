@@ -105,6 +105,32 @@ async def notify_closing_reminder(week_start: date, deadline_text: str, telegram
     return count
 
 
+async def notify_admin_filled_constraints(telegram_id: int, week_label: str) -> bool:
+    """Notify a guard that an admin filled their constraints on their behalf."""
+    from app.bot.keyboards.inline_kb import submission_success_kb
+
+    text = (
+        "📝 האדמין מילא עבורך את האילוצים\n\n"
+        f"שבוע: {week_label}\n\n"
+        "ניתן לצפות ולערוך את האילוצים כל עוד השבוע פתוח."
+    )
+    try:
+        bot = get_bot()
+        if bot is None:
+            logger.error("notify_admin_filled_constraints: bot is None")
+            return False
+        await bot.send_message(
+            chat_id=telegram_id,
+            text=text,
+            reply_markup=submission_success_kb(),
+        )
+        logger.info("Admin-filled-constraints notification sent to telegram_id=%s", telegram_id)
+        return True
+    except Exception as exc:
+        logger.error("notify_admin_filled_constraints: FAILED for telegram_id=%s — %s", telegram_id, exc)
+        return False
+
+
 async def notify_submission_success(telegram_id: int, week_label: str) -> bool:
     """Notify a guard that their submission was received successfully."""
     from app.bot.keyboards.inline_kb import submission_success_kb

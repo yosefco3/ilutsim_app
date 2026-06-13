@@ -12,6 +12,7 @@ from app.dependencies import (
     get_current_user,
     get_settings_service,
     get_submission_service,
+    get_user_service,
     get_week_service,
     require_admin_role,
 )
@@ -28,6 +29,7 @@ from app.schemas.submission_schemas import (
 from app.schemas.week_schemas import WeekWithDaysResponse
 from app.services.settings_service import SettingsService
 from app.services.submission_service import SubmissionService
+from app.services.user_service import UserService
 from app.services.week_service import WeekService
 
 logger = logging.getLogger("ilutzim")
@@ -147,6 +149,7 @@ async def admin_submit_schedule(
     data: AdminSubmissionRequest,
     submission_service: SubmissionService = Depends(get_submission_service),
     week_service: WeekService = Depends(get_week_service),
+    user_service: UserService = Depends(get_user_service),
 ):
     """Submit a guard's weekly schedule on the guard's behalf. **Admin only.**
 
@@ -154,6 +157,9 @@ async def admin_submit_schedule(
     dashboard. Unlike the guard endpoint, this is allowed regardless of the
     week's status (``override_lock=True``) — the admin can fill constraints for
     a closed/locked week as well.
+
+    If the guard *does* have Telegram linked, they receive a notification that
+    the admin filled their constraints on their behalf.
     """
     # Raises UserNotFoundException (404) via the global handler if missing.
     week = await week_service.get_week(data.week_id)
@@ -176,6 +182,17 @@ async def admin_submit_schedule(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e),
         )
+
+    # Notify the guard (if they have Telegram) that the admin filled for them.
+    # Non-critical — failure is logged but never fails the submission.
+    guard = await user_service.get_user(data.user_id)
+    if guard and guard.telegram_id:
+        try:
+            from app.bot.notifications import notify_admin_filled_constraints
+            week_label = f"{week.start_date.strftime('%d/%m/%Y')} - {week.end_date.strftime('%d/%m/%Y')}"
+            await notify_admin_filled_constraints(int(guard.telegram_id), week_label)
+        except Exception as e:
+            logger.warning(f"Failed to send admin-filled-constraints notification: {e}")
 
     return submission
 
