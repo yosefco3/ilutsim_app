@@ -1,11 +1,15 @@
-import { useState } from 'react';
+import { Fragment, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import messages from '../utils/messages';
 import { DAY_NAMES, SHIFT_LABELS } from '../utils/guardMessages';
 
-export default function StatusGrid({ submissions, detailsByUser = {} }) {
+export default function StatusGrid({ submissions, detailsByUser = {}, canFillConstraints = false }) {
   const [expandedUser, setExpandedUser] = useState(null);
   const navigate = useNavigate();
+
+  // Detail row spans all columns; the actions column only exists when the
+  // selected week is editable (the relevant 'open' week).
+  const colCount = canFillConstraints ? 5 : 4;
 
   if (!submissions.length) {
     return <p className="empty-state">{messages.submissions.empty}</p>;
@@ -19,7 +23,7 @@ export default function StatusGrid({ submissions, detailsByUser = {} }) {
           <th>{messages.submissions.status}</th>
           <th>{messages.submissions.submittedAt}</th>
           <th>{messages.submissions.viewDetails}</th>
-          <th>{messages.common.actions}</th>
+          {canFillConstraints && <th>{messages.common.actions}</th>}
         </tr>
       </thead>
       <tbody>
@@ -27,8 +31,8 @@ export default function StatusGrid({ submissions, detailsByUser = {} }) {
           const detail = detailsByUser[s.user_id];
           const expanded = expandedUser === s.user_id;
           return (
-            <>
-              <tr key={s.user_id}>
+            <Fragment key={s.user_id}>
+              <tr>
                 <td>{s.full_name || s.user_id}</td>
                 <td>
                   <span className={`badge ${s.submitted_at ? 'badge-success' : 'badge-warning'}`}>
@@ -48,18 +52,20 @@ export default function StatusGrid({ submissions, detailsByUser = {} }) {
                     <span className="text-muted">—</span>
                   )}
                 </td>
-                <td className="actions-cell">
-                  <button
-                    className="btn btn-sm btn-secondary"
-                    onClick={() => navigate(`/guards/${s.user_id}/constraints`)}
-                  >
-                    {messages.guards.fillConstraints}
-                  </button>
-                </td>
+                {canFillConstraints && (
+                  <td className="actions-cell">
+                    <button
+                      className="btn btn-sm btn-secondary"
+                      onClick={() => navigate(`/guards/${s.user_id}/constraints`)}
+                    >
+                      {messages.guards.fillConstraints}
+                    </button>
+                  </td>
+                )}
               </tr>
               {expanded && detail && (
-                <tr key={`${s.user_id}-detail`} className="detail-row">
-                  <td colSpan={5}>
+                <tr className="detail-row">
+                  <td colSpan={colCount}>
                     <div className="detail-content">
                       {detail.days?.map((day, idx) => (
                         <div key={idx} className="detail-day">
@@ -86,7 +92,7 @@ export default function StatusGrid({ submissions, detailsByUser = {} }) {
                   </td>
                 </tr>
               )}
-            </>
+            </Fragment>
           );
         })}
       </tbody>

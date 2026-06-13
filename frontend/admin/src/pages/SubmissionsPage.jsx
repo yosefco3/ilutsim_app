@@ -17,6 +17,13 @@ export default function SubmissionsPage() {
 
   const loading = weeksLoading || subsLoading;
 
+  // Filling constraints is only allowed on the *relevant* week — the single
+  // week still 'open' for submissions. A week that already started auto-locks
+  // (start_date ≤ today → LOCKED) and a published week is final, so gating on
+  // 'open' inherently excludes both "already started" and "published".
+  const selectedWeekObj = weeks.find((w) => String(w.id) === String(selectedWeek));
+  const canFillConstraints = selectedWeekObj?.status === 'open';
+
   // Map each guard's user_id to their detailed submission (days + notes)
   const detailsByUser = {};
   for (const s of detailedData?.submitted || []) {
@@ -76,7 +83,11 @@ export default function SubmissionsPage() {
               </button>
             </div>
           )}
-          <StatusGrid submissions={activeSubmissions} detailsByUser={detailsByUser} />
+          <StatusGrid
+            submissions={activeSubmissions}
+            detailsByUser={detailsByUser}
+            canFillConstraints={canFillConstraints}
+          />
 
           {inactiveSubmissions.length > 0 && (
             <div className="inactive-section">
@@ -90,7 +101,11 @@ export default function SubmissionsPage() {
                 {messages.submissions.inactiveToggle} ({inactiveSubmissions.length})
               </button>
               {showInactive && (
-                <StatusGrid submissions={inactiveSubmissions} detailsByUser={detailsByUser} />
+                <StatusGrid
+                  submissions={inactiveSubmissions}
+                  detailsByUser={detailsByUser}
+                  canFillConstraints={canFillConstraints}
+                />
               )}
             </div>
           )}
