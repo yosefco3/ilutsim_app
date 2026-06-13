@@ -3,7 +3,7 @@ import WeekStatusControl from '../components/WeekStatusControl';
 import messages from '../utils/messages';
 
 export default function WeeksPage() {
-  const { weeks, loading, setStatus, openForSubmission, publish, reload } = useWeeks();
+  const { weeks, loading, setStatus, openForSubmission, publish } = useWeeks();
 
   const handleOpen = async (weekId) => {
     await openForSubmission(weekId);
@@ -23,9 +23,6 @@ export default function WeeksPage() {
     <div className="page">
       <div className="page-header">
         <h2>{messages.weeks.title}</h2>
-        <button className="btn btn-outline btn-sm" onClick={reload}>
-          {messages.common.refresh || 'Refresh'}
-        </button>
       </div>
 
       {!weeks.length ? (
