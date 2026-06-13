@@ -9,7 +9,7 @@ const ROLE_LABELS = {
   CHECKER: 'בודק',
 };
 
-export default function GuardTable({ guards, onEdit, onToggle, onDelete, onFillConstraints }) {
+export default function GuardTable({ guards, onEdit, onToggle, onDelete }) {
   if (!guards.length) {
     return <p className="empty-state">{messages.guards.empty}</p>;
   }
@@ -39,9 +39,6 @@ export default function GuardTable({ guards, onEdit, onToggle, onDelete, onFillC
             <td className="actions-cell">
               <button className="btn btn-sm btn-primary" onClick={() => onEdit(g)}>
                 {messages.common.edit}
-              </button>
-              <button className="btn btn-sm btn-secondary" onClick={() => onFillConstraints(g)}>
-                {messages.guards.fillConstraints}
               </button>
               <button className="btn btn-sm btn-secondary" onClick={() => onToggle(g)}>
                 {g.is_active ? messages.guards.deactivate : messages.guards.activate}

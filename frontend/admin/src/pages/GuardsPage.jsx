@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useGuards } from '../hooks/useGuards';
 import GuardTable from '../components/GuardTable';
 import GuardForm from '../components/GuardForm';
@@ -9,7 +8,6 @@ import messages from '../utils/messages';
 
 export default function GuardsPage() {
   const { guards, loading, createGuard, updateGuard, toggleGuard, deleteGuard } = useGuards();
-  const navigate = useNavigate();
   const toast = useToast();
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState(null);
@@ -87,7 +85,6 @@ export default function GuardsPage() {
         onEdit={handleEdit}
         onToggle={handleToggle}
         onDelete={(g) => setConfirmDelete(g)}
-        onFillConstraints={(g) => navigate(`/guards/${g.id}/constraints`)}
       />
 
       {confirmDelete && (

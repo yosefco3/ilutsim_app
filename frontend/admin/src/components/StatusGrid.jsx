@@ -1,9 +1,11 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import messages from '../utils/messages';
 import { DAY_NAMES, SHIFT_LABELS } from '../utils/guardMessages';
 
 export default function StatusGrid({ submissions, detailsByUser = {} }) {
   const [expandedUser, setExpandedUser] = useState(null);
+  const navigate = useNavigate();
 
   if (!submissions.length) {
     return <p className="empty-state">{messages.submissions.empty}</p>;
@@ -17,6 +19,7 @@ export default function StatusGrid({ submissions, detailsByUser = {} }) {
           <th>{messages.submissions.status}</th>
           <th>{messages.submissions.submittedAt}</th>
           <th>{messages.submissions.viewDetails}</th>
+          <th>{messages.common.actions}</th>
         </tr>
       </thead>
       <tbody>
@@ -45,10 +48,18 @@ export default function StatusGrid({ submissions, detailsByUser = {} }) {
                     <span className="text-muted">—</span>
                   )}
                 </td>
+                <td className="actions-cell">
+                  <button
+                    className="btn btn-sm btn-secondary"
+                    onClick={() => navigate(`/guards/${s.user_id}/constraints`)}
+                  >
+                    {messages.guards.fillConstraints}
+                  </button>
+                </td>
               </tr>
               {expanded && detail && (
                 <tr key={`${s.user_id}-detail`} className="detail-row">
-                  <td colSpan={4}>
+                  <td colSpan={5}>
                     <div className="detail-content">
                       {detail.days?.map((day, idx) => (
                         <div key={idx} className="detail-day">

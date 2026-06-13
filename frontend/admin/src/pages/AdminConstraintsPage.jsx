@@ -43,12 +43,12 @@ export default function AdminConstraintsPage() {
 
   const guardName = guard ? `${guard.first_name} ${guard.last_name}` : '';
 
-  // On a successful save, confirm and return to the guards list (closes the form).
+  // On a successful save, confirm and return to the submissions list (closes the form).
   const handleSubmit = async () => {
     const ok = await submit();
     if (ok) {
       toast.success(`${messages.common.success} — ${guardName}`);
-      navigate('/guards');
+      navigate('/submissions');
     }
   };
 
@@ -58,7 +58,7 @@ export default function AdminConstraintsPage() {
         <h2>
           {messages.guards.fillConstraints} — {guardName}
         </h2>
-        <button className="btn btn-secondary" onClick={() => navigate('/guards')}>
+        <button className="btn btn-secondary" onClick={() => navigate('/submissions')}>
           {messages.common.back || 'חזרה'}
         </button>
       </div>
