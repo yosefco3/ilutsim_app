@@ -1,7 +1,7 @@
 /**
  * WeekStatusControl — status badge + action buttons for a single week card.
  *
- * Props: week, onOpen, onLock, onPublish, onDelete, loading
+ * Props: week, onOpen, onLock, onPublish, loading
  */
 import { useState } from 'react';
 import messages from '../utils/messages';
@@ -14,10 +14,9 @@ const STATUS_CFG = {
   published: { label: messages.weeks.publishedLabel,   bg: '#cce5ff', color: '#004085', icon: '📢' },
 };
 
-export default function WeekStatusControl({ week, onOpen, onLock, onPublish, onDelete, loading }) {
+export default function WeekStatusControl({ week, onOpen, onLock, onPublish, loading }) {
   const status = week.status || 'closed';
   const cfg = STATUS_CFG[status] || STATUS_CFG.closed;
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showPublishConfirm, setShowPublishConfirm] = useState(false);
 
   return (
@@ -62,29 +61,8 @@ export default function WeekStatusControl({ week, onOpen, onLock, onPublish, onD
               📢 {messages.weeks.published}
             </button>
           )}
-
-          {/* Delete — not allowed for published weeks (kept for history) */}
-          {status !== 'published' && (
-            <button
-              className="btn btn-danger btn-sm"
-              disabled={loading}
-              onClick={() => setShowDeleteConfirm(true)}
-            >
-              🗑️ {messages.weeks.delete}
-            </button>
-          )}
         </div>
       </div>
-
-      {showDeleteConfirm && (
-        <ConfirmDialog
-          title={messages.weeks.delete}
-          message={messages.weeks.deleteConfirm}
-          confirmLabel={messages.common.delete}
-          onConfirm={() => { setShowDeleteConfirm(false); onDelete(week.id); }}
-          onCancel={() => setShowDeleteConfirm(false)}
-        />
-      )}
 
       {showPublishConfirm && (
         <ConfirmDialog

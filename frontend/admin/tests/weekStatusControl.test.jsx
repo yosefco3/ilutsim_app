@@ -11,26 +11,18 @@ function renderWeek(status, handlers = {}) {
       onOpen={handlers.onOpen || noop}
       onLock={handlers.onLock || noop}
       onPublish={handlers.onPublish || noop}
-      onDelete={handlers.onDelete || noop}
       loading={false}
     />,
   );
 }
 
 describe('WeekStatusControl', () => {
-  it('hides the delete button for a published week', () => {
-    renderWeek('published');
-    expect(screen.queryByText(/מחק/)).not.toBeInTheDocument();
-  });
-
-  it('shows the delete button for a closed week', () => {
-    renderWeek('closed');
-    expect(screen.getByText(/מחק/)).toBeInTheDocument();
-  });
-
-  it('shows the delete button for an open week', () => {
-    renderWeek('open');
-    expect(screen.getByText(/מחק/)).toBeInTheDocument();
+  it('never shows a delete button — removed to prevent accidental data loss', () => {
+    for (const status of ['published', 'closed', 'open', 'locked']) {
+      const { unmount } = renderWeek(status);
+      expect(screen.queryByText(/מחק/)).not.toBeInTheDocument();
+      unmount();
+    }
   });
 
   it('offers "open for submission" on a closed week', () => {
@@ -41,7 +33,7 @@ describe('WeekStatusControl', () => {
   it('does not crash on an unknown status (falls back)', () => {
     renderWeek('something-weird');
     // Badge still renders; no throw.
-    expect(screen.getByText(/מחק/)).toBeInTheDocument();
+    expect(screen.getByText(/סגור/)).toBeInTheDocument();
   });
 
   it('does not publish immediately — asks for confirmation first', () => {

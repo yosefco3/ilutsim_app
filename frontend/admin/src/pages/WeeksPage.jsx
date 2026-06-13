@@ -3,7 +3,7 @@ import WeekStatusControl from '../components/WeekStatusControl';
 import messages from '../utils/messages';
 
 export default function WeeksPage() {
-  const { weeks, loading, setStatus, openForSubmission, publish, deleteWeek, reload } = useWeeks();
+  const { weeks, loading, setStatus, openForSubmission, publish, reload } = useWeeks();
 
   const handleOpen = async (weekId) => {
     await openForSubmission(weekId);
@@ -15,10 +15,6 @@ export default function WeeksPage() {
 
   const handlePublish = async (weekId) => {
     await publish(weekId);
-  };
-
-  const handleDelete = async (weekId) => {
-    await deleteWeek(weekId);
   };
 
   if (loading) return <div className="loading">{messages.common.loading}</div>;
@@ -52,7 +48,6 @@ export default function WeeksPage() {
                 onOpen={handleOpen}
                 onLock={handleLock}
                 onPublish={handlePublish}
-                onDelete={handleDelete}
                 loading={loading}
               />
             </div>
