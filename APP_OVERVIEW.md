@@ -3,7 +3,7 @@
 > **⚠️ מסמך זה מתעדכן בכל שינוי משמעותי באפליקציה.**
 > אם הנך מוסיף/משנה פיצ'ר — עדכן גם כאן.
 >
-> עדכון אחרון: 13 יוני 2026 (🕛 נעילה+רוטציה אוטומטית של שבוע במוצאי שבת 00:00)
+> עדכון אחרון: 13 יוני 2026 (⚠️ אישור פרסום בלתי-הפיך + 🕛 נעילה/רוטציה אוטומטית במוצ"ש 00:00)
 
 ---
 
@@ -139,8 +139,12 @@
 |-------------|-----------------------------------------------|---------------|
 | `closed`    | שבוע חדש שנוצר, עדיין לא פתוח להגשה           | אדמין         |
 | `open`      | פתוח להגשת זמינות — שומרים יכולים להגיש        | אדמין         |
-| `locked`    | נעול — לא ניתן להגיש יותר                     | אדמין         |
-| `published` | פורסם — הסידור הסופי הושלם                     | אדמין / אוטומטי |
+| `locked`    | נעול — לא ניתן להגיש יותר. **הפיך** — האדמין יכול לפתוח שוב (`locked → open`) | אדמין |
+| `published` | פורסם — הסידור הסופי הושלם. **סופי ובלתי-הפיך** — אי-אפשר לפתוח מחדש | אדמין / אוטומטי |
+
+> **אישור פרסום (Frontend)**: לחיצה על "פרסם" מציגה דיאלוג אישור (`ConfirmDialog`) שמזהיר שהפעולה **בלתי-הפיכה**
+> (בניגוד ל"נעל" שאותו אפשר לפתוח שוב) — למניעת התנגשויות. האכיפה האמיתית היא ב-backend: `ALLOWED_TRANSITIONS["published"] = []`
+> (מכוסה ב-`test_published_to_open_rejected`).
 
 ### יצירת שבוע חדש
 - **כל שבוע חדש נוצר בסטטוס `closed`** — בין אם ידנית (`create_week`), בזריעה (`ensure_initial_week`),
@@ -335,6 +339,7 @@ ilutzim_app/
 
 | תאריך     | שינוי                                                |
 |-----------|-------------------------------------------------------|
+| 13 יוני 2026 | ⚠️ **אישור פרסום בלתי-הפיך** — למניעת התנגשויות, לחיצה על "פרסם" ב-`WeekStatusControl` מציגה כעת `ConfirmDialog` שמזהיר שלאחר פרסום **אי-אפשר לפתוח את השבוע מחדש** (סטטוס סופי), בניגוד ל"נעל" שאותו אפשר לפתוח שוב. הפרסום מתבצע רק לאחר אישור ("כן, פרסם"). זוהי שכבת-UX בלבד — **האכיפה כבר קיימת ב-backend** (`ALLOWED_TRANSITIONS["published"] = []`, מכוסה ב-`test_published_to_open_rejected`); המחיקה כבר השתמשה באותו דיאלוג. נוספו מחרוזות `publishConfirm*` ב-`messages.js` ו-3 טסטים ל-`weekStatusControl.test.jsx` (לא מפרסם בלחיצה ישירה / מפרסם אחרי אישור / ביטול לא מפרסם); frontend 115 (0 כשלים). |
 | 13 יוני 2026 | 🕛 **נעילה + רוטציה אוטומטית של שבוע במוצאי שבת (ראשון 00:00, שעון ישראל)** — עד כה מחזור חיי השבוע היה ידני לגמרי (אין scheduler פעיל; `apscheduler` היה ב-requirements אך לא מחובר, `bot/cron.py` placeholder). כעת, **לא משנה אם האדמין נעל/פרסם** — מרגע שנכנס השבוע הפעיל (`start_date` הגיע) הוא **ננעל אוטומטית להגשה** (`open → locked`) כי הוא כבר לא רלוונטי, והשבוע הבא מופיע כ-`closed` שהאדמין יכול לפתוח. מימוש: (1) `ScheduleWeekRepository.get_open_weeks_started_on_or_before(today)` — שבועות `open` עם `start_date <= today`. (2) `WeekService.lock_expired_open_weeks` (נעילה **שקטה**, `notify=False` — אין ברודקאסט טלגרם בחצות) + `auto_advance_weeks` (=נעילה + `auto_rotate_weeks` הקיים); `change_week_status` קיבל פרמטר `notify`. (3) `app/scheduler.py` — `AsyncIOScheduler` (APScheduler) עם cron שבועי `sun 00:00` ב-`SCHEDULER_TIMEZONE` (ברירת מחדל `Asia/Jerusalem`, מטפל ב-DST), מחובר ב-`main.py` lifespan עם **השלמה חד-פעמית בעלייה** (catch-up לשרת שהיה כבוי) וכיבוי ב-shutdown. (4) config: `AUTO_ROLLOVER_ENABLED` + `SCHEDULER_TIMEZONE`. הלוגיקה **אידמפוטנטית ומרפאת-עצמה** — רצה גם בכל טעינת `GET /admin/weeks`, כך שריצה שהוחמצה מתוקנת מיד. כיסוי: 8 טסטים חדשים (`test_auto_advance.py` service+repo+DB מלא, `test_scheduler.py` תצורת job+disabled+delegation); backend 203 (0 כשלים). |
 | 13 יוני 2026 | 🔔 **כפתור תזכורת + הפרדת מאבטחים פעילים/לא-פעילים בדף הדיווחים** — (1) **כפתור "שלח תזכורת"** ב-`SubmissionsPage` שמפעיל את `POST /admin/notifications/remind/{week_id}` ושולח תזכורת טלגרם (`notify_closing_reminder`) **רק למאבטחים פעילים שטרם הגישו** ויש להם `telegram_id`. ה-endpoint היה שבור — קרא למתודות לא-קיימות (`WeekService.get_by_id`, `UserService.get_active_users`, `SubmissionService.get_user_submission`) ולשדות שבוע לא-קיימים → `AttributeError` בלחיצה; תוקן מול ה-API האמיתי (`get_week`/`get_all_active_users`/`get_submission`) עם גישת Pydantic ו-`int(telegram_id)`. אותו באג `get_by_id` תוקן גם ב-endpoint של `publish`. הכפתור מוצג בסרגל-פעולה בגוון אזהרה עם מונה "כמה טרם הגישו". (2) **הפרדת פעילים/לא-פעילים** — `get_week_submissions_grid` ו-`get_week_submissions_detailed` עברו מ-`get_active_users` ל-`get_all_users`, ו-`SubmissionStatusGrid` קיבל שדה `is_active`. הדף מציג כברירת-מחדל **רק מאבטחים פעילים**, עם כפתור מתקפל "הצג מאבטחים לא פעילים (N)" לרשימה נפרדת. מונה התזכורת סופר רק פעילים. כיסוי: 2 טסטים חדשים (endpoint תזכורת מאומת ב-`test_controllers.py`, גריד כולל לא-פעילים ב-`test_submission_persistence.py`); backend 195, frontend 112 (0 כשלים). |
 | 13 יוני 2026 | 📨 **התראת טלגרם כשהאדמין ממלא אילוצים עבור מאבטח** — כשהאדמין שולח אילוצים בשם מאבטח (`POST /submissions/admin`) ולמאבטח יש `telegram_id`, הוא מקבל כעת הודעת טלגרם "📝 האדמין מילא עבורך את האילוצים" (פונקציה חדשה `notify_admin_filled_constraints` ב-`bot/notifications.py`, מקבילה ל-`notify_submission_success`). הקונטרולר טוען את המאבטח דרך `get_user_service` ושולח לאחר שמירה מוצלחת; ההתראה **לא-קריטית** — כשל בשליחה נרשם ללוג בלבד ולא מפיל את ה-201. **אישור התנהגות קיימת:** טפסי האילוצים (`useSubmission`/`useAdminConstraints`) שומרים הכל ב-React state בלבד — **אין** localStorage/אוטו-שמירה/טיוטה, ושום דבר לא נכתב ל-DB עד לחיצת "שלח". כיסוי: 3 טסטים חדשים ב-`test_admin_submission.py` (מתריע עם טלגרם / מדלג בלעדיו / כשל לא מפיל הגשה); backend 193 (0 כשלים). |

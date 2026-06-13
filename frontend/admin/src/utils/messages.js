@@ -83,6 +83,9 @@ export default {
     delete: 'מחק שבוע',
     deleteConfirm: 'האם למחוק את השבוע? פעולה זו אינה ניתנת לביטול.',
     deleted: 'השבוע נמחק בהצלחה',
+    publishConfirmTitle: 'פרסום השבוע',
+    publishConfirm: 'לאחר פרסום לא ניתן לפתוח את השבוע מחדש — הסטטוס סופי. בניגוד ל"נעל" (שאותו אפשר לפתוח שוב), פעולה זו אינה הפיכה. לפרסם בכל זאת?',
+    publishConfirmLabel: 'כן, פרסם',
   },
   submissions: {
     title: 'דיווחים שהתקבלו',

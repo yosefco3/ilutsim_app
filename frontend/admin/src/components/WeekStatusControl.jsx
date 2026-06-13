@@ -18,6 +18,7 @@ export default function WeekStatusControl({ week, onOpen, onLock, onPublish, onD
   const status = week.status || 'closed';
   const cfg = STATUS_CFG[status] || STATUS_CFG.closed;
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showPublishConfirm, setShowPublishConfirm] = useState(false);
 
   return (
     <>
@@ -56,7 +57,7 @@ export default function WeekStatusControl({ week, onOpen, onLock, onPublish, onD
             <button
               className="btn btn-success btn-sm"
               disabled={loading}
-              onClick={() => onPublish(week.id)}
+              onClick={() => setShowPublishConfirm(true)}
             >
               📢 {messages.weeks.published}
             </button>
@@ -82,6 +83,16 @@ export default function WeekStatusControl({ week, onOpen, onLock, onPublish, onD
           confirmLabel={messages.common.delete}
           onConfirm={() => { setShowDeleteConfirm(false); onDelete(week.id); }}
           onCancel={() => setShowDeleteConfirm(false)}
+        />
+      )}
+
+      {showPublishConfirm && (
+        <ConfirmDialog
+          title={messages.weeks.publishConfirmTitle}
+          message={messages.weeks.publishConfirm}
+          confirmLabel={messages.weeks.publishConfirmLabel}
+          onConfirm={() => { setShowPublishConfirm(false); onPublish(week.id); }}
+          onCancel={() => setShowPublishConfirm(false)}
         />
       )}
     </>
