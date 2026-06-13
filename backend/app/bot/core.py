@@ -224,9 +224,10 @@ async def _show_main_menu(message: Message, display_name: str):
     from app.services.user_service import UserService
     from app.services.submission_service import SubmissionService
     from app.services.week_service import WeekService
+    from app.bot.webapp import submit_webapp_url
 
     telegram_id = message.from_user.id
-    webapp_url = f"{settings.APP_URL}/submit?tg_id={telegram_id}"
+    webapp_url = submit_webapp_url(tg_id=telegram_id)
 
     # Private URL detection
     private_pattern = r"(localhost|127\.|192\.168\.|10\.|172\.(1[6-9]|2[0-9]|3[01])\.)"

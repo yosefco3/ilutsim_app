@@ -56,21 +56,21 @@ def availability_kb(week_id: str, day_index: int) -> InlineKeyboardMarkup:
 
 def submission_success_kb() -> InlineKeyboardMarkup:
     """Inline keyboard shown after successful submission."""
-    from app.config import settings
+    from app.bot.webapp import submit_webapp_url
     return InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(
             text="✏️ ערוך אילוצים",
-            web_app=WebAppInfo(url=f"{settings.APP_URL}/submit"),
+            web_app=WebAppInfo(url=submit_webapp_url()),
         )],
     ])
 
 
 def submit_constraints_kb() -> InlineKeyboardMarkup:
     """Inline keyboard with a WebApp button to fill in constraints."""
-    from app.config import settings
+    from app.bot.webapp import submit_webapp_url
     return InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(
             text="📅 הגשת אילוצים",
-            web_app=WebAppInfo(url=f"{settings.APP_URL}/submit"),
+            web_app=WebAppInfo(url=submit_webapp_url()),
         )],
     ])

@@ -110,7 +110,10 @@ async def test_notification_message_format():
     kb = captured[0]["reply_markup"]
     button = kb.inline_keyboard[0][0]
     assert button.text == "📅 הגשת אילוצים"
-    assert button.web_app.url == "https://example.com/app/submit"
+    # The WebApp URL carries a cache-busting version param so Telegram's WebView
+    # never serves guards a stale build (see app.version / app.bot.webapp).
+    assert button.web_app.url.startswith("https://example.com/app/submit?")
+    assert "v=" in button.web_app.url
 
 
 # ===========================================================================
