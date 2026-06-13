@@ -125,9 +125,14 @@ done
 echo -e "${GREEN}✅ Backend is ready (took ${WAITED}s)${NC}"
 
 # --- Start Admin Frontend in a new window ---
-echo -e "${GREEN}🚀 Starting Admin Dashboard (port 3001) in a new window...${NC}"
+# Serve the PRODUCTION BUILD via `vite preview`, not the dev server. The dev
+# server hands out the unbundled ESM module graph (dozens of separate requests),
+# which Telegram's in-app WebView on older Android failed to load → blank guard
+# page. `vite build` produces a single transpiled bundle that the WebView parses
+# reliably. `noCacheWebApp` + `preview.proxy` (see vite.config.js) still apply.
+echo -e "${GREEN}🚀 Building & serving Admin Dashboard (port 3001) in a new window...${NC}"
 open_terminal "🎨 Admin" \
-    "cd '$PROJECT_ROOT/frontend/admin' && exec npm run dev"
+    "cd '$PROJECT_ROOT/frontend/admin' && npm run build && exec npm run preview"
 
 # --- Start Cloudflare Tunnel in a new window ---
 if command -v cloudflared &>/dev/null; then

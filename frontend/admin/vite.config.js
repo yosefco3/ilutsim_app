@@ -27,17 +27,35 @@ function noCacheWebApp() {
   };
 }
 
+// Shared dev/preview server options. `vite preview` does NOT inherit `server.*`
+// (proxy, allowedHosts, …), so production — which serves the built `dist/` via
+// `vite preview` behind the cloudflared tunnel — needs its own copy. The `/api`
+// proxy in particular must exist on preview or every guard/admin request 404s.
+const proxy = {
+  '/api': {
+    target: 'http://localhost:8000',
+    changeOrigin: true,
+    rewrite: (path) => path.replace(/^\/api/, ''),
+  },
+};
+const allowedHosts = ['app.safrasecure.uk', 'localhost', '.safrasecure.uk'];
+
 export default defineConfig({
   plugins: [react(), noCacheWebApp()],
+  // Bundle down to a syntax level old mobile WebViews (Telegram's in-app browser
+  // on older Android) can parse. The unbundled dev-server ESM graph was the
+  // suspected cause of the blank guard page; a single transpiled bundle avoids it.
+  build: {
+    target: 'es2018',
+  },
   server: {
     port: 3001,
-    allowedHosts: ['app.safrasecure.uk', 'localhost', '.safrasecure.uk'],
-    proxy: {
-      '/api': {
-        target: 'http://localhost:8000',
-        changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api/, ''),
-      },
-    },
+    allowedHosts,
+    proxy,
+  },
+  preview: {
+    port: 3001,
+    allowedHosts,
+    proxy,
   },
 });

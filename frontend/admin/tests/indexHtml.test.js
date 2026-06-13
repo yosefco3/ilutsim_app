@@ -19,4 +19,15 @@ describe('index.html', () => {
     expect(appIdx).toBeGreaterThan(-1);
     expect(sdkIdx).toBeLessThan(appIdx);
   });
+
+  // ErrorBoundary can't catch a module that fails to load/parse (the classic
+  // blank mobile-WebView page). The inline guard must paint into #root on an
+  // uncaught error and when React never mounts (timeout), so a failure is never
+  // an indistinguishable white screen.
+  it('has a white-screen guard for module load failures and non-mounting', () => {
+    expect(html).toContain("addEventListener('error'");
+    expect(html).toContain("addEventListener('unhandledrejection'");
+    expect(html).toContain('setTimeout');
+    expect(html).toContain("getElementById('root')");
+  });
 });
