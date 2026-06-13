@@ -49,6 +49,9 @@ _THIN_BORDER = Border(
     top=Side(style="thin"),
     bottom=Side(style="thin"),
 )
+# Thick separator drawn under the last row of each guard's block so adjacent
+# guards are easy to tell apart at a glance.
+_GUARD_SEPARATOR_SIDE = Side(style="thick")
 _CENTER = Alignment(horizontal="center", vertical="center")
 _CENTER_WRAP = Alignment(horizontal="center", vertical="center", wrap_text=True)
 _RED_FILL = PatternFill(
@@ -131,23 +134,55 @@ def _merge_vertical(
     value: Any,
     fill: Any = None,
     alignment: Any = None,
+    thick_bottom: bool = False,
 ) -> Any:
     """Merge ``span`` cells down a single column and style the whole block.
 
     openpyxl only keeps the top-left cell's value, but borders/fill must be set
     on every underlying cell for the merged region to render as one boxed cell.
+
+    With ``thick_bottom`` the merged block gets a heavy bottom edge. openpyxl
+    derives a merged range's outer borders from the *top-left* (anchor) cell on
+    save, so the thick side must be set on the anchor's ``bottom`` — setting it
+    on the bottom ``MergedCell`` directly is silently overwritten.
     """
     ws.merge_cells(
         start_row=row, start_column=col, end_row=row + span - 1, end_column=col
     )
     for r in range(row, row + span):
         c = ws.cell(row=r, column=col)
-        c.border = _THIN_BORDER
+        if thick_bottom and r == row:
+            c.border = Border(
+                left=_THIN_BORDER.left,
+                right=_THIN_BORDER.right,
+                top=_THIN_BORDER.top,
+                bottom=_GUARD_SEPARATOR_SIDE,
+            )
+        else:
+            c.border = _THIN_BORDER
         if fill is not None:
             c.fill = fill
     top = ws.cell(row=row, column=col, value=value)
     top.alignment = alignment or _CENTER
     return top
+
+
+def _draw_guard_separator(ws: Any, row: int, n_cols: int) -> None:
+    """Thicken the bottom border of ``row`` across all columns.
+
+    Used to draw a heavy line beneath the last row of each guard's three-row
+    block so neighbouring guards are visually separated. Existing left/right/top
+    sides are preserved so the rest of the grid still reads as thin cells.
+    """
+    for col in range(1, n_cols + 1):
+        cell = ws.cell(row=row, column=col)
+        existing = cell.border
+        cell.border = Border(
+            left=existing.left,
+            right=existing.right,
+            top=existing.top,
+            bottom=_GUARD_SEPARATOR_SIDE,
+        )
 
 
 class ExcelExportService:
@@ -349,8 +384,8 @@ class ExcelExportService:
             }
 
             # Name / phone / notes span the guard's three period rows
-            _merge_vertical(ws, row_num, 1, _SPAN, full_name)
-            _merge_vertical(ws, row_num, 2, _SPAN, phone)
+            _merge_vertical(ws, row_num, 1, _SPAN, full_name, thick_bottom=True)
+            _merge_vertical(ws, row_num, 2, _SPAN, phone, thick_bottom=True)
             _merge_vertical(
                 ws,
                 row_num,
@@ -360,6 +395,7 @@ class ExcelExportService:
                 alignment=Alignment(
                     horizontal="right", vertical="center", wrap_text=True
                 ),
+                thick_bottom=True,
             )
 
             # "משמרת" label column — one coloured row per period
@@ -379,7 +415,8 @@ class ExcelExportService:
                 # a single merged cell spanning the three period rows.
                 if ds is None or not ds.is_available:
                     _merge_vertical(
-                        ws, row_num, col, _SPAN, "לא זמין", fill=_RED_FILL
+                        ws, row_num, col, _SPAN, "לא זמין",
+                        fill=_RED_FILL, thick_bottom=True,
                     )
                     continue
 
@@ -390,7 +427,8 @@ class ExcelExportService:
 
                 if not windows_by_type:
                     _merge_vertical(
-                        ws, row_num, col, _SPAN, "זמין", fill=_GREEN_FILL
+                        ws, row_num, col, _SPAN, "זמין",
+                        fill=_GREEN_FILL, thick_bottom=True,
                     )
                     continue
 
@@ -411,6 +449,9 @@ class ExcelExportService:
                         cell.fill = _GREEN_FILL
                     else:
                         cell.fill = _EMPTY_FILL
+
+            # Heavy line under this guard's block to separate it from the next.
+            _draw_guard_separator(ws, row_num + _SPAN - 1, n_cols)
 
             row_num += _SPAN
 

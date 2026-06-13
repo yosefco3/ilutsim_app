@@ -296,6 +296,56 @@ async def test_constraints_excel_has_shift_times_and_notes():
     assert ws.cell(row=5, column=11).value == "הערה כללית"
 
 
+@pytest.mark.asyncio
+async def test_constraints_excel_has_thick_separator_between_guards():
+    """Each guard's three-row block ends with a heavy bottom border so
+    adjacent guards are easy to tell apart."""
+    try:
+        import openpyxl
+    except ImportError:
+        pytest.skip("openpyxl not installed")
+
+    from datetime import time
+
+    week = _make_week(week_start=date(2025, 1, 5))
+    user_a = _make_user(full_name="אבי כהן", phone="0501111111")
+    user_b = _make_user(full_name="בני לוי", phone="0502222222")
+    ds_a = _make_daily_status(
+        date(2025, 1, 5),
+        True,
+        [_make_shift_window(ShiftType.MORNING, time(7, 0), time(15, 0))],
+    )
+    ds_b = _make_daily_status(date(2025, 1, 5), False)
+    sub_a = _make_constraint_submission(user_a.id, week.id, [ds_a])
+    sub_b = _make_constraint_submission(user_b.id, week.id, [ds_b])
+
+    svc = _create_service(
+        week=week, users=[user_a, user_b], submissions=[sub_a, sub_b]
+    )
+
+    with patch("app.services.excel_export_service.HAS_OPENPYXL", True):
+        data = await svc.export_constraints_report(week.id)
+
+    ws = openpyxl.load_workbook(io.BytesIO(data)).active
+
+    # Guards are sorted by name: אבי (rows 5-7), בני (rows 8-10).
+    # openpyxl derives a merged range's bottom edge from its top-left (anchor)
+    # cell, so the merged columns carry the thick side on the block's top row;
+    # the non-merged period cells carry it on the block's last row.
+    def _bottom(row, col):
+        return ws.cell(row=row, column=col).border.bottom.style
+
+    # Non-merged period column (3): thick on each block's last (לילה) row.
+    assert _bottom(7, 3) == "thick"
+    assert _bottom(10, 3) == "thick"
+    # Merged name column (1): thick carried on the anchor row of each block.
+    assert _bottom(5, 1) == "thick"
+    assert _bottom(8, 1) == "thick"
+    # Interior period rows are not separators.
+    assert _bottom(5, 3) == "thin"
+    assert _bottom(6, 3) == "thin"
+
+
 # ── Deviation report tests ──────────────────────────────────────────
 
 
