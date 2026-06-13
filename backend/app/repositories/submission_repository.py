@@ -153,6 +153,14 @@ class SubmissionRepository(BaseRepository[WeeklySubmission]):
         submitted_ids = set(result.scalars().all())
         return [uid for uid in active_user_ids if uid not in submitted_ids]
 
+    async def count_by_week(self) -> dict[uuid.UUID, int]:
+        """Return ``{week_id: submission_count}`` for every week in one query."""
+        stmt = select(
+            WeeklySubmission.week_id, func.count(WeeklySubmission.id)
+        ).group_by(WeeklySubmission.week_id)
+        result = await self.session.execute(stmt)
+        return {row[0]: row[1] for row in result.all()}
+
     async def get_submission_stats(self, week_id: uuid.UUID) -> dict:
         """Return aggregate counts for a week's submissions."""
         stmt = select(WeeklySubmission).where(WeeklySubmission.week_id == week_id)

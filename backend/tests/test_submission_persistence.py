@@ -214,3 +214,38 @@ async def test_grid_includes_inactive_guards_with_flag(
     # Both active and inactive guards appear, each with the correct flag.
     assert by_id[user.id].is_active is True
     assert by_id[inactive.id].is_active is False
+
+
+@pytest.mark.asyncio
+async def test_get_submission_counts_groups_by_week(
+    db_session, service, user, open_week
+):
+    """Regression: the weeks page showed '0 הגשות' because no count was returned.
+
+    The count is keyed by week_id and reflects the number of guards who submitted.
+    """
+    # No submissions yet → week absent from the map (UI falls back to 0).
+    assert await service.get_submission_counts() == {}
+
+    # One guard submits for the open week.
+    await service.create_submission(
+        _make_create(user.id, open_week.id, open_week.start_date)
+    )
+
+    # A second guard submits for the same week.
+    other = User(
+        phone_number="0500000002",
+        first_name="נועה",
+        last_name="בר",
+        role=UserRole.BASIC_GUARD,
+        is_active=True,
+    )
+    db_session.add(other)
+    await db_session.commit()
+    await db_session.refresh(other)
+    await service.create_submission(
+        _make_create(other.id, open_week.id, open_week.start_date)
+    )
+
+    counts = await service.get_submission_counts()
+    assert counts == {open_week.id: 2}

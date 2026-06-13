@@ -110,6 +110,10 @@ class SubmissionService:
             return None
         return SubmissionResponse.model_validate(sub)
 
+    async def get_submission_counts(self) -> dict[uuid.UUID, int]:
+        """Return ``{week_id: submission_count}`` for every week."""
+        return await self._submission_repo.count_by_week()
+
     async def get_week_submissions_grid(self, week_id: uuid.UUID) -> list[SubmissionStatusGrid]:
         """Return submission status for all users (active and inactive) for a week.
 

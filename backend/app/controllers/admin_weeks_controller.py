@@ -27,9 +27,14 @@ router = APIRouter(
 @router.get("", response_model=list[WeekResponse])
 async def list_weeks(
     week_service: WeekService = Depends(get_week_service),
+    submission_service: SubmissionService = Depends(get_submission_service),
 ):
-    """List all schedule weeks."""
-    return await week_service.get_all_weeks()
+    """List all schedule weeks, each annotated with its submission count."""
+    weeks = await week_service.get_all_weeks()
+    counts = await submission_service.get_submission_counts()
+    for w in weeks:
+        w.submission_count = counts.get(w.id, 0)
+    return weeks
 
 
 @router.post("", response_model=WeekResponse, status_code=status.HTTP_201_CREATED)

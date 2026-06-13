@@ -34,6 +34,9 @@ class WeekResponse(BaseModel):
     start_date: date
     end_date: date
     status: WeekStatus
+    # Number of guards who submitted for this week. Populated by the weeks
+    # endpoint (defaults to 0 so single-week responses stay valid).
+    submission_count: int = 0
 
     @computed_field
     @property
