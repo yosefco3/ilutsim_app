@@ -58,8 +58,12 @@ export default function SubmissionsPage() {
       ) : selectedWeek ? (
         <>
           {missingCount > 0 && (
-            <div className="form-group">
-              <button className="btn-primary" onClick={handleRemind} disabled={reminding}>
+            <div className="submissions-actions">
+              <span className="submissions-missing-count">
+                <strong>{missingCount}</strong> {messages.submissions.missingCount}
+              </span>
+              <button className="btn btn-primary" onClick={handleRemind} disabled={reminding}>
+                <span aria-hidden="true">🔔</span>
                 {reminding ? messages.submissions.reminding : messages.submissions.remind}
               </button>
             </div>

@@ -330,6 +330,45 @@ class TestAdminNotificationsController:
         resp = client.post(f"/admin/notifications/remind/{fake_id}")
         assert resp.status_code in (401, 403)
 
+    @patch("app.bot.notifications.notify_closing_reminder", new_callable=AsyncMock)
+    def test_remind_sends_only_to_non_submitters(self, mock_notify):
+        from datetime import date
+        from types import SimpleNamespace
+
+        week_id = uuid.uuid4()
+        submitted = SimpleNamespace(id=uuid.uuid4(), telegram_id="111")
+        missing = SimpleNamespace(id=uuid.uuid4(), telegram_id="222")
+        no_telegram = SimpleNamespace(id=uuid.uuid4(), telegram_id=None)
+
+        week_svc = AsyncMock()
+        week_svc.get_week.return_value = SimpleNamespace(
+            id=week_id, start_date=date(2025, 6, 14)
+        )
+        user_svc = AsyncMock()
+        user_svc.get_all_active_users.return_value = [submitted, missing, no_telegram]
+        sub_svc = AsyncMock()
+        # Only `submitted` has a submission; the others haven't submitted.
+        sub_svc.get_submission.side_effect = lambda uid, wid: (
+            object() if uid == submitted.id else None
+        )
+
+        app = _make_app()
+        app.dependency_overrides[require_admin_role] = _mock_admin_payload
+        app.dependency_overrides[get_week_service] = lambda: week_svc
+        app.dependency_overrides[get_user_service] = lambda: user_svc
+        app.dependency_overrides[get_submission_service] = lambda: sub_svc
+        client = TestClient(app)
+
+        resp = client.post(f"/admin/notifications/remind/{week_id}")
+        assert resp.status_code == 200
+        body = resp.json()
+        assert body["reminded"] == 1
+        assert body["total_active"] == 3
+        mock_notify.assert_awaited_once()
+        # Only the missing guard WITH a telegram_id is reminded (as an int).
+        assert mock_notify.await_args.kwargs["telegram_ids"] == [222]
+        app.dependency_overrides.clear()
+
 
 # ---------------------------------------------------------------------------
 # Admin Export Controller Tests

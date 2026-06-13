@@ -99,6 +99,7 @@ export default {
     viewDetails: 'צפה בפירוט',
     remind: 'שלח תזכורת למי שלא שלח',
     reminding: 'שולח תזכורות...',
+    missingCount: 'מאבטחים טרם הגישו',
     reminderSent: 'נשלחו תזכורות',
     reminderNone: 'כל המאבטחים כבר שלחו — אין למי לשלוח תזכורת',
   },

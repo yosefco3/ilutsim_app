@@ -34,23 +34,20 @@ async def send_submission_reminder(
     submission_service: SubmissionService = Depends(get_submission_service),
 ):
     """Send a reminder to guards who haven't submitted yet for a given week."""
-    week = await week_service.get_by_id(week_id)
-    if week is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Week not found",
-        )
+    # Raises a not-found exception if the week doesn't exist.
+    week = await week_service.get_week(week_id)
 
-    users = await user_service.get_active_users()
+    users = await user_service.get_all_active_users()
 
-    # Collect telegram IDs of users who haven't submitted
+    # Collect telegram IDs of active users who haven't submitted yet.
     telegram_ids: list[int] = []
     for user in users:
-        submission = await submission_service.get_user_submission(user["id"], week_id)
-        if submission is None:
-            tg_id = user.get("telegram_id")
-            if tg_id:
-                telegram_ids.append(tg_id)
+        submission = await submission_service.get_submission(user.id, week_id)
+        if submission is None and user.telegram_id:
+            try:
+                telegram_ids.append(int(user.telegram_id))
+            except (TypeError, ValueError):
+                logger.warning("Skipping invalid telegram_id for user %s", user.id)
 
     # Send via bot
     sent_count = 0
@@ -59,8 +56,8 @@ async def send_submission_reminder(
             from app.bot.notifications import notify_closing_reminder
 
             await notify_closing_reminder(
-                week_start=week["week_start_date"],
-                deadline_text=str(week.get("submission_deadline", "בקרוב")),
+                week_start=week.start_date,
+                deadline_text="בקרוב",
                 telegram_ids=telegram_ids,
             )
             sent_count = len(telegram_ids)
@@ -85,12 +82,8 @@ async def notify_week_published(
     week_service: WeekService = Depends(get_week_service),
 ):
     """Notify all guards that the schedule for a week has been published."""
-    week = await week_service.get_by_id(week_id)
-    if week is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Week not found",
-        )
+    # Raises a not-found exception if the week doesn't exist.
+    await week_service.get_week(week_id)
 
     sent_count = 0
     try:
