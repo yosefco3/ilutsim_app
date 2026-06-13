@@ -8,6 +8,15 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@300..800&display=swap" />
+    <!--
+      Telegram WebApp SDK. Required so the guard area (/submit) works when opened
+      via a `web_app` button: it exposes window.Telegram.WebApp (real initData for
+      auth) and ready()/expand(). Without it a WebApp stays on Telegram's dark
+      loading screen ("blank dark screen"). Loaded synchronously (blocking) so it
+      is available before the deferred module script runs. Harmless on the admin
+      side (outside Telegram it just yields an empty WebApp object).
+    -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
   </head>
   <body>
     <div id="root"></div>
