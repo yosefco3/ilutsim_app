@@ -52,7 +52,7 @@ describe('WeekStatusControl', () => {
     fireEvent.click(screen.getByText(/📢/));
     expect(onPublish).not.toHaveBeenCalled();
     // The warning explains publish is irreversible (unlike lock).
-    expect(screen.getByText(/אינה הפיכה/)).toBeInTheDocument();
+    expect(screen.getByText(/בלתי הפיכה/)).toBeInTheDocument();
   });
 
   it('publishes only after confirming the irreversible warning', () => {

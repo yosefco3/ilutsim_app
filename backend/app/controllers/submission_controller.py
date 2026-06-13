@@ -154,9 +154,10 @@ async def admin_submit_schedule(
     """Submit a guard's weekly schedule on the guard's behalf. **Admin only.**
 
     For guards without Telegram, an admin fills the constraints from the
-    dashboard. Unlike the guard endpoint, this is allowed regardless of the
-    week's status (``override_lock=True``) — the admin can fill constraints for
-    a closed/locked week as well.
+    dashboard. Unlike the guard endpoint, this is allowed for a closed/locked
+    week as well (``override_lock=True``). The one exception is a **published**
+    week: it is final, so editing shifts is rejected for everyone (admin
+    included) to avoid conflicts after the schedule is published.
 
     If the guard *does* have Telegram linked, they receive a notification that
     the admin filled their constraints on their behalf.

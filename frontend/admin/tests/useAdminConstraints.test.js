@@ -72,7 +72,7 @@ describe('useAdminConstraints', () => {
     expect(result.current.notes).toBe('הערה');
   });
 
-  it('can edit a locked/published week (no status gating on the client)', async () => {
+  it('can edit a closed/locked week (editing allowed pre-publish)', async () => {
     // Select the closed/locked-style week — editing must still work.
     const { result } = renderHook(() => useAdminConstraints('g1'));
     await waitFor(() => expect(result.current.loading).toBe(false));
@@ -89,6 +89,26 @@ describe('useAdminConstraints', () => {
     expect(createGuardSubmission).toHaveBeenCalledTimes(1);
     expect(createGuardSubmission.mock.calls[0][0].week_id).toBe('w2');
     expect(result.current.saved).toBe(true);
+  });
+
+  it('blocks editing a published week: isPublished + submit is a no-op', async () => {
+    fetchWeeks.mockResolvedValue([
+      { id: 'wp', status: 'published', week_label: 'שבוע פורסם', start_date: '2025-06-01' },
+    ]);
+
+    const { result } = renderHook(() => useAdminConstraints('g1'));
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    await waitFor(() => expect(result.current.selectedWeekId).toBe('wp'));
+
+    expect(result.current.isPublished).toBe(true);
+
+    let returned;
+    await act(async () => {
+      returned = await result.current.submit();
+    });
+
+    expect(returned).toBe(false);
+    expect(createGuardSubmission).not.toHaveBeenCalled();
   });
 
   it('builds the payload with user_id + week_id and only active shifts', async () => {

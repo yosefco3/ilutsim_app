@@ -30,6 +30,7 @@ export default function AdminConstraintsPage() {
     weeks,
     selectedWeekId,
     setSelectedWeekId,
+    isPublished,
     days,
     notes,
     setNotes,
@@ -75,19 +76,22 @@ export default function AdminConstraintsPage() {
             </option>
           ))}
         </select>
-        <p className="hint">ניתן למלא ולערוך אילוצים בכל סטטוס שבוע — כולל נעול ופורסם.</p>
+        <p className="hint">ניתן למלא ולערוך אילוצים כששבוע סגור / פתוח / נעול — אך לא לאחר שפורסם.</p>
       </div>
 
       {/* Day rows (guard-scoped CSS) */}
       <div className="guard-layout">
         {error && <div className="error-banner">{error}</div>}
+        {isPublished && (
+          <div className="error-banner">{messages.guards.cannotEditPublished}</div>
+        )}
 
         <div className="days-list">
           {days.map((day) => (
             <DayRow
               key={day.day_index}
               day={day}
-              disabled={false}
+              disabled={isPublished}
               onToggleShift={toggleShift}
               onSetShiftHours={setShiftHours}
             />
@@ -101,13 +105,14 @@ export default function AdminConstraintsPage() {
             value={notes}
             placeholder={guardMessages.LABEL_NOTES_PLACEHOLDER}
             onChange={(e) => setNotes(e.target.value)}
+            disabled={isPublished}
           />
         </div>
 
         <button
           type="button"
           className="submit-btn"
-          disabled={saving || !selectedWeekId}
+          disabled={saving || !selectedWeekId || isPublished}
           onClick={handleSubmit}
         >
           {saving ? messages.common.loading : guardMessages.LABEL_SUBMIT}
