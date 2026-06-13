@@ -15,14 +15,12 @@ from app.constants import AdminRole
 from app.database import get_pool
 from app.models.user import User
 from app.repositories.admin_repository import AdminRepository
-from app.repositories.schedule_event_repository import ScheduleEventRepository
 from app.repositories.schedule_week_repository import ScheduleWeekRepository
 from app.repositories.submission_repository import SubmissionRepository
 from app.repositories.system_settings_repository import SystemSettingsRepository
 from app.repositories.user_repository import UserRepository
 from app.services.admin_service import AdminService
 from app.services.auth_service import AuthService
-from app.services.event_service import EventService
 from app.services.excel_export_service import ExcelExportService
 from app.services.settings_service import SettingsService
 from app.services.submission_service import SubmissionService
@@ -47,10 +45,6 @@ async def _get_week_repo(session=Depends(get_pool)) -> ScheduleWeekRepository:
 
 async def _get_submission_repo(session=Depends(get_pool)) -> SubmissionRepository:
     return SubmissionRepository(session)
-
-
-async def _get_event_repo(session=Depends(get_pool)) -> ScheduleEventRepository:
-    return ScheduleEventRepository(session)
 
 
 async def _get_admin_repo(session=Depends(get_pool)) -> AdminRepository:
@@ -89,13 +83,6 @@ async def get_submission_service(
     week_repo: ScheduleWeekRepository = Depends(_get_week_repo),
 ) -> SubmissionService:
     return SubmissionService(submission_repo, user_repo, week_repo)
-
-
-async def get_event_service(
-    event_repo: ScheduleEventRepository = Depends(_get_event_repo),
-    user_repo: UserRepository = Depends(_get_user_repo),
-) -> EventService:
-    return EventService(event_repo, user_repo)
 
 
 async def get_admin_service(

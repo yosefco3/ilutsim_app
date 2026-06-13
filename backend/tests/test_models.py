@@ -8,11 +8,10 @@ from datetime import date, time
 import pytest
 from sqlalchemy import inspect
 
-from app.constants import AdminRole, EventType, ShiftType, UserRole, WeekStatus
+from app.constants import AdminRole, ShiftType, UserRole, WeekStatus
 from app.models import (
     Admin,
     DailyStatus,
-    ScheduleEvent,
     ScheduleWeek,
     ShiftWindow,
     SystemSetting,
@@ -80,27 +79,6 @@ class TestScheduleWeekModel:
 
     async def test_schedule_week_table_name(self):
         assert ScheduleWeek.__tablename__ == "schedule_weeks"
-
-
-# ── ScheduleEvent ────────────────────────────────────────────────────────
-
-
-class TestScheduleEventModel:
-    async def test_create_schedule_event(self, db_session):
-        user = User(phone_number="0501111111", first_name="Guard", last_name="A", role=UserRole.BASIC_GUARD)
-        await _persist(db_session, user)
-        event = ScheduleEvent(
-            user_id=user.id,
-            event_type=EventType.VACATION,
-            start_date=date(2026, 6, 5),
-            end_date=date(2026, 6, 10),
-        )
-        await _persist(db_session, event)
-        assert event.id is not None
-        assert event.event_type == EventType.VACATION
-
-    async def test_schedule_event_table_name(self):
-        assert ScheduleEvent.__tablename__ == "schedule_events"
 
 
 # ── WeeklySubmission ─────────────────────────────────────────────────────
@@ -227,7 +205,6 @@ class TestTablesExist:
         expected = {
             "users",
             "schedule_weeks",
-            "schedule_events",
             "weekly_submissions",
             "daily_statuses",
             "shift_windows",

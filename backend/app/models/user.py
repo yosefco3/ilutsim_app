@@ -12,7 +12,6 @@ from app.constants import UserRole
 from app.models.base import BaseModel
 
 if TYPE_CHECKING:
-    from app.models.schedule_event import ScheduleEvent
     from app.models.weekly_submission import WeeklySubmission
 
 
@@ -56,9 +55,6 @@ class User(BaseModel):
     )
 
     # Relationships
-    schedule_events: Mapped[List["ScheduleEvent"]] = relationship(
-        back_populates="user", cascade="all, delete-orphan",
-    )
     weekly_submissions: Mapped[List["WeeklySubmission"]] = relationship(
         back_populates="user", cascade="all, delete-orphan",
     )

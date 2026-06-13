@@ -46,11 +46,6 @@ class Messages:
     EXCEL_HEADER_DEVIATION: str = "חריגה"
     EXCEL_REPORT_TITLE: str = "דוח משמרות — {start} עד {end}"
 
-    # ── Event type labels ─────────────────────────────────────────────
-    EVENT_VACATION: str = "חופשה"
-    EVENT_MILITARY: str = "מילואים"
-    EVENT_FIREARMS: str = "רענון נשק"
-
     # ── Submission status labels ──────────────────────────────────────
     STATUS_SUBMITTED: str = "הוגש"
     STATUS_SUBMITTED_VARIANCE: str = "הוגש עם חריגה"

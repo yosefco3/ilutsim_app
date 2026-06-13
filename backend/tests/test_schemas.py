@@ -5,7 +5,6 @@ from datetime import date, time
 
 from app.schemas.user_schemas import UserCreate, UserUpdate, _validate_israeli_phone
 from app.schemas.week_schemas import WeekCreate
-from app.schemas.event_schemas import ScheduleEventCreate
 from app.schemas.submission_schemas import (
     ShiftWindowInput,
     DayStatusInput,
@@ -110,26 +109,6 @@ class TestWeekCreate:
             )
 
 
-class TestScheduleEventCreate:
-    """Tests for ScheduleEventCreate date validation."""
-
-    def test_same_date_ok(self):
-        event = ScheduleEventCreate(
-            user_id="00000000-0000-0000-0000-000000000001",
-            event_type="vacation",
-            start_date=date(2024, 1, 1),
-            end_date=date(2024, 1, 1),
-        )
-        assert event.start_date == event.end_date
-
-    def test_reversed_rejected(self):
-        with pytest.raises(ValueError):
-            ScheduleEventCreate(
-                user_id="00000000-0000-0000-0000-000000000001",
-                event_type="vacation",
-                start_date=date(2024, 1, 7),
-                end_date=date(2024, 1, 1),
-            )
 
 
 # ── Submission validation ─────────────────────────────────────────

@@ -24,14 +24,12 @@ from app.models.schedule_week import ScheduleWeek
 from app.models.weekly_submission import WeeklySubmission
 from app.models.daily_status import DailyStatus
 from app.models.shift_window import ShiftWindow
-from app.models.schedule_event import ScheduleEvent
 from app.models.admin import Admin
 from app.models.system_setting import SystemSetting
-from app.constants import WeekStatus, ShiftType, EventType, AdminRole, UserRole
+from app.constants import WeekStatus, ShiftType, AdminRole, UserRole
 
 from app.repositories.user_repository import UserRepository
 from app.repositories.schedule_week_repository import ScheduleWeekRepository
-from app.repositories.schedule_event_repository import ScheduleEventRepository
 from app.repositories.submission_repository import SubmissionRepository
 from app.repositories.admin_repository import AdminRepository
 from app.repositories.system_settings_repository import SystemSettingsRepository
@@ -229,61 +227,6 @@ class TestScheduleWeekRepository:
         # Once everything has ended, there is no current/upcoming week.
         none_week = await repo.get_current_or_upcoming_week(date(2027, 1, 1))
         assert none_week is None
-
-
-# ──────────────── ScheduleEventRepository ────────────────
-
-
-class TestScheduleEventRepository:
-    @pytest.mark.asyncio
-    async def test_create_event(self, db_session: AsyncSession):
-        # Need a user first
-        user_repo = UserRepository(db_session)
-        user = await user_repo.create(phone_number="0504444444", first_name="Ev", last_name="User", is_active=True, role=UserRole.BASIC_GUARD)
-        await db_session.commit()
-
-        repo = ScheduleEventRepository(db_session)
-        event = await repo.create_event(
-            user_id=user.id,
-            event_type=EventType.VACATION,
-            start=date(2026, 6, 5),
-            end=date(2026, 6, 10),
-        )
-        await db_session.commit()
-
-        assert event.id is not None
-        assert event.event_type == EventType.VACATION
-
-    @pytest.mark.asyncio
-    async def test_get_events_for_user(self, db_session: AsyncSession):
-        user_repo = UserRepository(db_session)
-        user = await user_repo.create(phone_number="0505555555", first_name="Ev2", last_name="", is_active=True, role=UserRole.BASIC_GUARD)
-        await db_session.commit()
-
-        repo = ScheduleEventRepository(db_session)
-        await repo.create_event(user.id, EventType.VACATION, date(2026, 6, 1), date(2026, 6, 5))
-        await repo.create_event(user.id, EventType.MILITARY_RESERVE, date(2026, 6, 20), date(2026, 6, 25))
-        await db_session.commit()
-
-        # Query overlapping June 3–June 10
-        events = await repo.get_events_for_user(user.id, date(2026, 6, 3), date(2026, 6, 10))
-        assert len(events) == 1
-        assert events[0].event_type == EventType.VACATION
-
-    @pytest.mark.asyncio
-    async def test_get_full_week_absences(self, db_session: AsyncSession):
-        user_repo = UserRepository(db_session)
-        user = await user_repo.create(phone_number="0506666666", first_name="Abs", last_name="", is_active=True, role=UserRole.BASIC_GUARD)
-        await db_session.commit()
-
-        repo = ScheduleEventRepository(db_session)
-        await repo.create_event(user.id, EventType.VACATION, date(2026, 6, 1), date(2026, 6, 7))
-        await repo.create_event(user.id, EventType.MILITARY_RESERVE, date(2026, 6, 3), date(2026, 6, 5))
-        await db_session.commit()
-
-        absences = await repo.get_full_week_absences(date(2026, 6, 1), date(2026, 6, 7))
-        assert len(absences) == 1
-        assert absences[0].event_type == EventType.VACATION
 
 
 # ──────────────── SubmissionRepository ────────────────
