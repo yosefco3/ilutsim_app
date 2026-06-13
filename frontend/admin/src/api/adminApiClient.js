@@ -119,7 +119,7 @@ export function updateWeekStatus(id, status) {
 }
 
 export function sendWeekReminders(id) {
-  return request(`/admin/weeks/${id}/remind`, { method: 'POST' });
+  return request(`/admin/notifications/remind/${id}`, { method: 'POST' });
 }
 
 export function lockWeek(id) {

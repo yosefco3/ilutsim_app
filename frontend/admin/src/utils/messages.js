@@ -97,6 +97,10 @@ export default {
     submitted: 'שלח',
     missing: 'לא שלח',
     viewDetails: 'צפה בפירוט',
+    remind: 'שלח תזכורת למי שלא שלח',
+    reminding: 'שולח תזכורות...',
+    reminderSent: 'נשלחו תזכורות',
+    reminderNone: 'כל המאבטחים כבר שלחו — אין למי לשלוח תזכורת',
   },
   settings: {
     title: 'הגדרות מערכת',

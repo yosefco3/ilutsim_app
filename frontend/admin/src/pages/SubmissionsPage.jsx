@@ -2,12 +2,16 @@ import { useState } from 'react';
 import { useWeeks } from '../hooks/useWeeks';
 import { useSubmissions } from '../hooks/useSubmissions';
 import StatusGrid from '../components/StatusGrid';
+import { useToast } from '../components/Toast';
+import { sendWeekReminders } from '../api/adminApiClient';
 import messages from '../utils/messages';
 
 export default function SubmissionsPage() {
   const { weeks, loading: weeksLoading } = useWeeks();
   const [selectedWeek, setSelectedWeek] = useState('');
   const { submissions, detailedData, loading: subsLoading } = useSubmissions(selectedWeek, { detailed: true });
+  const toast = useToast();
+  const [reminding, setReminding] = useState(false);
 
   const loading = weeksLoading || subsLoading;
 
@@ -15,6 +19,25 @@ export default function SubmissionsPage() {
   const detailsByUser = {};
   for (const s of detailedData?.submitted || []) {
     detailsByUser[s.user_id] = s;
+  }
+
+  const missingCount = submissions.filter((s) => !s.submitted_at).length;
+
+  async function handleRemind() {
+    if (!selectedWeek || reminding) return;
+    setReminding(true);
+    try {
+      const result = await sendWeekReminders(selectedWeek);
+      if (result?.reminded > 0) {
+        toast.success(`${messages.submissions.reminderSent} (${result.reminded})`);
+      } else {
+        toast.info(messages.submissions.reminderNone);
+      }
+    } catch (err) {
+      toast.error(messages.common.error + ': ' + err.message);
+    } finally {
+      setReminding(false);
+    }
   }
 
   return (
@@ -33,7 +56,16 @@ export default function SubmissionsPage() {
       {loading ? (
         <div className="loading">{messages.common.loading}</div>
       ) : selectedWeek ? (
-        <StatusGrid submissions={submissions} detailsByUser={detailsByUser} />
+        <>
+          {missingCount > 0 && (
+            <div className="form-group">
+              <button className="btn-primary" onClick={handleRemind} disabled={reminding}>
+                {reminding ? messages.submissions.reminding : messages.submissions.remind}
+              </button>
+            </div>
+          )}
+          <StatusGrid submissions={submissions} detailsByUser={detailsByUser} />
+        </>
       ) : (
         <p className="empty-state">{messages.submissions.selectWeekPrompt}</p>
       )}
