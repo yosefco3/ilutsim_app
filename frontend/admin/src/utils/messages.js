@@ -10,7 +10,6 @@ export default {
   nav: {
     guards: 'מאבטחים',
     weeks: 'שבועות',
-    events: 'אירועים',
     submissions: 'דיווחים',
     settings: 'הגדרות',
     export: 'ייצוא',
@@ -84,19 +83,6 @@ export default {
     delete: 'מחק שבוע',
     deleteConfirm: 'האם למחוק את השבוע? פעולה זו אינה ניתנת לביטול.',
     deleted: 'השבוע נמחק בהצלחה',
-  },
-  events: {
-    title: 'ניהול אירועים',
-    add: 'הוסף אירוע',
-    edit: 'ערוך',
-    delete: 'מחק',
-    confirmDelete: 'האם למחוק את האירוע?',
-    dayOfWeek: 'יום בשבוע',
-    shiftType: 'סוג משמרת',
-    location: 'מיקום',
-    notes: 'הערות',
-    noEvents: 'אין אירועים לשבוע זה',
-    selectWeek: 'בחר שבוע',
   },
   submissions: {
     title: 'דיווחים שהתקבלו',

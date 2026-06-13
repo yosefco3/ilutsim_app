@@ -32,11 +32,6 @@ describe('Admin Messages', () => {
     expect(messages.weeks.status).toBeDefined();
   });
 
-  it('has events section', () => {
-    expect(messages.events).toBeDefined();
-    expect(messages.events.title).toBeDefined();
-  });
-
   it('has submissions section', () => {
     expect(messages.submissions).toBeDefined();
     expect(messages.submissions.title).toBeDefined();

@@ -143,23 +143,6 @@ export function deleteWeek(id) {
   return request(`/admin/weeks/${id}`, { method: 'DELETE' });
 }
 
-// ──── Events ────
-export function fetchEvents(weekId) {
-  return request(`/admin/events?week_id=${weekId}`);
-}
-
-export function createEvent(data) {
-  return request('/admin/events', { method: 'POST', body: JSON.stringify(data) });
-}
-
-export function updateEvent(id, data) {
-  return request(`/admin/events/${id}`, { method: 'PUT', body: JSON.stringify(data) });
-}
-
-export function deleteEvent(id) {
-  return request(`/admin/events/${id}`, { method: 'DELETE' });
-}
-
 // ──── Submissions ────
 export function fetchSubmissions(weekId) {
   return request(`/admin/weeks/${weekId}/submissions`);
@@ -223,7 +206,6 @@ export function deleteAdmin(id) {
 }
 
 // ──── Aliases used by pages ────
-export const getEvents = fetchEvents;
 export const exportExcel = exportWeekExcel;
 export const login = adminLogin;
 export const sendReminder = sendWeekReminders;
@@ -245,10 +227,6 @@ export default {
   lockWeek,
   unlockWeek,
   deleteWeek,
-  fetchEvents,
-  createEvent,
-  updateEvent,
-  deleteEvent,
   fetchSubmissions,
   fetchSubmissionsDetailed,
   sendNotifications,
