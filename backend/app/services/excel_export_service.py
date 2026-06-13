@@ -15,12 +15,10 @@ from typing import Any
 
 from app.constants import (
     AdminRole,
-    EventType,
     ShiftType,
     WeekStatus,
 )
 from app.messages import Messages
-from app.repositories.schedule_event_repository import ScheduleEventRepository
 from app.repositories.schedule_week_repository import ScheduleWeekRepository
 from app.repositories.submission_repository import SubmissionRepository
 from app.repositories.user_repository import UserRepository
@@ -56,9 +54,6 @@ _CENTER = Alignment(horizontal="center", vertical="center")
 _CENTER_WRAP = Alignment(horizontal="center", vertical="center", wrap_text=True)
 _RED_FILL = PatternFill(
     start_color="FF4444", end_color="FF4444", fill_type="solid"
-)
-_YELLOW_FILL = PatternFill(
-    start_color="FFFFAA", end_color="FFFFAA", fill_type="solid"
 )
 _GREEN_FILL = PatternFill(
     start_color="C6EFCE", end_color="C6EFCE", fill_type="solid"
@@ -105,14 +100,6 @@ _SHIFT_LABELS: dict[str, str] = {
     ShiftType.AFTERNOON.value: Messages.LABEL_AFTERNOON,
     ShiftType.NIGHT.value: Messages.LABEL_NIGHT,
 }
-
-_EVENT_LABELS: dict[str, str] = {
-    EventType.VACATION.value: Messages.EVENT_VACATION,
-    EventType.MILITARY_RESERVE.value: Messages.EVENT_MILITARY,
-    EventType.FIREARMS_TRAINING.value: Messages.EVENT_FIREARMS,
-}
-
-
 
 def _apply_header_style(cell: Any) -> None:
     cell.font = _HEADER_FONT
@@ -193,12 +180,10 @@ class ExcelExportService:
         submission_repo: SubmissionRepository,
         user_repo: UserRepository,
         week_repo: ScheduleWeekRepository,
-        event_repo: ScheduleEventRepository | None = None,
     ) -> None:
         self._submission_repo = submission_repo
         self._user_repo = user_repo
         self._week_repo = week_repo
-        self._event_repo = event_repo
 
     # ── 1. Weekly schedule grid ─────────────────────────────────────
 
@@ -207,7 +192,7 @@ class ExcelExportService:
         Generate an Excel file with the weekly schedule grid.
 
         Rows = guards, columns = days (Sun–Sat).
-        Each cell shows the guard's selected shifts or event.
+        Each cell shows the guard's selected shifts.
         Auto-absence is applied for missing submissions.
         """
         if not HAS_OPENPYXL:
@@ -241,18 +226,6 @@ class ExcelExportService:
         # Build lookup: user_id → submission
         sub_map: dict[uuid.UUID, Any] = {s.user_id: s for s in submissions}
 
-        # Build event lookup: user_id → list of (start_date, end_date, label)
-        event_map: dict[uuid.UUID, list[tuple[date, date, str]]] = {}
-        if self._event_repo:
-            for user in active_users:
-                events = await self._event_repo.get_events_for_user(
-                    user.id, week.start_date, week.end_date
-                )
-                for ev in events:
-                    event_map.setdefault(user.id, []).append(
-                        (ev.start_date, ev.end_date, _EVENT_LABELS.get(ev.event_type, ev.event_type))
-                    )
-
         # Data rows
         row_num = 4
         for user in active_users:
@@ -261,26 +234,11 @@ class ExcelExportService:
             ws.cell(row=row_num, column=1).alignment = Alignment(vertical="center")
 
             sub = sub_map.get(user.id)
-            user_events = event_map.get(user.id, [])
 
             for day_offset in range(7):
                 col = day_offset + 2
-                current_date = week.start_date + timedelta(days=day_offset)
 
-                cell_value = ""
-                cell_fill = None
-
-                # Check if user has an event on this date
-                event_label = None
-                for ev_start, ev_end, ev_label in user_events:
-                    if ev_start <= current_date <= ev_end:
-                        event_label = ev_label
-                        break
-
-                if event_label:
-                    cell_value = f"📅 {event_label}"
-                    cell_fill = _YELLOW_FILL
-                elif sub is None:
+                if sub is None:
                     # No submission → auto-absence
                     cell_value = "❌"
                     cell_fill = _RED_FILL
@@ -571,7 +529,7 @@ class ExcelExportService:
         """
         Generate a per-guard history report across multiple weeks.
 
-        Shows submission status and events for each week in the range.
+        Shows submission status for each week in the range.
         """
         if not HAS_OPENPYXL:
             raise RuntimeError("openpyxl is required for Excel export")
@@ -584,26 +542,19 @@ class ExcelExportService:
         submissions = await self._submission_repo.get_by_user(user_id)
         sub_by_week: dict[uuid.UUID, Any] = {s.week_id: s for s in submissions}
 
-        # Get events for this user in the date range
-        events: list[Any] = []
-        if self._event_repo:
-            events = await self._event_repo.get_events_for_user(
-                user_id, start_date, end_date
-            )
-
         wb = openpyxl.Workbook()
         ws = wb.active
         ws.title = "Guard History"
 
         # Title
         title_text = f"היסטוריית מאבטח — {user.full_name}"
-        ws.merge_cells(start_row=1, start_column=1, end_row=1, end_column=4)
+        ws.merge_cells(start_row=1, start_column=1, end_row=1, end_column=3)
         title_cell = ws.cell(row=1, column=1, value=title_text)
         title_cell.font = _TITLE_FONT
         title_cell.alignment = _CENTER
 
         # Subtitle with date range
-        ws.merge_cells(start_row=2, start_column=1, end_row=2, end_column=4)
+        ws.merge_cells(start_row=2, start_column=1, end_row=2, end_column=3)
         ws.cell(
             row=2, column=1, value=f"תקופה: {start_date} עד {end_date}"
         ).alignment = _CENTER
@@ -613,7 +564,6 @@ class ExcelExportService:
             "שבוע",
             Messages.EXCEL_HEADER_NAME,
             "סטטוס הגשה",
-            "אירועים",
         ]
         for col, header in enumerate(headers, 1):
             _apply_header_style(ws.cell(row=4, column=col, value=header))
@@ -628,27 +578,16 @@ class ExcelExportService:
 
             # Find matching submission
             status_text = Messages.STATUS_PENDING
-            events_text = ""
 
             for s_week_id, s in sub_by_week.items():
                 # We need the week object to match dates
                 # For now, show all submissions we have
                 pass
 
-            # Find events overlapping this period
-            period_events = []
-            for ev in events:
-                if ev.start_date <= week_end and ev.end_date >= current:
-                    label = _EVENT_LABELS.get(ev.event_type, ev.event_type)
-                    period_events.append(label)
-            if period_events:
-                events_text = ", ".join(period_events)
-
             row_data = [
                 f"{current} – {week_end}",
                 user.full_name,
                 status_text,
-                events_text,
             ]
             for col, value in enumerate(row_data, 1):
                 cell = ws.cell(row=row_num, column=col, value=value)

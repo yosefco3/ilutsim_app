@@ -10,7 +10,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from app.constants import EventType, ShiftType, SubmissionStatus, WeekStatus
+from app.constants import ShiftType, SubmissionStatus, WeekStatus
 from app.messages import Messages
 from app.services.excel_export_service import ExcelExportService
 
@@ -52,43 +52,27 @@ def _make_submission(user_id, week_id, status=SubmissionStatus.SUBMITTED):
     return sub
 
 
-def _make_event(user_id, event_type=EventType.VACATION, start=None, end=None):
-    ev = MagicMock()
-    ev.id = uuid.uuid4()
-    ev.user_id = user_id
-    ev.event_type = event_type
-    ev.start_date = start or date(2025, 1, 5)
-    ev.end_date = end or date(2025, 1, 7)
-    ev.notes = ""
-    return ev
-
-
 def _create_service(
     week=None,
     users=None,
     submissions=None,
-    events=None,
 ):
     """Build an ExcelExportService with mocked repos."""
     sub_repo = AsyncMock()
     user_repo = AsyncMock()
     week_repo = AsyncMock()
-    event_repo = AsyncMock()
 
     week_repo.get_by_id.return_value = week
     user_repo.get_active_users.return_value = users or []
     sub_repo.get_by_week.return_value = submissions or []
     sub_repo.get_submissions_for_week.return_value = submissions or []
     sub_repo.get_by_user.return_value = submissions or []
-    event_repo.get_by_user.return_value = events or []
-    event_repo.get_events_for_user.return_value = events or []
     user_repo.get_by_id.return_value = users[0] if users else None
 
     return ExcelExportService(
         submission_repo=sub_repo,
         user_repo=user_repo,
         week_repo=week_repo,
-        event_repo=event_repo,
     )
 
 
@@ -121,23 +105,6 @@ async def test_export_weekly_no_submission_auto_absence():
     week = _make_week()
 
     svc = _create_service(week=week, users=[user], submissions=[])
-
-    with patch("app.services.excel_export_service.HAS_OPENPYXL", True):
-        data = await svc.export_weekly_schedule(week.id)
-
-    assert isinstance(data, bytes)
-    assert data[:2] == b"PK"
-
-
-@pytest.mark.asyncio
-async def test_export_weekly_with_event():
-    """Events overlapping the week are shown in cells."""
-    user = _make_user()
-    week = _make_week()
-    sub = _make_submission(user.id, week.id)
-    event = _make_event(user.id, start=week.week_start, end=week.week_start + timedelta(days=1))
-
-    svc = _create_service(week=week, users=[user], submissions=[sub], events=[event])
 
     with patch("app.services.excel_export_service.HAS_OPENPYXL", True):
         data = await svc.export_weekly_schedule(week.id)
@@ -405,22 +372,6 @@ async def test_export_guard_history_basic():
 
     assert isinstance(data, bytes)
     assert data[:2] == b"PK"
-
-
-@pytest.mark.asyncio
-async def test_export_guard_history_with_events():
-    """Guard history includes events overlapping the date range."""
-    user = _make_user()
-    start = date(2025, 1, 5)
-    end = date(2025, 1, 19)
-    event = _make_event(user.id, start=date(2025, 1, 6), end=date(2025, 1, 8))
-
-    svc = _create_service(users=[user], submissions=[], events=[event])
-
-    with patch("app.services.excel_export_service.HAS_OPENPYXL", True):
-        data = await svc.export_guard_history(user.id, start, end)
-
-    assert isinstance(data, bytes)
 
 
 @pytest.mark.asyncio

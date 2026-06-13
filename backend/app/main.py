@@ -16,7 +16,6 @@ from app.controllers import (
     submission_router,
     admin_users_router,
     admin_weeks_router,
-    admin_events_router,
     admin_notifications_router,
     admin_export_router,
     admin_settings_router,
@@ -107,7 +106,6 @@ def create_app() -> FastAPI:
     app.include_router(submission_router)
     app.include_router(admin_users_router)
     app.include_router(admin_weeks_router)
-    app.include_router(admin_events_router)
     app.include_router(admin_notifications_router)
     app.include_router(admin_export_router)
     app.include_router(admin_settings_router)

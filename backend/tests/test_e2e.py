@@ -166,56 +166,6 @@ class TestUsers:
 
 
 # ---------------------------------------------------------------------------
-# 5. Events
-# ---------------------------------------------------------------------------
-
-class TestEvents:
-    """Schedule-event CRUD (requires a user first)."""
-
-    def test_event_lifecycle(self, http: httpx.Client, auth_headers: dict):
-        # Create a week for the event
-        week_r = http.post(
-            f"{API}/admin/weeks",
-            json={"start_date": "2026-02-01", "end_date": "2026-02-07"},
-            headers=auth_headers,
-        )
-        assert week_r.status_code in (200, 201)
-        week_id = week_r.json()["id"]
-
-        # Create a user to attach events to
-        user_r = http.post(
-            f"{API}/admin/users",
-            json={"full_name": "Event Test Guard", "phone": "0500000001"},
-            headers=auth_headers,
-        )
-        assert user_r.status_code in (200, 201)
-        user_id = user_r.json()["id"]
-
-        # --- Create event ---
-        payload = {
-            "user_id": user_id,
-            "event_type": "חופש",
-            "start_date": "2026-02-01",
-            "end_date": "2026-02-03",
-        }
-        r = http.post(f"{API}/admin/events", json=payload, headers=auth_headers)
-        assert r.status_code in (200, 201), f"Create event: {r.text}"
-        event_id = r.json()["id"]
-
-        # --- List by week ---
-        r = http.get(f"{API}/admin/events/week/{week_id}", headers=auth_headers)
-        assert r.status_code in (200, 404)  # may be empty
-
-        # --- Delete ---
-        r = http.delete(f"{API}/admin/events/{event_id}", headers=auth_headers)
-        assert r.status_code in (200, 204), f"Delete event: {r.text}"
-
-        # Cleanup
-        http.delete(f"{API}/admin/users/{user_id}", headers=auth_headers)
-        http.delete(f"{API}/admin/weeks/{week_id}", headers=auth_headers)
-
-
-# ---------------------------------------------------------------------------
 # 6. Settings
 # ---------------------------------------------------------------------------
 

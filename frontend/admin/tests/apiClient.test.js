@@ -20,8 +20,6 @@ describe('Admin API Client', () => {
     expect(typeof adminApi.deleteGuard).toBe('function');
     expect(typeof adminApi.fetchWeeks).toBe('function');
     expect(typeof adminApi.createWeek).toBe('function');
-    expect(typeof adminApi.fetchEvents).toBe('function');
-    expect(typeof adminApi.createEvent).toBe('function');
     expect(typeof adminApi.fetchSubmissions).toBe('function');
     expect(typeof adminApi.fetchSettings).toBe('function');
     expect(typeof adminApi.updateSettings).toBe('function');

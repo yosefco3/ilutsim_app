@@ -32,10 +32,9 @@ describe('Navbar links', () => {
     expect(link).toHaveAttribute('href', '/submissions');
   });
 
-  it('shows events and export links when authenticated', () => {
+  it('shows export link when authenticated', () => {
     isLoggedIn.mockReturnValue(true);
     renderNavbar();
-    expect(screen.getByRole('link', { name: messages.nav.events })).toHaveAttribute('href', '/events');
     expect(screen.getByRole('link', { name: messages.nav.export })).toHaveAttribute('href', '/export');
   });
 

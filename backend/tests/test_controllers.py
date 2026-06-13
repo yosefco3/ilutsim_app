@@ -15,7 +15,6 @@ from app.controllers.auth_controller import router as auth_router
 from app.controllers.submission_controller import router as submission_router
 from app.controllers.admin_users_controller import router as admin_users_router
 from app.controllers.admin_weeks_controller import router as admin_weeks_router
-from app.controllers.admin_events_controller import router as admin_events_router
 from app.controllers.admin_notifications_controller import router as admin_notif_router
 from app.controllers.admin_export_controller import router as admin_export_router
 from app.controllers.admin_settings_controller import router as admin_settings_router
@@ -42,7 +41,6 @@ def _make_app() -> FastAPI:
     app.include_router(submission_router)
     app.include_router(admin_users_router)
     app.include_router(admin_weeks_router)
-    app.include_router(admin_events_router)
     app.include_router(admin_notif_router)
     app.include_router(admin_export_router)
     app.include_router(admin_settings_router)
@@ -315,30 +313,6 @@ class TestAdminWeeksController:
             "/admin/weeks",
             json={"start_date": "2025-01-06", "end_date": "2025-01-12"},
         )
-        assert resp.status_code in (401, 403)
-
-
-# ---------------------------------------------------------------------------
-# Admin Events Controller Tests
-# ---------------------------------------------------------------------------
-
-class TestAdminEventsController:
-    """Tests for /admin/events endpoints."""
-
-    def test_create_event_requires_admin(self):
-        app = _make_app()
-        client = TestClient(app)
-        resp = client.post(
-            "/admin/events",
-            json={"week_id": str(uuid.uuid4()), "event_type": "SHIFT"},
-        )
-        assert resp.status_code in (401, 403)
-
-    def test_get_events_for_week_requires_admin(self):
-        app = _make_app()
-        client = TestClient(app)
-        fake_id = str(uuid.uuid4())
-        resp = client.get(f"/admin/events/week/{fake_id}")
         assert resp.status_code in (401, 403)
 
 
