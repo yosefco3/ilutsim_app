@@ -47,6 +47,12 @@ class Settings(BaseSettings):
     AUTO_ROLLOVER_ENABLED: bool = True
     SCHEDULER_TIMEZONE: str = "Asia/Jerusalem"
 
+    # Data retention — keep only the most recent N weeks (by start_date).
+    # Older weeks (including published) are auto-purged during the weekly
+    # rollover so the database does not grow without bound.
+    RETENTION_ENABLED: bool = True
+    RETENTION_WEEKS: int = 60
+
     # Seed — default admin user
     SEED_ADMIN_EMAIL: str = "admin@test.com"
     SEED_ADMIN_PASSWORD: str = "admin123"

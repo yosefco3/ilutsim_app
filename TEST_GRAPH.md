@@ -1,20 +1,20 @@
 # Test Coverage Graph
 
-_נוצר אוטומטית ב: 2026-06-13 00:37_
-**טרנד:**  →0%
+_נוצר אוטומטית ב: 2026-06-13 16:18_
+**טרנד:**  ↓4%
 
 ## סיכום
 
 | מדד | ערך |
 |---|---|
-| קבצי קוד backend | 57 |
-| קבצי קוד מכוסים בטסטים | 37 |
-| קבצי קוד ללא טסטים | 20 |
-| אחוז כיסוי | 64% →0% |
-| טסטים עוברים (backend) | 23 ✅ |
+| קבצי קוד backend | 55 |
+| קבצי קוד מכוסים בטסטים | 33 |
+| קבצי קוד ללא טסטים | 22 |
+| אחוז כיסוי | 60% ↓4% |
+| טסטים עוברים (backend) | 28 ✅ |
 | טסטים נכשלים (backend) | 0 ❌ |
 | קבצי קוד frontend (ממופים) | 10 |
-| טסטים עוברים (frontend) | 21 ✅ |
+| טסטים עוברים (frontend) | 24 ✅ |
 | טסטים נכשלים (frontend) | 0 ❌ |
 
 ## Backend: מיפוי קוד → טסטים
@@ -81,13 +81,15 @@ _נוצר אוטומטית ב: 2026-06-13 00:37_
 | 🔴 HIGH | `admin_service.py` | `app/services` |
 | 🔴 HIGH | `auth_service.py` | `app/services` |
 | 🔴 HIGH | `deviation_service.py` | `app/services` |
-| 🔴 HIGH | `event_service.py` | `app/services` |
 | 🔴 HIGH | `settings_service.py` | `app/services` |
 | 🔴 HIGH | `submission_service.py` | `app/services` |
 | 🔴 HIGH | `user_service.py` | `app/services` |
 | 🟡 MEDIUM | `inline_kb.py` | `app/bot/keyboards` |
 | 🟡 MEDIUM | `auth.py` | `app/bot/middlewares` |
+| 🟡 MEDIUM | `webapp.py` | `app/bot` |
+| 🟡 MEDIUM | `scheduler.py` | `app` |
 | 🟡 MEDIUM | `telegram_auth.py` | `app/utils` |
+| 🟡 MEDIUM | `version.py` | `app` |
 | ⚪ LOW | `bot_instance.py` | `app/bot` |
 | ⚪ LOW | `database.py` | `app` |
 | ⚪ LOW | `dependencies.py` | `app` |
@@ -115,7 +117,9 @@ _נוצר אוטומטית ב: 2026-06-13 00:37_
 
 | קובץ טסט | מכסה קבצי קוד | סטטוס |
 |---|---|---|
+| `test_admin_published_guard.py` | 1 | 🟢 |
 | `test_admin_submission.py` | 1 | 🟢 |
+| `test_auto_advance.py` | 1 | 🟢 |
 | `test_auto_rotate.py` | 1 | 🟢 |
 | `test_bot.py` | 4 | 🟢 |
 | `test_config.py` | 1 | 🟢 |
@@ -130,6 +134,8 @@ _נוצר אוטומטית ב: 2026-06-13 00:37_
 | `test_models.py` | 8 | 🟢 |
 | `test_notification_on_open.py` | 2 | 🟢 |
 | `test_repositories.py` | 6 | 🟢 |
+| `test_retention.py` | 1 | 🟢 |
+| `test_scheduler.py` | 1 | 🟢 |
 | `test_schemas.py` | 5 | 🟢 |
 | `test_settings_service.py` | 1 | 🟢 |
 | `test_status_transitions.py` | 2 | 🟢 |
@@ -138,4 +144,5 @@ _נוצר אוטומטית ב: 2026-06-13 00:37_
 | `test_submission_persistence.py` | 1 | 🟢 |
 | `test_telegram_auth.py` | 1 | 🟢 |
 | `test_telegram_token_apply.py` | 1 | 🟢 |
+| `test_webapp_url.py` | 1 | 🟢 |
 | `test_week_workflow.py` | 2 | 🟢 |

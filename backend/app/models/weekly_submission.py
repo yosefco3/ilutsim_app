@@ -24,7 +24,7 @@ class WeeklySubmission(BaseModel):
         ForeignKey("users.id"), nullable=False,
     )
     week_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("schedule_weeks.id"), nullable=False,
+        ForeignKey("schedule_weeks.id", ondelete="CASCADE"), nullable=False,
     )
     general_notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     has_deviation: Mapped[bool] = mapped_column(Boolean, default=False)

@@ -29,4 +29,5 @@ class ScheduleWeek(BaseModel):
     # Relationships
     weekly_submissions: Mapped[List["WeeklySubmission"]] = relationship(
         back_populates="week", cascade="all, delete-orphan",
+        passive_deletes=True,
     )

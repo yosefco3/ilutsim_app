@@ -7,6 +7,7 @@ import uuid
 import pytest
 import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
+from sqlalchemy import event
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
 
 # Set test environment variables before importing app modules
@@ -41,6 +42,14 @@ async def client() -> AsyncClient:
 
 TEST_DB_URL = "sqlite+aiosqlite://"
 test_engine = create_async_engine(TEST_DB_URL, echo=False)
+
+
+@event.listens_for(test_engine.sync_engine, "connect")
+def _enable_test_sqlite_fk(dbapi_conn, _record):
+    """Enforce FK constraints (incl. ON DELETE CASCADE) so tests mirror prod."""
+    cursor = dbapi_conn.cursor()
+    cursor.execute("PRAGMA foreign_keys=ON")
+    cursor.close()
 TestSessionLocal = async_sessionmaker(test_engine, class_=AsyncSession, expire_on_commit=False)
 
 

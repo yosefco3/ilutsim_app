@@ -87,6 +87,23 @@ class ScheduleWeekRepository(BaseRepository[ScheduleWeek]):
         result = await self.session.execute(select(func.count(ScheduleWeek.id)))
         return result.scalar()
 
+    async def get_weeks_beyond_retention(self, keep: int) -> list[ScheduleWeek]:
+        """Return weeks older than the ``keep`` most-recent ones (purge candidates).
+
+        Weeks are ordered by ``start_date`` descending and the first ``keep`` are
+        retained; everything past that offset is returned for deletion. A
+        non-positive ``keep`` returns an empty list (safety — never purge all).
+        """
+        if keep <= 0:
+            return []
+        stmt = (
+            select(self.model_class)
+            .order_by(ScheduleWeek.start_date.desc())
+            .offset(keep)
+        )
+        result = await self.session.execute(stmt)
+        return list(result.scalars().all())
+
     async def update_status(
         self, week_id: uuid.UUID, new_status: WeekStatus
     ) -> ScheduleWeek:

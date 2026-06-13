@@ -205,6 +205,8 @@ class WeekService:
              submission target (``lock_expired_open_weeks``).
           2. Ensure the upcoming Sun–Sat week exists as CLOSED so the admin has
              a next week ready to open (``auto_rotate_weeks``).
+          3. Purge weeks older than the retention window so the database keeps
+             only the most recent ``RETENTION_WEEKS`` weeks (``purge_old_weeks``).
 
         Because the lock rule keys on ``start_date <= today``, a missed run
         (server down at midnight) is corrected automatically on the next call —
@@ -212,6 +214,7 @@ class WeekService:
         """
         await self.lock_expired_open_weeks()
         await self.auto_rotate_weeks()
+        await self.purge_old_weeks()
 
     async def lock_expired_open_weeks(self) -> None:
         """Auto-lock OPEN weeks whose submission window has already begun.
@@ -270,6 +273,55 @@ class WeekService:
                 )
         except Exception as exc:
             logger.warning(f"Failed to auto-create upcoming week: {exc}")
+
+    async def purge_old_weeks(self) -> int:
+        """Delete weeks older than the retention window. Returns the count purged.
+
+        Keeps only the most recent ``RETENTION_WEEKS`` weeks (by ``start_date``)
+        and hard-deletes everything older — **including published weeks**, since
+        the whole point of the retention cap is to bound how much history is
+        kept. Children (submissions → daily statuses → shift windows) are removed
+        by the ``ON DELETE CASCADE`` chain at the database level.
+
+        Idempotent and self-healing: once the DB holds ≤ retention weeks it is a
+        no-op, so it is safe to run on every rollover / weeks-list load. Failures
+        are logged and swallowed so they never break the rollover.
+        """
+        from app.config import get_settings
+
+        settings = get_settings()
+        if not settings.RETENTION_ENABLED:
+            return 0
+
+        try:
+            stale = await self._week_repo.get_weeks_beyond_retention(
+                settings.RETENTION_WEEKS
+            )
+        except Exception as exc:
+            logger.warning(f"Failed to query weeks beyond retention: {exc}")
+            return 0
+
+        purged = 0
+        for week in stale:
+            try:
+                # Delete directly (not delete_week) to bypass the published guard:
+                # purging old history is the intended behavior here.
+                deleted = await self._week_repo.delete(week.id)
+                if deleted:
+                    purged += 1
+                    logger.info(
+                        f"Purged old week {week.start_date} – {week.end_date} "
+                        f"(id={week.id}, was {week.status})"
+                    )
+            except Exception as exc:
+                logger.warning(f"Failed to purge week {week.id}: {exc}")
+
+        if purged:
+            logger.info(
+                f"Retention purge removed {purged} week(s); "
+                f"keeping the most recent {settings.RETENTION_WEEKS}"
+            )
+        return purged
 
     # ── Internal helpers ──────────────────────────────────────────────────
 

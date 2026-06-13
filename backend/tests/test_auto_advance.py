@@ -78,6 +78,7 @@ async def test_auto_advance_locks_and_creates_next():
     repo.update.return_value = _week(WeekStatus.LOCKED, stale.start_date, stale.end_date)
     repo.get_by_date_range.return_value = None  # upcoming week missing
     repo.save.return_value = _week(WeekStatus.CLOSED, ws, we)
+    repo.get_weeks_beyond_retention.return_value = []  # nothing to purge
 
     svc = WeekService(repo)
     await svc.auto_advance_weeks()

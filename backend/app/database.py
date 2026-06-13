@@ -2,6 +2,7 @@
 Async database engine and session factory.
 """
 
+from sqlalchemy import event
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 from app.config import get_settings
@@ -20,6 +21,18 @@ async_engine = create_async_engine(
     settings.DATABASE_URL,
     **_engine_kwargs,
 )
+
+# SQLite (dev/tests) does not enforce foreign keys unless asked. Production runs
+# on PostgreSQL where ON DELETE CASCADE works natively; enabling the pragma here
+# makes SQLite faithful so cascade-delete (e.g. data-retention purge) behaves the
+# same in both.
+if settings.DATABASE_URL.startswith("sqlite"):
+
+    @event.listens_for(async_engine.sync_engine, "connect")
+    def _enable_sqlite_fk(dbapi_conn, _record):  # pragma: no cover - infra glue
+        cursor = dbapi_conn.cursor()
+        cursor.execute("PRAGMA foreign_keys=ON")
+        cursor.close()
 
 async_session_factory = async_sessionmaker(
     bind=async_engine,
