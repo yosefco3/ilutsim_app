@@ -22,6 +22,7 @@ export const messages = {
   LABEL_NOTES_PLACEHOLDER: "הערות נוספות (אופציונלי)...",
   LABEL_BLOCKED: "חסום",
   LABEL_SUBMIT: "שלח אילוצים",
+  LABEL_SUBMITTING: "שולח...",
   LABEL_LOADING: "טוען...",
 
   LOCK_BANNER: "השבוע נעול — לא ניתן לעדכן אילוצים",
@@ -34,6 +35,9 @@ export const messages = {
   ERR_LOCKED: "השבוע נעול להגשות",
   ERR_GENERIC: "אירעה שגיאה — נסה שוב",
   ERR_NETWORK: "בעיית תקשורת — בדוק את החיבור לאינטרנט",
+  // Shown when the POST returned 2xx but no persisted submission came back —
+  // i.e. the server did not actually confirm the save. Never treat as success.
+  ERR_NO_CONFIRM: "השרת לא אישר את ההגשה — נסה שוב",
   SUCCESS_SUBMITTED: "האילוצים נשלחו בהצלחה!",
 
   // Soft, non-blocking constraint-rule warnings (submission is still allowed).

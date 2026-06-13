@@ -4,6 +4,8 @@
  * All requests go through Vite proxy (/api → localhost:8000).
  */
 
+import { messages } from '../utils/guardMessages.js';
+
 const API_BASE = import.meta.env.VITE_API_URL || '/api';
 
 /**
@@ -25,17 +27,27 @@ async function request(path, options, initData) {
     });
 
     if (!res.ok) {
-      let error;
-      if (res.status === 401) {
-        error = 'שגיאת אימות — נסה שוב דרך הבוט';
-      } else if (res.status === 403 || res.status === 409) {
-        error = 'השבוע נעול להגשות';
-      } else if (res.status === 422) {
+      // Prefer the backend's own message so the approval/rejection text the guard
+      // sees is authoritative (from the server, not invented in the frontend).
+      let detail = null;
+      try {
         const body = await res.json();
-        error = body?.detail || 'אירעה שגיאה — נסה שוב';
-      } else {
-        error = 'אירעה שגיאה — נסה שוב';
+        if (typeof body?.detail === 'string') detail = body.detail;
+      } catch {
+        /* no / non-JSON body */
       }
+
+      let fallback;
+      if (res.status === 401) {
+        fallback = messages.ERR_AUTH;
+      } else if (res.status === 403 || res.status === 409) {
+        fallback = messages.ERR_LOCKED;
+      } else {
+        fallback = messages.ERR_GENERIC;
+      }
+      // 401 is an auth/plumbing failure — keep the friendly hint rather than a
+      // raw server detail; for everything else, trust the backend's message.
+      const error = res.status === 401 ? fallback : detail || fallback;
       return { data: null, error };
     }
 
@@ -47,7 +59,7 @@ async function request(path, options, initData) {
     const data = await res.json();
     return { data, error: null };
   } catch {
-    return { data: null, error: 'בעיית תקשורת — בדוק את החיבור לאינטרנט' };
+    return { data: null, error: messages.ERR_NETWORK };
   }
 }
 

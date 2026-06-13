@@ -14,6 +14,7 @@ export default function SubmissionForm() {
   const { initData } = useTelegram();
   const {
     loading,
+    submitting,
     error,
     week,
     days,
@@ -26,6 +27,12 @@ export default function SubmissionForm() {
     setShiftHours,
     submit,
   } = useSubmission(initData);
+
+  // Navigate to the success page ONLY when the backend confirmed the save.
+  async function handleSubmit() {
+    const { ok } = await submit();
+    if (ok) window.location.href = "/submit/success";
+  }
 
   if (loading) {
     return (
@@ -100,9 +107,10 @@ export default function SubmissionForm() {
         <button
           type="button"
           className="submit-btn"
-          onClick={submit}
+          onClick={handleSubmit}
+          disabled={submitting}
         >
-          {messages.LABEL_SUBMIT}
+          {submitting ? messages.LABEL_SUBMITTING : messages.LABEL_SUBMIT}
         </button>
       )}
     </div>

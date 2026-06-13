@@ -92,11 +92,38 @@ describe('useSubmission', () => {
     expect(result.current.days[0].shifts.morning.active).toBe(true);
   });
 
-  it('should navigate to /submit/success on successful submit', async () => {
+  it('returns ok:true only when the backend echoes a persisted submission (id)', async () => {
     get.mockResolvedValue({
       data: { id: 'w1', status: 'open', days: [{ day_index: 0, blocked: false }] },
       error: null,
     });
+    post.mockResolvedValue({ data: { id: 'sub1', submitted_at: 'now' }, error: null });
+
+    const { result } = renderHook(() => useSubmission(initData));
+
+    await waitFor(() => {
+      expect(result.current.loading).toBe(false);
+    });
+
+    let res;
+    await act(async () => {
+      res = await result.current.submit();
+    });
+
+    expect(res).toEqual({ ok: true, error: null });
+    expect(post).toHaveBeenCalledWith(
+      expect.stringContaining('submissions'),
+      expect.objectContaining({ week_id: 'w1' }),
+      initData,
+    );
+  });
+
+  it('does NOT treat a 2xx without a submission body as success', async () => {
+    get.mockResolvedValue({
+      data: { id: 'w1', status: 'open', days: [{ day_index: 0, blocked: false }] },
+      error: null,
+    });
+    // 2xx but no persisted submission echoed back → must not be a "success".
     post.mockResolvedValue({ data: { success: true }, error: null });
 
     const { result } = renderHook(() => useSubmission(initData));
@@ -105,16 +132,13 @@ describe('useSubmission', () => {
       expect(result.current.loading).toBe(false);
     });
 
+    let res;
     await act(async () => {
-      await result.current.submit();
+      res = await result.current.submit();
     });
 
-    expect(window.location.href).toBe('/submit/success');
-    expect(post).toHaveBeenCalledWith(
-      expect.stringContaining('submissions'),
-      expect.objectContaining({ week_id: 'w1' }),
-      initData,
-    );
+    expect(res.ok).toBe(false);
+    expect(result.current.error).toBeTruthy();
   });
 
   it('should prefill an existing submission (date→day_index, shift_windows→shifts)', async () => {

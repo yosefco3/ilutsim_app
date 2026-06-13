@@ -62,6 +62,7 @@ function makeShifts(defaults) {
  */
 export function useSubmission(initData) {
   const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
   const [week, setWeek] = useState(null);
   const [days, setDays] = useState([]);
@@ -247,10 +248,14 @@ export function useSubmission(initData) {
   }, []);
 
   // ── Submit the form ──────────────────────────────────────────
+  // Returns { ok, error }. Success is declared ONLY when the backend confirms
+  // it persisted the submission (a 201 carrying the saved row's id). A 2xx with
+  // no submission body is treated as a failure — never a frontend-only "success".
   const submit = useCallback(async () => {
-    if (!week) return;
+    if (!week || submitting) return { ok: false, error: null };
 
     setError(null);
+    setSubmitting(true);
 
     const payload = {
       week_id: week.id,
@@ -272,14 +277,21 @@ export function useSubmission(initData) {
         })),
     };
 
-    const { error: submitErr } = await post("/submissions", payload, initData);
+    const { data, error: submitErr } = await post("/submissions", payload, initData);
+    setSubmitting(false);
 
     if (submitErr) {
       setError(submitErr);
-    } else {
-      window.location.href = '/submit/success';
+      return { ok: false, error: submitErr };
     }
-  }, [week, days, notes, initData]);
+    // The backend must echo back the saved submission (with an id). Without it
+    // we have no proof the data reached the server, so we do NOT show success.
+    if (!data || !data.id) {
+      setError(messages.ERR_NO_CONFIRM);
+      return { ok: false, error: messages.ERR_NO_CONFIRM };
+    }
+    return { ok: true, error: null };
+  }, [week, days, notes, initData, submitting]);
 
   const weekStatus = week?.status || null;
   const canSubmit = weekStatus === "open";
@@ -290,6 +302,7 @@ export function useSubmission(initData) {
 
   return {
     loading,
+    submitting,
     error,
     week,
     days,

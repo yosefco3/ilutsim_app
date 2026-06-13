@@ -65,6 +65,26 @@ describe('guardApiClient', () => {
       const { error } = await post('/test', {}, initData);
       expect(error).toContain('נעול');
     });
+
+    it('surfaces the backend detail message on rejection', async () => {
+      fetch.mockResolvedValueOnce({
+        ok: false,
+        status: 403,
+        json: async () => ({ detail: 'ניתן להגיש רק לשבוע הפתוח הנוכחי.' }),
+      });
+      const { error } = await post('/submissions', {}, initData);
+      expect(error).toBe('ניתן להגיש רק לשבוע הפתוח הנוכחי.');
+    });
+
+    it('keeps the friendly auth hint on 401 even if a detail is present', async () => {
+      fetch.mockResolvedValueOnce({
+        ok: false,
+        status: 401,
+        json: async () => ({ detail: 'Invalid Telegram auth' }),
+      });
+      const { error } = await post('/submissions', {}, initData);
+      expect(error).toContain('אימות');
+    });
   });
 
   describe('get current week', () => {
