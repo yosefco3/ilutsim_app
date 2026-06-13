@@ -42,6 +42,11 @@ class Settings(BaseSettings):
     CRON_WEEKLY_OPEN_HOUR: str = "09:00"
     REMINDER_HOUR: int = 18
 
+    # Automatic weekly rollover (Motzaei Shabbat — Sunday 00:00 Israel time):
+    # auto-lock the active submission week and ensure the upcoming one.
+    AUTO_ROLLOVER_ENABLED: bool = True
+    SCHEDULER_TIMEZONE: str = "Asia/Jerusalem"
+
     # Seed — default admin user
     SEED_ADMIN_EMAIL: str = "admin@test.com"
     SEED_ADMIN_PASSWORD: str = "admin123"

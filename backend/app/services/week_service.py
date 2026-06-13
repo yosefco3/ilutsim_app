@@ -47,18 +47,22 @@ class WeekService:
         return WeekResponse.model_validate(created)
 
     async def get_all_weeks(self) -> list[WeekResponse]:
-        """Return all schedule weeks, after auto-rotating expired ones."""
-        await self.auto_rotate_weeks()
+        """Return all schedule weeks, after the automatic weekly advance."""
+        await self.auto_advance_weeks()
         weeks = await self._week_repo.get_all()
         return [WeekResponse.model_validate(w) for w in weeks]
 
     async def change_week_status(
-        self, week_id: uuid.UUID, new_status: WeekStatus
+        self, week_id: uuid.UUID, new_status: WeekStatus, notify: bool = True
     ) -> WeekResponse:
         """Transition a week to a new status.
 
         Validates that the transition follows the allowed path:
         open → locked → published.
+
+        ``notify`` controls the Telegram broadcast. Manual admin transitions
+        notify guards; the automatic Saturday-night rollover locks silently
+        (``notify=False``) to avoid a midnight broadcast.
         """
         week = await self._get_week_or_raise(week_id)
         old_status = week.status
@@ -83,24 +87,26 @@ class WeekService:
         updated = await self._week_repo.update(week.id, status=new_status)
         logger.info(f"Week {week_id}: {old_status} -> {new_status}")
 
-        # Send Telegram notifications on status change
-        try:
-            from app.bot.notifications import notify_week_locked, notify_week_opened, notify_week_published
+        # Send Telegram notifications on status change (skipped for silent
+        # automatic transitions, e.g. the Saturday-night auto-lock).
+        if notify:
+            try:
+                from app.bot.notifications import notify_week_locked, notify_week_opened, notify_week_published
 
-            telegram_ids: list[int] = []
-            if self._user_repo is not None:
-                users = await self._user_repo.get_all()
-                telegram_ids = [u.telegram_id for u in users if u.telegram_id]
+                telegram_ids: list[int] = []
+                if self._user_repo is not None:
+                    users = await self._user_repo.get_all()
+                    telegram_ids = [u.telegram_id for u in users if u.telegram_id]
 
-            if telegram_ids:
-                if new_status == WeekStatus.OPEN:
-                    await notify_week_opened(updated.start_date, updated.end_date, telegram_ids)
-                elif new_status == WeekStatus.LOCKED:
-                    await notify_week_locked(updated.start_date, updated.end_date, telegram_ids)
-                elif new_status == WeekStatus.PUBLISHED:
-                    await notify_week_published(updated.start_date, updated.end_date, telegram_ids)
-        except Exception as exc:
-            logger.warning(f"Failed to send status-change notification: {exc}")
+                if telegram_ids:
+                    if new_status == WeekStatus.OPEN:
+                        await notify_week_opened(updated.start_date, updated.end_date, telegram_ids)
+                    elif new_status == WeekStatus.LOCKED:
+                        await notify_week_locked(updated.start_date, updated.end_date, telegram_ids)
+                    elif new_status == WeekStatus.PUBLISHED:
+                        await notify_week_published(updated.start_date, updated.end_date, telegram_ids)
+            except Exception as exc:
+                logger.warning(f"Failed to send status-change notification: {exc}")
 
         # Auto-create next week when publishing
         if new_status == WeekStatus.PUBLISHED:
@@ -185,6 +191,55 @@ class WeekService:
             from app.exceptions import UserNotFoundException
             raise UserNotFoundException()
         logger.info(f"Week {week_id} deleted (was {week.status})")
+
+    async def auto_advance_weeks(self) -> None:
+        """Perform the automatic weekly rollover (idempotent, self-healing).
+
+        This is the single entry point for the Saturday-night (Motzaei Shabbat,
+        Sunday 00:00) rollover. It runs on a scheduled trigger, on startup, and
+        on every weeks-list load, and converges to the correct state regardless
+        of how many times it runs:
+
+          1. Lock any OPEN week whose ``start_date`` has arrived — it is the
+             week that just became "current" and is no longer a relevant
+             submission target (``lock_expired_open_weeks``).
+          2. Ensure the upcoming Sun–Sat week exists as CLOSED so the admin has
+             a next week ready to open (``auto_rotate_weeks``).
+
+        Because the lock rule keys on ``start_date <= today``, a missed run
+        (server down at midnight) is corrected automatically on the next call —
+        no catch-up bookkeeping needed.
+        """
+        await self.lock_expired_open_weeks()
+        await self.auto_rotate_weeks()
+
+    async def lock_expired_open_weeks(self) -> None:
+        """Auto-lock OPEN weeks whose submission window has already begun.
+
+        An open submission week is meant to be a future week. The moment its
+        ``start_date`` arrives it is no longer relevant, so it is transitioned
+        OPEN → LOCKED **silently** (no Telegram broadcast at midnight). The
+        admin's manual lock/publish flow is untouched: a week that was already
+        locked/published, or an open *future* week, is never affected.
+        """
+        today = date.today()
+        try:
+            stale = await self._week_repo.get_open_weeks_started_on_or_before(today)
+        except Exception as exc:
+            logger.warning(f"Failed to query expired open weeks: {exc}")
+            return
+
+        for week in stale:
+            try:
+                await self.change_week_status(
+                    week.id, WeekStatus.LOCKED, notify=False
+                )
+                logger.info(
+                    f"Auto-locked expired open week {week.start_date} – "
+                    f"{week.end_date} (id={week.id})"
+                )
+            except Exception as exc:
+                logger.warning(f"Failed to auto-lock week {week.id}: {exc}")
 
     async def auto_rotate_weeks(self) -> None:
         """Ensure the upcoming week always exists, created CLOSED.

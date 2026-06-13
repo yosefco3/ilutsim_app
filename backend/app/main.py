@@ -48,6 +48,24 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     except Exception as exc:
         logger.warning("Could not ensure initial week: %s", exc)
 
+    # Catch-up rollover: if the Saturday-night transition was missed while the
+    # server was down, run it now (idempotent — no-op if already advanced).
+    try:
+        from app.scheduler import run_weekly_rollover
+
+        await run_weekly_rollover()
+    except Exception as exc:
+        logger.warning("Startup catch-up rollover failed: %s", exc)
+
+    # Start the weekly rollover scheduler (Sun 00:00 Israel time).
+    scheduler = None
+    try:
+        from app.scheduler import start_scheduler
+
+        scheduler = start_scheduler()
+    except Exception as exc:
+        logger.warning("Failed to start rollover scheduler: %s", exc)
+
     # Start Telegram bot (only if token is configured)
     bot_started = False
     if settings.TELEGRAM_BOT_TOKEN:
@@ -65,6 +83,13 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     yield
 
     # Shutdown
+    if scheduler is not None:
+        try:
+            scheduler.shutdown(wait=False)
+            logger.info("Rollover scheduler stopped")
+        except Exception as exc:
+            logger.warning("Error stopping scheduler: %s", exc)
+
     if bot_started:
         try:
             from app.bot import stop_bot

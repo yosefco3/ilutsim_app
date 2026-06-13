@@ -25,6 +25,28 @@ class ScheduleWeekRepository(BaseRepository[ScheduleWeek]):
         result = await self.session.execute(stmt)
         return result.scalar_one_or_none()
 
+    async def get_open_weeks_started_on_or_before(
+        self, today: date
+    ) -> list[ScheduleWeek]:
+        """Return all OPEN weeks whose submission window has begun.
+
+        A week that is open for submission is meant to be a *future* week. Once
+        its ``start_date`` arrives (``start_date <= today``) it is no longer a
+        relevant submission target and should be auto-locked. Returns a list
+        (normally 0 or 1) ordered by start_date so the auto-advance can lock
+        every stale open week deterministically.
+        """
+        stmt = (
+            select(self.model_class)
+            .where(
+                ScheduleWeek.status == WeekStatus.OPEN,
+                ScheduleWeek.start_date <= today,
+            )
+            .order_by(ScheduleWeek.start_date.asc())
+        )
+        result = await self.session.execute(stmt)
+        return list(result.scalars().all())
+
     async def get_by_date_range(self, start: date, end: date) -> ScheduleWeek | None:
         """Find a week that exactly matches the given date range."""
         stmt = select(self.model_class).where(

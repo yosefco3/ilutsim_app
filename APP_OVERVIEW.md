@@ -3,7 +3,7 @@
 > **⚠️ מסמך זה מתעדכן בכל שינוי משמעותי באפליקציה.**
 > אם הנך מוסיף/משנה פיצ'ר — עדכן גם כאן.
 >
-> עדכון אחרון: 13 יוני 2026 (🔔 כפתור תזכורת בדף הדיווחים + הפרדת מאבטחים פעילים/לא-פעילים)
+> עדכון אחרון: 13 יוני 2026 (🕛 נעילה+רוטציה אוטומטית של שבוע במוצאי שבת 00:00)
 
 ---
 
@@ -148,11 +148,18 @@
 - האדמין מעביר אותו ל-`open` ידנית כשהוא מוכן — מה ששולח התראת פתיחה לכל השומרים
 
 ### רוטציה אוטומטית של שבועות
-- **מתי**: בכל טעינה של דף השבועות (`GET /admin/weeks`) ובעליית השרת
-- **מה קורה**: אם עדיין לא קיים שבוע לטווח הקרוב (ראשון–שבת) → נוצר שבוע חדש בסטטוס **`closed`**
-  (לפי טווח תאריכים, כך שאין כפילות מול `_ensure_next_week`)
-- **אין שינוי סטטוס אוטומטי**: המערכת **לא** מפרסמת/נועלת שבועות בשקט — כל מעבר (פתיחה/נעילה/פרסום)
-  הוא פעולת אדמין מפורשת
+- **מתי**: בכל טעינה של דף השבועות (`GET /admin/weeks`), בעליית השרת, ובטריגר מתוזמן כל **מוצאי שבת (ראשון 00:00, שעון ישראל)**
+- **מה קורה** (`WeekService.auto_advance_weeks` — אידמפוטנטי, מרפא-עצמי):
+  1. **נעילה אוטומטית של השבוע הפעיל** — כל שבוע במצב `open` שה-`start_date` שלו כבר הגיע (`start_date <= today`)
+     ננעל אוטומטית (`open → locked`), כי שבוע פתוח אמור תמיד להיות **עתידי** ושבוע שכבר התחיל אינו רלוונטי להגשה.
+     הנעילה **שקטה** (`notify=False`) — אין ברודקאסט טלגרם בחצות; נעילה ידנית של האדמין כן מתריעה כרגיל.
+  2. **יצירת השבוע הבא** — אם עדיין לא קיים שבוע לטווח הקרוב (ראשון–שבת) → נוצר במצב **`closed`**
+     (לפי טווח תאריכים, כך שאין כפילות מול `_ensure_next_week`), ומופיע כשבוע הבא שהאדמין יכול לפתוח.
+- **תזמון** (`app/scheduler.py`, APScheduler): `AsyncIOScheduler` עם cron שבועי `sun 00:00` ב-`SCHEDULER_TIMEZONE`
+  (ברירת מחדל `Asia/Jerusalem`, מטפל ב-DST). ניתן לכבות עם `AUTO_ROLLOVER_ENABLED=false`. בעליית השרת רצה
+  **השלמה חד-פעמית** (catch-up) של אותו רולאובר — מכסה שרת שהיה כבוי בחצות מוצ"ש.
+- **"לא משנה מה יקרה"**: גם אם האדמין לא נעל/פרסם ידנית — מרגע שנכנס השבוע, הוא ננעל אוטומטית. אם האדמין כן
+  פעל ידנית — הכלל לא משנה כלום (אין שבוע פתוח שהתחיל). השבועות הישנים נשארים ברשימה כהיסטוריה.
 - **מחיקת שבוע**: אפשרית רק לשבועות שלא פורסמו (שומר היסטוריה); כפתור המחיקה מוסתר לשבוע שפורסם
 
 ---
@@ -328,6 +335,7 @@ ilutzim_app/
 
 | תאריך     | שינוי                                                |
 |-----------|-------------------------------------------------------|
+| 13 יוני 2026 | 🕛 **נעילה + רוטציה אוטומטית של שבוע במוצאי שבת (ראשון 00:00, שעון ישראל)** — עד כה מחזור חיי השבוע היה ידני לגמרי (אין scheduler פעיל; `apscheduler` היה ב-requirements אך לא מחובר, `bot/cron.py` placeholder). כעת, **לא משנה אם האדמין נעל/פרסם** — מרגע שנכנס השבוע הפעיל (`start_date` הגיע) הוא **ננעל אוטומטית להגשה** (`open → locked`) כי הוא כבר לא רלוונטי, והשבוע הבא מופיע כ-`closed` שהאדמין יכול לפתוח. מימוש: (1) `ScheduleWeekRepository.get_open_weeks_started_on_or_before(today)` — שבועות `open` עם `start_date <= today`. (2) `WeekService.lock_expired_open_weeks` (נעילה **שקטה**, `notify=False` — אין ברודקאסט טלגרם בחצות) + `auto_advance_weeks` (=נעילה + `auto_rotate_weeks` הקיים); `change_week_status` קיבל פרמטר `notify`. (3) `app/scheduler.py` — `AsyncIOScheduler` (APScheduler) עם cron שבועי `sun 00:00` ב-`SCHEDULER_TIMEZONE` (ברירת מחדל `Asia/Jerusalem`, מטפל ב-DST), מחובר ב-`main.py` lifespan עם **השלמה חד-פעמית בעלייה** (catch-up לשרת שהיה כבוי) וכיבוי ב-shutdown. (4) config: `AUTO_ROLLOVER_ENABLED` + `SCHEDULER_TIMEZONE`. הלוגיקה **אידמפוטנטית ומרפאת-עצמה** — רצה גם בכל טעינת `GET /admin/weeks`, כך שריצה שהוחמצה מתוקנת מיד. כיסוי: 8 טסטים חדשים (`test_auto_advance.py` service+repo+DB מלא, `test_scheduler.py` תצורת job+disabled+delegation); backend 203 (0 כשלים). |
 | 13 יוני 2026 | 🔔 **כפתור תזכורת + הפרדת מאבטחים פעילים/לא-פעילים בדף הדיווחים** — (1) **כפתור "שלח תזכורת"** ב-`SubmissionsPage` שמפעיל את `POST /admin/notifications/remind/{week_id}` ושולח תזכורת טלגרם (`notify_closing_reminder`) **רק למאבטחים פעילים שטרם הגישו** ויש להם `telegram_id`. ה-endpoint היה שבור — קרא למתודות לא-קיימות (`WeekService.get_by_id`, `UserService.get_active_users`, `SubmissionService.get_user_submission`) ולשדות שבוע לא-קיימים → `AttributeError` בלחיצה; תוקן מול ה-API האמיתי (`get_week`/`get_all_active_users`/`get_submission`) עם גישת Pydantic ו-`int(telegram_id)`. אותו באג `get_by_id` תוקן גם ב-endpoint של `publish`. הכפתור מוצג בסרגל-פעולה בגוון אזהרה עם מונה "כמה טרם הגישו". (2) **הפרדת פעילים/לא-פעילים** — `get_week_submissions_grid` ו-`get_week_submissions_detailed` עברו מ-`get_active_users` ל-`get_all_users`, ו-`SubmissionStatusGrid` קיבל שדה `is_active`. הדף מציג כברירת-מחדל **רק מאבטחים פעילים**, עם כפתור מתקפל "הצג מאבטחים לא פעילים (N)" לרשימה נפרדת. מונה התזכורת סופר רק פעילים. כיסוי: 2 טסטים חדשים (endpoint תזכורת מאומת ב-`test_controllers.py`, גריד כולל לא-פעילים ב-`test_submission_persistence.py`); backend 195, frontend 112 (0 כשלים). |
 | 13 יוני 2026 | 📨 **התראת טלגרם כשהאדמין ממלא אילוצים עבור מאבטח** — כשהאדמין שולח אילוצים בשם מאבטח (`POST /submissions/admin`) ולמאבטח יש `telegram_id`, הוא מקבל כעת הודעת טלגרם "📝 האדמין מילא עבורך את האילוצים" (פונקציה חדשה `notify_admin_filled_constraints` ב-`bot/notifications.py`, מקבילה ל-`notify_submission_success`). הקונטרולר טוען את המאבטח דרך `get_user_service` ושולח לאחר שמירה מוצלחת; ההתראה **לא-קריטית** — כשל בשליחה נרשם ללוג בלבד ולא מפיל את ה-201. **אישור התנהגות קיימת:** טפסי האילוצים (`useSubmission`/`useAdminConstraints`) שומרים הכל ב-React state בלבד — **אין** localStorage/אוטו-שמירה/טיוטה, ושום דבר לא נכתב ל-DB עד לחיצת "שלח". כיסוי: 3 טסטים חדשים ב-`test_admin_submission.py` (מתריע עם טלגרם / מדלג בלעדיו / כשל לא מפיל הגשה); backend 193 (0 כשלים). |
 | 13 יוני 2026 | 🗑️ **הסרת פיצ'ר האירועים (Events) — אדמין + באקאנד** — הפיצ'ר לא היה בשימוש. **Frontend:** הוסרו הראוט `/events`, הקישור ב-`Navbar`, `EventsPage`, `EventForm`, פונקציות ה-API (`fetchEvents/createEvent/updateEvent/deleteEvent`) ומחרוזות `events` ב-`messages.js`. **Backend:** נמחקו `admin_events_controller`, `event_service`, מודל `ScheduleEvent`, `event_schemas`, `schedule_event_repository`; נוקו הרישומים (`controllers/services/repositories/models __init__`), `dependencies.py` (`get_event_service`/`_get_event_repo`), רישום ה-router ב-`main.py`, יחס `User.schedule_events`, ה-enum `EventType` וההודעות `EVENT_*`. **ייצוא Excel:** הוסרה תצוגת האירועים מ-`export_weekly_schedule` ומ-`export_guard_history` (לא ניתן היה ליצור אירועים יותר → קוד מת). **DB:** טבלת `schedule_events` נשארת ב-DB/מיגרציה (לא הוסרה — להימנע מסיכון מיגרציה; אין לה יותר מודל). כיסוי: backend 190, frontend 111 (0 כשלים). |
