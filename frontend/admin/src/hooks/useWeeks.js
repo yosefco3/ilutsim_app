@@ -43,9 +43,23 @@ export function useWeeks() {
     return updated;
   };
 
+  // Silent re-fetch (no loading spinner) — used after publish, which
+  // auto-creates the next week on the server that must appear in the list.
+  const refreshSilently = useCallback(async () => {
+    try {
+      const data = await fetchWeeks();
+      setWeeks(Array.isArray(data) ? data : data.items || []);
+    } catch {
+      // keep current state on failure; the optimistic update still applied
+    }
+  }, []);
+
   const publish = async (id) => {
     const updated = await publishWeek(id);
     setWeeks((prev) => prev.map((w) => (w.id === id ? { ...w, ...updated } : w)));
+    // Publishing auto-creates the next week server-side; pull it into the list
+    // so it appears without a manual page reload.
+    await refreshSilently();
     return updated;
   };
 
