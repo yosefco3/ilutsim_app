@@ -29,12 +29,14 @@ export default function SubmissionsPage() {
 
   const loading = weeksLoading || subsLoading;
 
-  // Filling constraints is only allowed on the *relevant* week — the single
-  // week still 'open' for submissions. A week that already started auto-locks
-  // (start_date ≤ today → LOCKED) and a published week is final, so gating on
-  // 'open' inherently excludes both "already started" and "published".
+  // Admins may fill and edit constraints while a week is 'closed' / 'open' /
+  // 'locked' — only a 'published' week is final and locks editing for everyone
+  // (matches the backend: create_submission(override_lock=True) rejects only
+  // PUBLISHED, and AdminConstraintsPage which gates solely on 'published').
+  // Regular guards are still blocked once the week is locked; that gate lives
+  // on the guard side, not here.
   const selectedWeekObj = weeks.find((w) => String(w.id) === String(selectedWeek));
-  const canFillConstraints = selectedWeekObj?.status === 'open';
+  const canFillConstraints = !!selectedWeekObj && selectedWeekObj.status !== 'published';
 
   // Map each guard's user_id to their detailed submission (days + notes)
   const detailsByUser = {};
