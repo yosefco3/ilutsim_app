@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useWeeks } from '../hooks/useWeeks';
 import { useSubmissions } from '../hooks/useSubmissions';
 import StatusGrid from '../components/StatusGrid';
@@ -14,6 +14,18 @@ export default function SubmissionsPage() {
   const [reminding, setReminding] = useState(false);
 
   const [showInactive, setShowInactive] = useState(false);
+
+  // Default the week selector to the relevant week (the single 'open' one) once
+  // weeks load — that's the week the admin almost always wants, and it makes the
+  // "מילוי אילוצים" button show immediately. Runs once; the admin can still pick
+  // another week. If no week is open, stay on the "choose week" prompt.
+  const didInitWeek = useRef(false);
+  useEffect(() => {
+    if (didInitWeek.current || !weeks.length) return;
+    didInitWeek.current = true;
+    const open = weeks.find((w) => w.status === 'open');
+    if (open) setSelectedWeek(String(open.id));
+  }, [weeks]);
 
   const loading = weeksLoading || subsLoading;
 
