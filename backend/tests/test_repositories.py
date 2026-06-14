@@ -109,6 +109,25 @@ class TestUserRepository:
         assert active[0].first_name == "Active"
 
     @pytest.mark.asyncio
+    async def test_get_active_users_is_deterministically_ordered(self, db_session: AsyncSession):
+        """get_active_users must return a stable order (by last/first name).
+
+        The __DEV_MODE__ auth bypass returns users[0]; with no ORDER BY that was an
+        arbitrary DB-order row, so every guard could be authenticated as the same
+        unrelated person. Pin the order so users[0] is at least predictable.
+        """
+        repo = UserRepository(db_session)
+        # Inserted out of alphabetical order on purpose.
+        await repo.create(phone_number="0500000010", first_name="Moshe", last_name="Shimon", is_active=True, role=UserRole.BASIC_GUARD)
+        await repo.create(phone_number="0500000011", first_name="Bobby", last_name="Biton", is_active=True, role=UserRole.BASIC_GUARD)
+        await repo.create(phone_number="0500000012", first_name="Avi", last_name="Aaron", is_active=True, role=UserRole.BASIC_GUARD)
+        await db_session.commit()
+
+        ordered = await repo.get_active_users()
+        names = [(u.last_name, u.first_name) for u in ordered]
+        assert names == sorted(names)
+
+    @pytest.mark.asyncio
     async def test_link_telegram_id(self, db_session: AsyncSession):
         repo = UserRepository(db_session)
         await repo.create(phone_number="0502222222", first_name="Link", last_name="Me", is_active=True, role=UserRole.BASIC_GUARD)

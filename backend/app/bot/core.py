@@ -13,6 +13,7 @@ from aiogram.types import (
     InlineKeyboardButton,
     InlineKeyboardMarkup,
     Message,
+    WebAppInfo,
 )
 from aiogram.filters import CommandStart
 from aiogram.fsm.context import FSMContext
@@ -260,8 +261,18 @@ async def _show_main_menu(message: Message, display_name: str):
             text = f"שלום {display_name}! 👋\nברוך הבא למערכת ניהול האילוצים."
 
             if not is_private and webapp_url.startswith("https://"):
+                # MUST be a real Telegram WebApp button (web_app=), NOT a plain
+                # url= button. A url= button opens an ordinary browser tab with no
+                # Telegram context, so window.Telegram.WebApp.initData is empty and
+                # the frontend falls back to the __DEV_MODE__ auth sentinel — which
+                # authenticates every guard as the same arbitrary user[0]. The
+                # web_app button populates signed initData so each guard is
+                # identified by their own telegram_id. (Matches inline_kb.py.)
                 kb = InlineKeyboardMarkup(inline_keyboard=[
-                    [InlineKeyboardButton(text=button_text, url=webapp_url)],
+                    [InlineKeyboardButton(
+                        text=button_text,
+                        web_app=WebAppInfo(url=webapp_url),
+                    )],
                 ])
             else:
                 text += f"\n\n🌐 כניסה למערכת: {webapp_url}"

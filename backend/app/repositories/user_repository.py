@@ -31,8 +31,12 @@ class UserRepository(BaseRepository[User]):
         return result.scalar_one_or_none()
 
     async def get_active_users(self) -> List[User]:
-        """Return only active users."""
-        stmt = select(self.model_class).where(User.is_active.is_(True))
+        """Return only active users, in a deterministic order."""
+        stmt = (
+            select(self.model_class)
+            .where(User.is_active.is_(True))
+            .order_by(User.last_name, User.first_name, User.id)
+        )
         result = await self.session.execute(stmt)
         return list(result.scalars().all())
 
