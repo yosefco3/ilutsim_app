@@ -24,8 +24,8 @@
 - [ ] `לא זמין` **ותא ריק** = אין זמינות (שקולים ברמת התא).
 - [ ] לילה חוצה חצות (`23:00–07:00`).
 - [ ] חפיפות → איחוד; שעות מהאיחוד (12 לא 13.5).
-- [ ] טלפון בפורמטים שונים (לא קריטי — ההתאמה לפי שם).
-- [ ] התאמה למאבטח קיים לפי שם; שם לא מזוהה → דיווח, בלי יצירה.
+- [ ] טלפון בפורמטים שונים (לא קריטי — הזהות לפי שם).
+- [ ] זהות = שם: מצאי-או-צור מאבטח לפי שם (גם רשומה שנכתבה ידנית נכנסת). **בלי דחייה, בלי שמות כפולים.**
 - [ ] שבוע היעד מטווח התאריכים בכותרת.
 - [ ] ולידציה: שעה לא תקינה / מאבטח כפול / שורת-משמרת חסרה → מדווח, לא קורס.
 
@@ -36,11 +36,10 @@
 | # | קובץ | תמצית | סוג |
 |---|------|--------|-----|
 | 01 | `01_format_spec_and_parser.md` | פרסר טהור: bytes → מבנה נתונים (ללא DB) | backend, unit |
-| 02 | `02_name_matching.md` | התאמת שמות למאבטחים קיימים + דוח לא-מזוהים | backend, unit |
-| 03 | `03_union_merge_hours.md` | מיזוג חפיפות → שעות מהאיחוד (12≠13.5) | backend, unit |
-| 04 | `04_clean_preview_view.md` | endpoint preview (dry-run) + מסך תצוגה נקי | backend+frontend |
-| 05 | `05_persist_to_availability_model.md` | commit → `WeeklySubmission`/`DailyStatus`/`ShiftWindow` | backend+frontend |
-| 06 | `06_import_summary_report.md` | דוח סיכום ייבוא + ליטוש | backend+frontend |
+| 02 | `02_union_merge_hours.md` | מיזוג חפיפות → שעות מהאיחוד (12≠13.5) | backend, unit |
+| 03 | `03_clean_preview_view.md` | endpoint preview (dry-run) + מסך תצוגה נקי | backend+frontend |
+| 04 | `04_persist_to_availability_model.md` | commit → `WeeklySubmission`/`DailyStatus`/`ShiftWindow` (מצאי-או-צור לפי שם) | backend+frontend |
+| 05 | `05_import_summary_report.md` | דוח סיכום ייבוא + ליטוש | backend+frontend |
 
 אחרי כל צעד: טסטים עוברים → קומיט קטן → push → עדכון `_PROGRESS.md`. אחרי הצעד האחרון: עדכון
 גרף (`code-review-graph update`) ו-`APP_OVERVIEW.md`.

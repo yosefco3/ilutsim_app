@@ -61,7 +61,7 @@ class ParsedImport:
 
 ## קריטריון הצלחה
 - ✅ הטסטים עוברים.
-- ✅ (המשתמש) — אין UI עדיין; אישור ידני יגיע בצעד 04.
+- ✅ (המשתמש) — אין UI עדיין; אישור ידני יגיע בצעד 03 (מסך התצוגה).
 
 ## סיום
 קומיט: `feat(import): pure parser for guard-constraints xlsx`. push. עדכן `_PROGRESS.md` ומחק קובץ זה.
