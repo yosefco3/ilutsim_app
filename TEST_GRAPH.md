@@ -1,20 +1,20 @@
 # Test Coverage Graph
 
-_נוצר אוטומטית ב: 2026-06-13 16:38_
-**טרנד:**  →0%
+_נוצר אוטומטית ב: 2026-06-15 21:02_
+**טרנד:**  ↓6%
 
 ## סיכום
 
 | מדד | ערך |
 |---|---|
-| קבצי קוד backend | 55 |
+| קבצי קוד backend | 61 |
 | קבצי קוד מכוסים בטסטים | 33 |
-| קבצי קוד ללא טסטים | 22 |
-| אחוז כיסוי | 60% →0% |
-| טסטים עוברים (backend) | 28 ✅ |
+| קבצי קוד ללא טסטים | 28 |
+| אחוז כיסוי | 54% ↓6% |
+| טסטים עוברים (backend) | 32 ✅ |
 | טסטים נכשלים (backend) | 0 ❌ |
 | קבצי קוד frontend (ממופים) | 10 |
-| טסטים עוברים (frontend) | 25 ✅ |
+| טסטים עוברים (frontend) | 26 ✅ |
 | טסטים נכשלים (frontend) | 0 ❌ |
 
 ## Backend: מיפוי קוד → טסטים
@@ -77,9 +77,14 @@ _נוצר אוטומטית ב: 2026-06-13 16:38_
 |---|---|---|
 | 🔴 HIGH | `admin_admins_controller.py` | `app/controllers` |
 | 🔴 HIGH | `admin_settings_controller.py` | `app/controllers` |
+| 🔴 HIGH | `constraints_import_controller.py` | `app/controllers` |
 | 🔴 HIGH | `base_repository.py` | `app/repositories` |
 | 🔴 HIGH | `admin_service.py` | `app/services` |
 | 🔴 HIGH | `auth_service.py` | `app/services` |
+| 🔴 HIGH | `commit.py` | `app/services/constraints_import` |
+| 🔴 HIGH | `hours.py` | `app/services/constraints_import` |
+| 🔴 HIGH | `parser.py` | `app/services/constraints_import` |
+| 🔴 HIGH | `preview.py` | `app/services/constraints_import` |
 | 🔴 HIGH | `deviation_service.py` | `app/services` |
 | 🔴 HIGH | `settings_service.py` | `app/services` |
 | 🔴 HIGH | `submission_service.py` | `app/services` |
@@ -88,6 +93,7 @@ _נוצר אוטומטית ב: 2026-06-13 16:38_
 | 🟡 MEDIUM | `auth.py` | `app/bot/middlewares` |
 | 🟡 MEDIUM | `webapp.py` | `app/bot` |
 | 🟡 MEDIUM | `scheduler.py` | `app` |
+| 🟡 MEDIUM | `constraints_import.py` | `app/schemas` |
 | 🟡 MEDIUM | `telegram_auth.py` | `app/utils` |
 | 🟡 MEDIUM | `version.py` | `app` |
 | ⚪ LOW | `bot_instance.py` | `app/bot` |
@@ -124,12 +130,16 @@ _נוצר אוטומטית ב: 2026-06-13 16:38_
 | `test_bot.py` | 4 | 🟢 |
 | `test_config.py` | 1 | 🟢 |
 | `test_constraint_rules_endpoint.py` | 1 | 🟢 |
+| `test_constraints_hours.py` | 1 | 🟢 |
+| `test_constraints_parser.py` | 1 | 🟢 |
 | `test_controllers.py` | 7 | 🟢 |
 | `test_current_week.py` | 2 | 🟢 |
 | `test_date_utils.py` | 1 | 🟢 |
 | `test_e2e.py` | 1 | ⚪ |
 | `test_export.py` | 2 | 🟢 |
 | `test_health.py` | 1 | 🟢 |
+| `test_import_commit.py` | 1 | 🟢 |
+| `test_import_preview_endpoint.py` | 1 | 🟢 |
 | `test_initial_seed.py` | 1 | 🟢 |
 | `test_models.py` | 8 | 🟢 |
 | `test_notification_on_open.py` | 2 | 🟢 |

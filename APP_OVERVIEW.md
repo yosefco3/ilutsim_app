@@ -3,7 +3,7 @@
 > **⚠️ מסמך זה מתעדכן בכל שינוי משמעותי באפליקציה.**
 > אם הנך מוסיף/משנה פיצ'ר — עדכן גם כאן.
 >
-> עדכון אחרון: 14 יוני 2026 (🐛 תיקון קריטי: הגשות מאבטח נשמרו תחת מאבטח אחר — כפתור הבוט פותח עכשיו WebApp אמיתי)
+> עדכון אחרון: 15 יוני 2026 (✅ פייפליין ייבוא אילוצים מאקסל — העלאה → תצוגה נקייה (חלונות ממוזגים, שעות מהאיחוד) → אישור → שמירה למודל הזמינות הקיים)
 
 ---
 
@@ -342,6 +342,8 @@ ilutzim_app/
 | DELETE | `/admin/weeks/{id}`       | **מחיקת שבוע** (לא פורסם)  |
 | GET    | `/admin/submissions`      | רשימת הגשות               |
 | GET    | `/admin/export/constraints/{week_id}` | ייצוא אילוצים ל-Excel |
+| POST   | `/admin/import/constraints/preview` | **ייבוא אילוצים — תצוגה מקדימה** (multipart xlsx; parse+מיזוג, ללא שמירה) |
+| POST   | `/admin/import/constraints/commit`  | **ייבוא אילוצים — שמירה** למודל הזמינות (`?week_id=` לעקיפת שבוע) |
 | GET    | `/admin/settings`         | הגדרות מערכת (רשימת `{key,value,description}`) |
 | PUT    | `/admin/settings`         | עדכון הגדרות (`{settings:{k:v}}`)  |
 
@@ -353,6 +355,7 @@ ilutzim_app/
 
 | תאריך     | שינוי                                                |
 |-----------|-------------------------------------------------------|
+| 15 יוני 2026 | ✅ **פייפליין ייבוא אילוצים מאקסל** (`constraints_import`) — פרסר טהור (`parser.py`), מיזוג חפיפות ושעות-מהאיחוד 12≠13.5 (`hours.py`), `preview.py`/`commit.py`; endpoints `/admin/import/constraints/{preview,commit}`; דף `ImportConstraintsPage` (תצוגה נקייה → אישור → סיכום). זהות=שם, מצאי-או-צור; `זמין`=איחוד חלונות-משמרת דיפולטיביים. כלי השוואה: `scripts/preview_constraints.py` (גולמי מול מעובד) |
 | 14 יוני 2026 | 🐛🔒 **תיקון קריטי** — הגשות מאבטח נשמרו תחת מאבטח שרירותי (`users[0]`): כפתור `/start` בבוט היה `url=` רגיל ולא `web_app=` → `initData` ריק → הפרונט שלח `__DEV_MODE__` → ה-backend (ב-`ENVIRONMENT=dev`) החזיר את המאבטח הראשון. תוקן ל-`WebAppInfo` (זהות חתומה לפי `telegram_id`) + `ORDER BY` דטרמיניסטי ל-`get_active_users`. **נדרש גם `ENVIRONMENT=production` בתהליך הפרודקשן** |
 | 13 יוני 2026 | 📄 עדכון מסמך המנהלים (`COMBINED_FOR_MANAGERS.md` + PDF) — flow שבוע מעודכן, ייצוא 3-שורות, רטנציה; נוסף `scripts/build_managers_pdf.py` לבנייה מחדש (md→HTML→LibreOffice) |
 | 13 יוני 2026 | 📊 ייצוא אילוצים Excel — שלוש שורות לכל שומר (בוקר/ערב/לילה) עם קוד צבעים לכל משמרת |
