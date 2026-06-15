@@ -17,3 +17,9 @@
   כפתור "אשר" מושבת (יופעל ב-04). · קבצים: `constraints_import_controller.py`, `schemas/constraints_import.py`,
   `services/constraints_import/preview.py`, `ImportConstraintsPage.jsx` + API/Navbar/App/messages/css · 4 טסטי backend +
   4 frontend · backend 239 / frontend 134 ירוקים · commit `feat(import): constraints import preview screen (dry-run)`
+- **04** · commit למודל הזמינות. `POST /admin/import/constraints/commit` → מצאי-או-צור מאבטח לפי שם (חדש=`BASIC_GUARD`),
+  איתור שבוע היעד מטווח הקובץ (או `week_id`), upsert דרך `submission_service.create_submission(override_lock=True)`,
+  חלונות נשמרים as-is, `זמין`=חלון-משמרת דיפולטי, כשל פר-מאבטח נאסף ולא חוסם. Frontend: "אשר ייבוא" פעיל + בורר
+  שבוע אופציונלי + כרטיס סיכום + Toast. · קבצים: `constraints_import/commit.py`, `constraints_import_controller.py`,
+  `dependencies.py`, `ImportConstraintsPage.jsx`, `test_import_commit.py` (+frontend) · backend 243 / frontend 135 ·
+  commit `feat(import): commit imported constraints into availability model`
