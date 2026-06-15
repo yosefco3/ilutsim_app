@@ -1,24 +1,33 @@
 import { useState, useRef } from 'react';
-import { previewConstraintsImport } from '../api/adminApiClient';
+import { previewConstraintsImport, commitConstraintsImport } from '../api/adminApiClient';
+import { useWeeks } from '../hooks/useWeeks';
+import { useToast } from '../components/Toast';
 import messages from '../utils/messages';
 
 const m = messages.importConstraints;
 const DAY_NAMES = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'];
 
 /**
- * Constraints import — step 03: upload an xlsx and see a clean, merged preview
- * (dry-run, no write). The "confirm import" button is wired in step 04.
+ * Constraints import — upload an xlsx, see a clean merged preview (dry-run),
+ * then confirm to persist into the existing availability model. After commit a
+ * summary report (imported / created-new / errors / target week) is shown.
  */
 export default function ImportConstraintsPage() {
+  const { weeks } = useWeeks();
+  const toast = useToast();
   const [file, setFile] = useState(null);
   const [preview, setPreview] = useState(null);
+  const [summary, setSummary] = useState(null);
+  const [weekId, setWeekId] = useState('');
   const [loading, setLoading] = useState(false);
+  const [committing, setCommitting] = useState(false);
   const [error, setError] = useState('');
   const fileInputRef = useRef(null);
 
   const handleFile = (e) => {
     setFile(e.target.files?.[0] || null);
     setPreview(null);
+    setSummary(null);
     setError('');
   };
 
@@ -29,6 +38,7 @@ export default function ImportConstraintsPage() {
     }
     setLoading(true);
     setError('');
+    setSummary(null);
     try {
       setPreview(await previewConstraintsImport(file));
     } catch (err) {
@@ -36,6 +46,21 @@ export default function ImportConstraintsPage() {
       setPreview(null);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleCommit = async () => {
+    if (!file) return;
+    setCommitting(true);
+    setError('');
+    try {
+      const resp = await commitConstraintsImport(file, weekId || undefined);
+      setSummary(resp.summary);
+      toast.success(m.commitSuccess);
+    } catch (err) {
+      setError(err.message || 'שגיאה בשמירת הייבוא');
+    } finally {
+      setCommitting(false);
     }
   };
 
@@ -55,6 +80,15 @@ export default function ImportConstraintsPage() {
             data-testid="file-input"
           />
         </div>
+        <div className="form-group">
+          <label>{m.week}</label>
+          <select value={weekId} onChange={(e) => setWeekId(e.target.value)}>
+            <option value="">{m.weekAuto}</option>
+            {weeks.map((w) => (
+              <option key={w.id} value={w.id}>{w.week_label}</option>
+            ))}
+          </select>
+        </div>
         <button
           className="btn btn-primary"
           onClick={handlePreview}
@@ -66,12 +100,42 @@ export default function ImportConstraintsPage() {
 
       {error && <div className="alert alert-error" role="alert">{error}</div>}
 
-      {preview && <PreviewResult preview={preview} />}
+      {summary && <SummaryReport summary={summary} />}
+
+      {preview && (
+        <PreviewResult
+          preview={preview}
+          committing={committing}
+          onCommit={handleCommit}
+        />
+      )}
     </div>
   );
 }
 
-function PreviewResult({ preview }) {
+function SummaryReport({ summary }) {
+  const { week_start, week_end, imported, created_new, errors } = summary;
+  return (
+    <div className="card summary-report" data-testid="summary-report">
+      <h3>{m.summaryTitle}</h3>
+      <p className="summary-line">{imported} {m.importedSuffix}</p>
+      <p className="summary-line">{m.createdPrefix} {created_new} {m.createdSuffix}</p>
+      {week_start && week_end && (
+        <p className="summary-line">{m.weekPrefix} {week_start} {m.weekJoin} {week_end}</p>
+      )}
+      {errors && errors.length > 0 && (
+        <>
+          <p className="summary-line">{m.errorsTitle}:</p>
+          <ul className="import-errors" data-testid="summary-errors">
+            {errors.map((e, i) => <li key={i}>{e}</li>)}
+          </ul>
+        </>
+      )}
+    </div>
+  );
+}
+
+function PreviewResult({ preview, committing, onCommit }) {
   const { week_start, week_end, guards, errors } = preview;
   return (
     <>
@@ -134,8 +198,8 @@ function PreviewResult({ preview }) {
       </div>
 
       <div className="card">
-        <button className="btn btn-primary" disabled title="ייפעל בשלב הבא">
-          {m.confirm}
+        <button className="btn btn-primary" onClick={onCommit} disabled={committing}>
+          {committing ? m.committing : m.confirm}
         </button>
       </div>
     </>

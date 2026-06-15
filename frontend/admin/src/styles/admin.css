@@ -569,3 +569,6 @@ body {
 
 .import-errors { margin: 0; padding-inline-start: 18px; }
 .import-errors li { color: #fca5a5; }
+
+.summary-report { border-inline-start: 4px solid var(--success, #22c55e); }
+.summary-report .summary-line { margin: 4px 0; }

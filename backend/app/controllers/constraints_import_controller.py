@@ -7,11 +7,23 @@ All routes require admin auth and live under ``/admin/import/constraints``.
 """
 
 import logging
+import uuid
 
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
+from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, status
 
-from app.dependencies import get_user_service, require_admin_role
-from app.schemas.constraints_import import ConstraintsPreviewResponse
+from app.dependencies import (
+    get_constraints_commit_service,
+    get_user_service,
+    require_admin_role,
+)
+from app.schemas.constraints_import import (
+    ConstraintsCommitResponse,
+    ConstraintsPreviewResponse,
+)
+from app.services.constraints_import.commit import (
+    ConstraintsCommitService,
+    WeekNotFoundError,
+)
 from app.services.constraints_import.parser import parse_constraints_xlsx
 from app.services.constraints_import.preview import build_preview
 from app.services.user_service import UserService
@@ -67,3 +79,30 @@ async def preview_constraints(
 
     existing = await _existing_names(user_service)
     return build_preview(parsed, existing)
+
+
+@router.post("/commit", response_model=ConstraintsCommitResponse)
+async def commit_constraints(
+    file: UploadFile = File(...),
+    week_id: uuid.UUID | None = Query(
+        None, description="Override target week; defaults to the file's week range"
+    ),
+    commit_service: ConstraintsCommitService = Depends(get_constraints_commit_service),
+):
+    """Parse an uploaded constraints xlsx and persist it to the availability model."""
+    data = await _read_xlsx(file)
+    try:
+        parsed = parse_constraints_xlsx(data)
+    except Exception as exc:  # malformed workbook → 400, never 500
+        logger.warning("constraints commit parse failed: %s", exc)
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="לא ניתן לקרוא את קובץ האקסל — ודא שהוא תקין ובפורמט הצפוי",
+        )
+
+    try:
+        return await commit_service.commit(parsed, week_id=week_id)
+    except WeekNotFoundError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)
+        )

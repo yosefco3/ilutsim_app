@@ -26,6 +26,8 @@ export default {
     confirm: 'אשר ייבוא',
     committing: 'שומר…',
     week: 'שבוע יעד',
+    weekAuto: 'אוטומטי (לפי טווח התאריכים בקובץ)',
+    summaryTitle: 'סיכום ייבוא',
     weeklyHours: 'שעות שבועיות',
     notes: 'הערות',
     guard: 'מאבטח',

@@ -85,6 +85,16 @@ async def get_submission_service(
     return SubmissionService(submission_repo, user_repo, week_repo)
 
 
+async def get_constraints_commit_service(
+    user_repo: UserRepository = Depends(_get_user_repo),
+    week_repo: ScheduleWeekRepository = Depends(_get_week_repo),
+    submission_service: SubmissionService = Depends(get_submission_service),
+) -> "ConstraintsCommitService":
+    from app.services.constraints_import.commit import ConstraintsCommitService
+
+    return ConstraintsCommitService(user_repo, week_repo, submission_service)
+
+
 async def get_admin_service(
     admin_repo: AdminRepository = Depends(_get_admin_repo),
     auth_service: AuthService = Depends(get_auth_service),
