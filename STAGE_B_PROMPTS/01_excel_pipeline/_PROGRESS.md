@@ -11,3 +11,9 @@
   (12≠13.5), לילה חוצה חצות +24ש' נספר ביום ההתחלה. **קונבנציית `זמין`=איחוד חלונות-משמרת הדיפולטיביים (24ש')** —
   ניתן להזרקה (`all_day_windows`). · קבצים: `constraints_import/hours.py`, `tests/test_constraints_hours.py` · 8 טסטים ·
   commit `feat(import): merge overlapping availability windows, count union hours`
+- **03** · מסך תצוגה נקי (preview / dry-run). `POST /admin/import/constraints/preview` (multipart) → parser+hours →
+  JSON נקי (שבוע, חלונות יומיים ממוזגים, שעות שבועיות מהאיחוד, הערות, `exists` חיווי בלבד, שגיאות). Frontend:
+  `ImportConstraintsPage` (טבלה RTL נקייה + אזור שגיאות + תג חדש/קיים), קישור ניווט, route, upload helper, CSS.
+  כפתור "אשר" מושבת (יופעל ב-04). · קבצים: `constraints_import_controller.py`, `schemas/constraints_import.py`,
+  `services/constraints_import/preview.py`, `ImportConstraintsPage.jsx` + API/Navbar/App/messages/css · 4 טסטי backend +
+  4 frontend · backend 239 / frontend 134 ירוקים · commit `feat(import): constraints import preview screen (dry-run)`
