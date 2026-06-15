@@ -23,3 +23,10 @@
   שבוע אופציונלי + כרטיס סיכום + Toast. · קבצים: `constraints_import/commit.py`, `constraints_import_controller.py`,
   `dependencies.py`, `ImportConstraintsPage.jsx`, `test_import_commit.py` (+frontend) · backend 243 / frontend 135 ·
   commit `feat(import): commit imported constraints into availability model`
+- **05** · דוח סיכום + ליטוש קצה-לקצה. תגובת ה-commit כבר מחזירה `ImportSummary` מובנה (יובאו/נוצרו-חדשים/שגיאות/שבוע)
+  והדף מציג כרטיס סיכום + Toast (נעשה ב-04). נוסף **כלי השוואה** `scripts/preview_constraints.py` — מדפיס את האקסל
+  הגולמי מול הפלט הנקי/מעובד (חלונות ממוזגים, שעות מהאיחוד, הערות, שגיאות), self-resolve ל-`backend/.venv`. אומת
+  קצה-לקצה על קובץ הדמו (36 מאבטחים — נקי, ללא שגיאות). עודכנו `APP_OVERVIEW.md` (endpoints/שירות/היסטוריה) והגרף.
+  · backend 243 / frontend 135 · commit `feat(import): import summary report + end-to-end polish`
+
+✅ All prompts completed
