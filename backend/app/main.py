@@ -20,6 +20,7 @@ from app.controllers import (
     admin_export_router,
     admin_settings_router,
     admin_admins_router,
+    constraints_import_router,
 )
 from app.exceptions import (
     AppBaseException,
@@ -135,6 +136,7 @@ def create_app() -> FastAPI:
     app.include_router(admin_export_router)
     app.include_router(admin_settings_router)
     app.include_router(admin_admins_router)
+    app.include_router(constraints_import_router)
 
     # Health check endpoint
     @app.get("/health")

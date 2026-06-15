@@ -10,6 +10,7 @@ from app.controllers.admin_notifications_controller import router as admin_notif
 from app.controllers.admin_export_controller import router as admin_export_router
 from app.controllers.admin_settings_controller import router as admin_settings_router
 from app.controllers.admin_admins_controller import router as admin_admins_router
+from app.controllers.constraints_import_controller import router as constraints_import_router
 
 __all__ = [
     "auth_router",
@@ -20,4 +21,5 @@ __all__ = [
     "admin_export_router",
     "admin_settings_router",
     "admin_admins_router",
+    "constraints_import_router",
 ]

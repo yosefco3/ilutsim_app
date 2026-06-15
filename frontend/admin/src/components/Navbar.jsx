@@ -29,6 +29,7 @@ export default function Navbar() {
         <NavLink to="/guards">{messages.nav.guards}</NavLink>
         <NavLink to="/weeks">{messages.nav.weeks}</NavLink>
         <NavLink to="/submissions">{messages.nav.submissions}</NavLink>
+        <NavLink to="/import">{messages.nav.import}</NavLink>
         <NavLink to="/export">{messages.nav.export}</NavLink>
         <NavLink to="/settings">{messages.nav.settings}</NavLink>
         <button className="btn btn-secondary btn-sm" onClick={handleLogout}>

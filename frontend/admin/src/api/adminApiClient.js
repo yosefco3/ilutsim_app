@@ -180,6 +180,45 @@ export async function exportWeekExcel(weekId) {
   return blob;
 }
 
+// ──── Constraints import ────
+// Multipart upload: build FormData and let the browser set the Content-Type
+// boundary (the shared `request` helper forces application/json, which breaks
+// file uploads), while still attaching the admin bearer token.
+async function uploadConstraints(endpoint, file, query = {}) {
+  const params = new URLSearchParams(
+    Object.entries(query).filter(([, v]) => v != null && v !== ''),
+  ).toString();
+  const url = `${API_BASE}${endpoint}${params ? `?${params}` : ''}`;
+
+  const form = new FormData();
+  form.append('file', file);
+
+  const token = getToken();
+  const headers = {};
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+
+  const res = await fetch(url, { method: 'POST', headers, body: form });
+
+  if (res.status === 401) {
+    clearToken();
+    window.location.href = '/login';
+    throw new Error('Unauthorized');
+  }
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.detail || `HTTP ${res.status}`);
+  }
+  return res.json();
+}
+
+export function previewConstraintsImport(file) {
+  return uploadConstraints('/admin/import/constraints/preview', file);
+}
+
+export function commitConstraintsImport(file, weekId) {
+  return uploadConstraints('/admin/import/constraints/commit', file, { week_id: weekId });
+}
+
 // ──── Settings ────
 export function fetchSettings() {
   return request('/admin/settings');
@@ -236,4 +275,6 @@ export default {
   fetchAdmins,
   createAdmin,
   deleteAdmin,
+  previewConstraintsImport,
+  commitConstraintsImport,
 };

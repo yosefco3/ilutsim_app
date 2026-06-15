@@ -12,6 +12,7 @@ import SubmissionsPage from './pages/SubmissionsPage';
 import SubmissionDetailPage from './pages/SubmissionDetailPage';
 import SettingsPage from './pages/SettingsPage';
 import ExportPage from './pages/ExportPage';
+import ImportConstraintsPage from './pages/ImportConstraintsPage';
 import './styles/admin.css';
 
 export default function App() {
@@ -43,6 +44,7 @@ function AppContent() {
           <Route path="/submissions" element={<ProtectedRoute><SubmissionsPage /></ProtectedRoute>} />
           <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
           <Route path="/export" element={<ProtectedRoute><ExportPage /></ProtectedRoute>} />
+          <Route path="/import" element={<ProtectedRoute><ImportConstraintsPage /></ProtectedRoute>} />
           <Route path="*" element={<Navigate to="/guards" replace />} />
         </Routes>
       </main>
