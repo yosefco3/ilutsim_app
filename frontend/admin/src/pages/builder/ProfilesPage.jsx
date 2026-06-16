@@ -120,7 +120,7 @@ export default function ProfilesPage() {
         <input
           type="text"
           aria-label={m.description}
-          placeholder={m.description}
+          placeholder={m.descriptionPlaceholder}
           value={form.description}
           onChange={(e) => setForm({ ...form, description: e.target.value })}
         />
