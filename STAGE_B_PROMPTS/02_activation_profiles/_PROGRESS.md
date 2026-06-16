@@ -27,3 +27,11 @@
   · קבצים: `schedule_builder/schemas/profile_schemas.py`, `schedule_builder/controllers/profile_controller.py`,
   `app/main.py`, `tests/test_profile_api.py` (8 טסטים, fake service) · backend 265 ·
   commit `feat(builder): profiles REST API (/admin/builder/profiles)`
+- **04** · מסך ניהול פרופילים. `builderApiClient.js` (list/create/get/update/duplicate/delete). `pages/builder/ProfilesPage.jsx`
+  (רשימת כרטיסים, טופס יצירה, שכפול, עריכה במודל, מחיקה עם ConfirmDialog, Toast). route `/builder/profiles` ב-App.jsx +
+  קבוצת ניווט "בונה הסידור" ב-Navbar + מחרוזות `nav.builderGroup`/`profiles` + CSS. עודכן `APP_OVERVIEW.md`
+  (מודל/endpoints/דף/מיגרציה/היסטוריה/תאריך) + הגרף. · קבצים: `api/builderApiClient.js`, `pages/builder/ProfilesPage.jsx`,
+  `App.jsx`, `components/Navbar.jsx`, `utils/messages.js`, `styles/admin.css`, `tests/builderProfilesPage.test.jsx` (5 טסטים) ·
+  backend 265 / frontend 140 · build ✓ · commit `feat(builder): activation profiles management page`
+
+✅ All prompts completed

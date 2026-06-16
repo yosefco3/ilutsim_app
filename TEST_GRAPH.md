@@ -1,20 +1,20 @@
 # Test Coverage Graph
 
-_נוצר אוטומטית ב: 2026-06-15 21:02_
-**טרנד:**  ↓6%
+_נוצר אוטומטית ב: 2026-06-16 19:54_
+**טרנד:**  ↓5%
 
 ## סיכום
 
 | מדד | ערך |
 |---|---|
-| קבצי קוד backend | 61 |
+| קבצי קוד backend | 67 |
 | קבצי קוד מכוסים בטסטים | 33 |
-| קבצי קוד ללא טסטים | 28 |
-| אחוז כיסוי | 54% ↓6% |
-| טסטים עוברים (backend) | 32 ✅ |
+| קבצי קוד ללא טסטים | 34 |
+| אחוז כיסוי | 49% ↓5% |
+| טסטים עוברים (backend) | 35 ✅ |
 | טסטים נכשלים (backend) | 0 ❌ |
 | קבצי קוד frontend (ממופים) | 10 |
-| טסטים עוברים (frontend) | 26 ✅ |
+| טסטים עוברים (frontend) | 27 ✅ |
 | טסטים נכשלים (frontend) | 0 ❌ |
 
 ## Backend: מיפוי קוד → טסטים
@@ -92,6 +92,11 @@ _נוצר אוטומטית ב: 2026-06-15 21:02_
 | 🟡 MEDIUM | `inline_kb.py` | `app/bot/keyboards` |
 | 🟡 MEDIUM | `auth.py` | `app/bot/middlewares` |
 | 🟡 MEDIUM | `webapp.py` | `app/bot` |
+| 🟡 MEDIUM | `profile_controller.py` | `app/schedule_builder/controllers` |
+| 🟡 MEDIUM | `activation_profile.py` | `app/schedule_builder/models` |
+| 🟡 MEDIUM | `profile_repository.py` | `app/schedule_builder/repositories` |
+| 🟡 MEDIUM | `profile_schemas.py` | `app/schedule_builder/schemas` |
+| 🟡 MEDIUM | `profile_service.py` | `app/schedule_builder/services` |
 | 🟡 MEDIUM | `scheduler.py` | `app` |
 | 🟡 MEDIUM | `constraints_import.py` | `app/schemas` |
 | 🟡 MEDIUM | `telegram_auth.py` | `app/utils` |
@@ -103,6 +108,7 @@ _נוצר אוטומטית ב: 2026-06-15 21:02_
 | ⚪ LOW | `logging_config.py` | `app` |
 | ⚪ LOW | `messages.py` | `app` |
 | ⚪ LOW | `base.py` | `app/models` |
+| ⚪ LOW | `dependencies.py` | `app/schedule_builder` |
 
 ## Frontend: מיפוי טסטים
 
@@ -123,6 +129,7 @@ _נוצר אוטומטית ב: 2026-06-15 21:02_
 
 | קובץ טסט | מכסה קבצי קוד | סטטוס |
 |---|---|---|
+| `test_activation_profile_model.py` | 1 | 🟢 |
 | `test_admin_published_guard.py` | 1 | 🟢 |
 | `test_admin_submission.py` | 1 | 🟢 |
 | `test_auto_advance.py` | 1 | 🟢 |
@@ -143,6 +150,8 @@ _נוצר אוטומטית ב: 2026-06-15 21:02_
 | `test_initial_seed.py` | 1 | 🟢 |
 | `test_models.py` | 8 | 🟢 |
 | `test_notification_on_open.py` | 2 | 🟢 |
+| `test_profile_api.py` | 1 | 🟢 |
+| `test_profile_service.py` | 1 | 🟢 |
 | `test_repositories.py` | 6 | 🟢 |
 | `test_retention.py` | 1 | 🟢 |
 | `test_scheduler.py` | 1 | 🟢 |

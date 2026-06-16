@@ -572,3 +572,64 @@ body {
 
 .summary-report { border-inline-start: 4px solid var(--success, #22c55e); }
 .summary-report .summary-line { margin: 4px 0; }
+
+/* ── Part B — Schedule Builder ───────────────────────────────────── */
+.navbar-group-sep { color: var(--border-strong); margin: 0 0.25rem; opacity: 0.6; }
+.navbar-group-label { font-size: 0.8rem; color: var(--text-dim); font-weight: 600; }
+.page-subtitle { margin: 0.25rem 0 0; font-size: 0.9rem; color: var(--text-muted); }
+
+.profile-create-form {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.25rem;
+}
+.profile-create-form input {
+  flex: 1 1 160px;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text);
+}
+
+.profile-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1rem;
+}
+.profile-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.25rem;
+  animation: fadeIn 0.2s ease;
+  transition: border-color .15s, box-shadow .15s;
+}
+.profile-card:hover { border-color: var(--border-strong); box-shadow: var(--shadow-md); }
+.profile-card-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+  flex-wrap: wrap;
+}
+.profile-card-name { font-size: 1.05rem; font-weight: 600; color: var(--text); }
+.profile-card-kind {
+  font-size: 0.8rem;
+  color: var(--text-dim);
+  background: var(--bg, rgba(255,255,255,0.05));
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+}
+.profile-card-default {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--success, #22c55e);
+  border: 1px solid var(--success, #22c55e);
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+}
+.profile-card-desc { font-size: 0.9rem; color: var(--text-muted); margin: 0.25rem 0; }
+.profile-card-positions { font-size: 0.8rem; color: var(--text-dim); font-style: italic; margin: 0.5rem 0; }
+.profile-card-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; }

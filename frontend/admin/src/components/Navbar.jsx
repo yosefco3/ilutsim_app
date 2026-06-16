@@ -32,6 +32,9 @@ export default function Navbar() {
         <NavLink to="/import">{messages.nav.import}</NavLink>
         <NavLink to="/export">{messages.nav.export}</NavLink>
         <NavLink to="/settings">{messages.nav.settings}</NavLink>
+        <span className="navbar-group-sep" aria-hidden="true">|</span>
+        <span className="navbar-group-label">{messages.nav.builderGroup}</span>
+        <NavLink to="/builder/profiles">{messages.nav.profiles}</NavLink>
         <button className="btn btn-secondary btn-sm" onClick={handleLogout}>
           {messages.nav.logout}
         </button>

@@ -3,7 +3,7 @@
 > **⚠️ מסמך זה מתעדכן בכל שינוי משמעותי באפליקציה.**
 > אם הנך מוסיף/משנה פיצ'ר — עדכן גם כאן.
 >
-> עדכון אחרון: 15 יוני 2026 (✅ פייפליין ייבוא אילוצים מאקסל — העלאה → תצוגה נקייה (חלונות ממוזגים, שעות מהאיחוד) → אישור → שמירה למודל הזמינות הקיים)
+> עדכון אחרון: 16 יוני 2026 (🏗️ חלק ב' — בונה הסידור: משימה 02 פרופילי הפעלה — מודל/שירות/API/מסך + גבול קוד נפרד `app/schedule_builder/`)
 
 ---
 
@@ -92,6 +92,7 @@
 | **הגשות**        | צפייה בהגשות שומרים לפי שבוע                     |
 | **ייצוא**        | ייצוא נתונים ל-Excel                            |
 | **הגדרות**       | הגדרות מערכת — ברירות-מחדל למשמרות, ספי כללי-אילוץ, ושדות placeholder לאוטומציה (טוקן טלגרם הוא env-only, לא נערך מכאן) |
+| **בונה הסידור › פרופילים** | *(חלק ב')* ניהול פרופילי הפעלה — יצירה, שכפול, עריכת-שם, מחיקה. `/builder/profiles` |
 
 ### ניהול שומרים
 
@@ -199,6 +200,7 @@
 | `DailyStatus`       | סטטוס יומי — משמרת + זמינות + סוג פטור   |
 | `ShiftWindow`       | חלונות משמרות — הגדרות שעות              |
 | `SystemSetting`     | הגדרות מערכת — key/value                  |
+| `ActivationProfile` | *(חלק ב')* פרופיל הפעלה — תבנית לשימוש חוזר (שם, סוג חופשי, תיאור, ברירת-מחדל). יחזיק עמדות (משימה 03). `app/schedule_builder/` |
 
 ---
 
@@ -209,6 +211,7 @@
 - `a1b2c3d4e5f6` — הוספת `CLOSED` ל-enum `week_status` ב-PostgreSQL
 - `b2c3d4e5f6a7` — הסרת `telegram_bot_token` מ-`system_settings` (טוקן env-only)
 - `c3d4e5f6a7b8` — `ON DELETE CASCADE` ל-`weekly_submissions.week_id` (תומך בניקוי רטנציה)
+- `6abbd8e22af6` — *(חלק ב')* יצירת טבלת `activation_profiles` (פרופילי הפעלה)
 
 ---
 
@@ -350,6 +353,9 @@ ilutzim_app/
 | POST   | `/admin/import/constraints/commit`  | **ייבוא אילוצים — שמירה** למודל הזמינות (`?week_id=` לעקיפת שבוע) |
 | GET    | `/admin/settings`         | הגדרות מערכת (רשימת `{key,value,description}`) |
 | PUT    | `/admin/settings`         | עדכון הגדרות (`{settings:{k:v}}`)  |
+| GET/POST | `/admin/builder/profiles` | *(חלק ב')* רשימת/יצירת פרופילי הפעלה |
+| GET/PATCH/DELETE | `/admin/builder/profiles/{id}` | *(חלק ב')* קריאה/עריכת-שם/מחיקת פרופיל |
+| POST   | `/admin/builder/profiles/{id}/duplicate` | *(חלק ב')* שכפול פרופיל |
 
 ---
 
@@ -359,6 +365,7 @@ ilutzim_app/
 
 | תאריך     | שינוי                                                |
 |-----------|-------------------------------------------------------|
+| 16 יוני 2026 | 🏗️ **חלק ב' — בונה הסידור, משימה 02 (פרופילי הפעלה)** — הוצב גבול קוד נפרד (`app/schedule_builder/` + `pages/builder/` + `builderApiClient.js`, תלות חד-כיוונית ב'→א'). מודל `ActivationProfile` (תבנית לשימוש חוזר: שם, סוג חופשי, תיאור, ברירת-מחדל) + מיגרציה `6abbd8e22af6`. שכבת `ProfileRepository`/`ProfileService` (CRUD, **שכפול** עם `_copy_positions` מוכן ל-deep-copy, זריעת "שגרה" idempotent ב-startup). API `/admin/builder/profiles` (list/create/get/rename/duplicate/delete). מסך `ProfilesPage` + קבוצת ניווט "בונה הסידור". העמדות עצמן — משימה 03 |
 | 15 יוני 2026 | ✅ **פייפליין ייבוא אילוצים מאקסל** (`constraints_import`) — פרסר טהור (`parser.py`), מיזוג חפיפות ושעות-מהאיחוד 12≠13.5 (`hours.py`), `preview.py`/`commit.py`; endpoints `/admin/import/constraints/{preview,commit}`; דף `ImportConstraintsPage` (תצוגה נקייה → אישור → סיכום). זהות=שם, מצאי-או-צור; `זמין`=איחוד חלונות-משמרת דיפולטיביים. כלי השוואה: `scripts/preview_constraints.py` (גולמי מול מעובד); פייפ מלא מקצה-לקצה: `scripts/import_constraints.py` (קלט→פרסור→מיזוג→מודל הזמינות; dry-run כברירת מחדל, `--commit`/`--create-week`; קלט הדמו ניתן להחלפה ב-`CONSTRAINTS_INPUT`/ארגומנט לקובץ שלב א') |
 | 14 יוני 2026 | 🐛🔒 **תיקון קריטי** — הגשות מאבטח נשמרו תחת מאבטח שרירותי (`users[0]`): כפתור `/start` בבוט היה `url=` רגיל ולא `web_app=` → `initData` ריק → הפרונט שלח `__DEV_MODE__` → ה-backend (ב-`ENVIRONMENT=dev`) החזיר את המאבטח הראשון. תוקן ל-`WebAppInfo` (זהות חתומה לפי `telegram_id`) + `ORDER BY` דטרמיניסטי ל-`get_active_users`. **נדרש גם `ENVIRONMENT=production` בתהליך הפרודקשן** |
 | 13 יוני 2026 | 📄 עדכון מסמך המנהלים (`COMBINED_FOR_MANAGERS.md` + PDF) — flow שבוע מעודכן, ייצוא 3-שורות, רטנציה; נוסף `scripts/build_managers_pdf.py` לבנייה מחדש (md→HTML→LibreOffice) |
