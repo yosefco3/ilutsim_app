@@ -1,0 +1,110 @@
+"""
+Position schemas (part B — schedule builder).
+
+Input validation for positions lives HERE — most importantly the shape of
+``day_schedules`` (the per-day hours map). ``end <= start`` is allowed (a night
+window wraps past midnight, the part-A convention).
+"""
+
+import re
+import uuid
+from datetime import datetime
+
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+
+from app.constants import ShiftType
+
+_TIME_RE = re.compile(r"^([01]\d|2[0-3]):[0-5]\d$")
+_DAY_KEYS = {str(i) for i in range(7)}  # "0".."6", 0=ראשון … 6=שבת
+
+
+class DaySchedule(BaseModel):
+    """Hours for a single active day."""
+    start: str
+    end: str
+
+    @field_validator("start", "end")
+    @classmethod
+    def _valid_time(cls, v: str) -> str:
+        if not _TIME_RE.match(v):
+            raise ValueError("שעה חייבת להיות בפורמט HH:MM")
+        return v
+
+
+def _validate_day_schedules(value: dict) -> dict:
+    """Keys must be "0".."6"; at least one day; each value a valid DaySchedule."""
+    if not isinstance(value, dict) or not value:
+        raise ValueError("יש להגדיר לפחות יום פעיל אחד")
+    for day, hours in value.items():
+        if day not in _DAY_KEYS:
+            raise ValueError("מפתח יום חייב להיות 0..6")
+        DaySchedule.model_validate(hours)
+    return value
+
+
+def _validate_required_attributes(value: list) -> list:
+    """A list of unique non-empty attribute keys."""
+    if len(set(value)) != len(value):
+        raise ValueError("דרישות חייבות להיות ייחודיות")
+    return value
+
+
+class PositionCreate(BaseModel):
+    """Schema for creating a position (profile_id comes from the path)."""
+    name: str = Field(min_length=1, max_length=255)
+    shift: ShiftType
+    day_schedules: dict = Field(default_factory=dict)
+    required_attributes: list[str] = Field(default_factory=list)
+
+    @field_validator("day_schedules")
+    @classmethod
+    def _check_schedules(cls, v: dict) -> dict:
+        return _validate_day_schedules(v)
+
+    @field_validator("required_attributes")
+    @classmethod
+    def _check_attrs(cls, v: list) -> list:
+        return _validate_required_attributes(v)
+
+
+class PositionUpdate(BaseModel):
+    """Schema for updating a position. At least one field required."""
+    name: str | None = Field(default=None, min_length=1, max_length=255)
+    shift: ShiftType | None = None
+    day_schedules: dict | None = None
+    required_attributes: list[str] | None = None
+
+    @field_validator("day_schedules")
+    @classmethod
+    def _check_schedules(cls, v: dict | None) -> dict | None:
+        return v if v is None else _validate_day_schedules(v)
+
+    @field_validator("required_attributes")
+    @classmethod
+    def _check_attrs(cls, v: list | None) -> list | None:
+        return v if v is None else _validate_required_attributes(v)
+
+    @model_validator(mode="after")
+    def _at_least_one_field(self) -> "PositionUpdate":
+        if (
+            self.name is None
+            and self.shift is None
+            and self.day_schedules is None
+            and self.required_attributes is None
+        ):
+            raise ValueError("יש לספק לפחות שדה אחד לעדכון")
+        return self
+
+
+class PositionResponse(BaseModel):
+    """Schema for position data in API responses."""
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    profile_id: uuid.UUID
+    name: str
+    shift: ShiftType
+    day_schedules: dict
+    required_attributes: list[str]
+    display_order: int
+    created_at: datetime

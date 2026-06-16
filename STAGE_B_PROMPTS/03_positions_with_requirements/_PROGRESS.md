@@ -31,3 +31,12 @@
   `dependencies.py`, `app/exceptions.py`, `tests/test_position_service.py` (7),
   `tests/test_profile_service.py` (+1 deep-copy) · backend 289 ·
   commit `feat(builder): position repository + service + deep-copy on profile duplicate`
+- **04** · REST API. Schemas: `position_schemas.py` (`DaySchedule`/`PositionCreate`/`PositionUpdate`/
+  `PositionResponse` — ולידציית `day_schedules`: מפתחות 0-6, שעות HH:MM, ≥יום אחד, לילה חוצה-חצות מותר;
+  `required_attributes` ייחודי) + `attribute_schemas.py` (key slug `^[a-z][a-z0-9_]*$`, ≥שדה-אחד).
+  Controllers: `/admin/builder/profiles/{id}/positions` (list/create) + `/positions/{id}` (get/patch/delete),
+  `/admin/builder/attributes` (CRUD), מאחורי `require_admin_role`, מיפוי `AppBaseException`→HTTP. נרשמו
+  ב-`main.py` בקבוצת "Part B". · קבצים: `schemas/position_schemas.py`, `schemas/attribute_schemas.py`,
+  `controllers/position_controller.py`, `controllers/attribute_controller.py`, `app/main.py`,
+  `tests/test_position_api.py` (10), `tests/test_attribute_api.py` (7) · backend 306 ·
+  commit `feat(builder): positions + attributes REST API`
