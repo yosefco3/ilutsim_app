@@ -8,10 +8,15 @@ edit*: copy "שגרה", change one day, save as a new profile (e.g. a mid-week
 holiday). Profile↔week binding arrives with the board (task 04).
 """
 
+from typing import TYPE_CHECKING
+
 from sqlalchemy import Boolean, Integer, String
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import BaseModel
+
+if TYPE_CHECKING:
+    from app.schedule_builder.models.position import Position
 
 
 class ActivationProfile(BaseModel):
@@ -37,14 +42,13 @@ class ActivationProfile(BaseModel):
         Integer, nullable=False, default=0, server_default="0",
     )
 
-    # ── Future (task 03 — positions) — design notes, do NOT implement here ──
-    # A ``Position`` model will add ``profile_id`` FK → ``activation_profiles.id``.
-    # The relationship will be:
-    #   positions: Mapped[List["Position"]] = relationship(
-    #       back_populates="profile", cascade="all, delete-orphan",
-    #       passive_deletes=True,
-    #   )
-    # so deleting a profile deletes its positions.
-    # ``Position.profile_id`` is nullable=False but **updatable** — moving a
-    # position between profiles = reassigning that FK.
-    # Duplicating a profile deep-copies its positions (ProfileService._copy_positions).
+    # Positions owned by this profile. Deleting a profile deletes its positions
+    # (cascade). ``Position.profile_id`` is updatable — moving a position between
+    # profiles = reassigning that FK. Duplicating a profile deep-copies these
+    # (ProfileService._copy_positions).
+    positions: Mapped[list["Position"]] = relationship(
+        back_populates="profile",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+        order_by="Position.display_order",
+    )
