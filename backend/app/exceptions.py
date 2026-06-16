@@ -119,6 +119,12 @@ class AttributeKeyConflictException(AppBaseException):
     message = "מפתח מאפיין כבר קיים"
 
 
+class PositionNotFoundException(AppBaseException):
+    """Raised when a position does not exist."""
+    status_code = 404
+    message = "עמדה לא נמצאה"
+
+
 # ── Global exception handlers ─────────────────────────────────────────
 
 

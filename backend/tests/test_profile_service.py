@@ -53,6 +53,37 @@ class TestDuplicate:
         dup = await service.duplicate_profile(src.id, new_name="חג שני")
         assert dup.name == "חג שני"
 
+    async def test_duplicate_deep_copies_positions(self, service, db_session):
+        from app.constants import ShiftType
+        from app.schedule_builder.repositories.position_repository import (
+            PositionRepository,
+        )
+        from app.schedule_builder.services.position_service import PositionService
+
+        positions = PositionService(PositionRepository(db_session))
+        src = await service.create_profile("שגרה")
+        await positions.create_position(
+            src.id, "ארנונה", ShiftType.MORNING,
+            day_schedules={"0": {"start": "07:30", "end": "15:00"}},
+            required_attributes=["armed"],
+        )
+        await positions.create_position(src.id, "קומה 6", ShiftType.NIGHT)
+
+        dup = await service.duplicate_profile(src.id)
+        copied = await positions.list_positions(dup.id)
+        original = await positions.list_positions(src.id)
+
+        # Two NEW positions under the copy, same content, different ids.
+        assert len(copied) == 2
+        assert {p.name for p in copied} == {"ארנונה", "קומה 6"}
+        assert {p.id for p in copied}.isdisjoint({p.id for p in original})
+
+        # JSON is copied, not shared: mutating the copy must not touch the source.
+        arnona_copy = next(p for p in copied if p.name == "ארנונה")
+        arnona_copy.day_schedules["0"]["start"] = "09:00"
+        arnona_src = next(p for p in original if p.name == "ארנונה")
+        assert arnona_src.day_schedules["0"]["start"] == "07:30"
+
 
 class TestRename:
     async def test_rename_updates_fields_only(self, service):

@@ -21,3 +21,13 @@
   `models/__init__.py` ×2, `alembic/versions/95be7724eba5_*.py`, `tests/test_requirement_attribute_model.py` (3),
   `tests/test_attribute_service.py` (9) · backend 281 ·
   commit `feat(builder): configurable requirement-attributes vocabulary + seed`
+- **03** · שכבת דאטה+לוגיקה לעמדות + חיבור deep-copy. `PositionRepository`
+  (get_by_profile/max_display_order_in_profile). `PositionService` (list/get/create/update/delete,
+  scoped לפרופיל, `display_order` פר-פרופיל, update רק שדות שסופקו, אין מגבלת "עמדה אחרונה").
+  חריג `PositionNotFoundException`. `ProfileService._copy_positions` מומש (deep-copy אמיתי, העתק
+  עמוק של ה-JSON), `__init__` מקבל `position_repo` אופציונלי (fallback לאותו session). `dependencies.py`:
+  `get_position_service` + `get_profile_service` מזריק `PositionRepository`. · קבצים:
+  `repositories/position_repository.py`, `services/position_service.py`, `services/profile_service.py`,
+  `dependencies.py`, `app/exceptions.py`, `tests/test_position_service.py` (7),
+  `tests/test_profile_service.py` (+1 deep-copy) · backend 289 ·
+  commit `feat(builder): position repository + service + deep-copy on profile duplicate`

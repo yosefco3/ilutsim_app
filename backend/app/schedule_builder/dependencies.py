@@ -12,14 +12,20 @@ from fastapi import Depends
 
 from app.database import get_pool
 from app.schedule_builder.repositories.attribute_repository import AttributeRepository
+from app.schedule_builder.repositories.position_repository import PositionRepository
 from app.schedule_builder.repositories.profile_repository import ProfileRepository
 from app.schedule_builder.services.attribute_service import AttributeService
+from app.schedule_builder.services.position_service import PositionService
 from app.schedule_builder.services.profile_service import ProfileService
 
 
 async def get_profile_service(session=Depends(get_pool)) -> ProfileService:
-    return ProfileService(ProfileRepository(session))
+    return ProfileService(ProfileRepository(session), PositionRepository(session))
 
 
 async def get_attribute_service(session=Depends(get_pool)) -> AttributeService:
     return AttributeService(AttributeRepository(session))
+
+
+async def get_position_service(session=Depends(get_pool)) -> PositionService:
+    return PositionService(PositionRepository(session))
