@@ -21,7 +21,7 @@ function clearToken() {
   localStorage.removeItem('admin_token');
 }
 
-async function request(endpoint, options = {}) {
+export async function request(endpoint, options = {}) {
   const url = `${API_BASE}${endpoint}`;
   const headers = { 'Content-Type': 'application/json', ...(options.headers || {}) };
 

@@ -11,6 +11,10 @@ from app.models.shift_window import ShiftWindow
 from app.models.admin import Admin
 from app.models.system_setting import SystemSetting
 
+# Part B (schedule builder) models — imported here ONLY so Alembic autogenerate
+# sees them in Base.metadata. The code itself lives under app/schedule_builder/.
+# (the actual import line is added when the first builder model exists — prompt 01)
+
 __all__ = [
     "Base",
     "BaseModel",
