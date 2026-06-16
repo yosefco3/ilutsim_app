@@ -144,15 +144,17 @@ export default function ProfilesPage() {
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <h3 className="modal-title">{m.edit}</h3>
             <form onSubmit={handleSaveEdit}>
-              <label>
-                {m.name}
+              <div className="form-group">
+                <label htmlFor="edit-profile-name">{m.name}</label>
                 <input
+                  id="edit-profile-name"
                   type="text"
                   aria-label={`${m.edit}-${m.name}`}
+                  autoFocus
                   value={editing.name}
                   onChange={(e) => setEditing({ ...editing, name: e.target.value })}
                 />
-              </label>
+              </div>
               <div className="modal-actions">
                 <button type="submit" className="btn btn-primary" disabled={!editing.name.trim()}>
                   {messages.common.save}

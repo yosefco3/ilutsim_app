@@ -573,32 +573,78 @@ body {
 .summary-report { border-inline-start: 4px solid var(--success, #22c55e); }
 .summary-report .summary-line { margin: 4px 0; }
 
+/* ── Modal (shared: ConfirmDialog + builder edit modal) ──────────── */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(5,7,12,.65);
+  backdrop-filter: blur(2px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+  padding: 1rem;
+  animation: fadeIn .15s ease;
+}
+.modal-content {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 1.75rem;
+  width: 100%;
+  max-width: 420px;
+  box-shadow: var(--shadow-lg);
+  animation: fadeIn .18s ease;
+}
+.modal-content p { margin: 0 0 1.25rem; color: var(--text-muted); }
+.modal-actions {
+  display: flex;
+  gap: 0.6rem;
+  justify-content: flex-end;
+  margin-top: 1.25rem;
+}
+
 /* ── Part B — Schedule Builder ───────────────────────────────────── */
-.navbar-group-sep { color: var(--border-strong); margin: 0 0.25rem; opacity: 0.6; }
-.navbar-group-label { font-size: 0.8rem; color: var(--text-dim); font-weight: 600; }
-.page-subtitle { margin: 0.25rem 0 0; font-size: 0.9rem; color: var(--text-muted); }
+.navbar-group-sep { color: var(--border-strong); margin: 0 0.5rem; opacity: 0.5; }
+.navbar-group-label { font-size: 0.78rem; color: var(--text-dim); font-weight: 600; letter-spacing: .02em; }
+.page-subtitle { margin: 0.35rem 0 0; font-size: 0.9rem; color: var(--text-muted); }
 
 .profile-create-form {
   display: flex;
-  gap: 0.5rem;
+  gap: 0.6rem;
+  align-items: stretch;
   flex-wrap: wrap;
-  margin-bottom: 1.25rem;
+  margin-bottom: 1.5rem;
+  max-width: 540px;
 }
 .profile-create-form input {
-  flex: 1 1 160px;
-  padding: 0.5rem 0.75rem;
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  background: var(--surface);
+  flex: 1 1 220px;
+  padding: 0.55rem 0.75rem;
+  background: var(--surface-2);
   color: var(--text);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  font-size: 0.9rem;
+  font-family: inherit;
+  direction: rtl;
+  transition: border-color .15s, box-shadow .15s;
 }
+.profile-create-form input::placeholder { color: var(--text-dim); }
+.profile-create-form input:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--primary-soft);
+}
+.profile-create-form .btn { white-space: nowrap; }
 
 .profile-cards {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 1rem;
 }
 .profile-card {
+  display: flex;
+  flex-direction: column;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
@@ -611,25 +657,28 @@ body {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  margin-bottom: 0.5rem;
   flex-wrap: wrap;
 }
 .profile-card-name { font-size: 1.05rem; font-weight: 600; color: var(--text); }
-.profile-card-kind {
-  font-size: 0.8rem;
-  color: var(--text-dim);
-  background: var(--bg, rgba(255,255,255,0.05));
-  padding: 0.1rem 0.5rem;
-  border-radius: 999px;
-}
 .profile-card-default {
-  font-size: 0.75rem;
+  font-size: 0.72rem;
   font-weight: 600;
   color: var(--success, #22c55e);
   border: 1px solid var(--success, #22c55e);
   padding: 0.1rem 0.5rem;
   border-radius: 999px;
 }
-.profile-card-desc { font-size: 0.9rem; color: var(--text-muted); margin: 0.25rem 0; }
-.profile-card-positions { font-size: 0.8rem; color: var(--text-dim); font-style: italic; margin: 0.5rem 0; }
-.profile-card-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+.profile-card-positions {
+  font-size: 0.82rem;
+  color: var(--text-dim);
+  font-style: italic;
+  margin: 0.6rem 0 1rem;
+}
+.profile-card-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-top: auto;
+  padding-top: 0.85rem;
+  border-top: 1px solid var(--border);
+}
