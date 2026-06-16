@@ -49,6 +49,17 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     except Exception as exc:
         logger.warning("Could not ensure initial week: %s", exc)
 
+    # Part B (schedule builder): ensure the default "שגרה" profile exists.
+    try:
+        from app.database import async_session_factory
+        from app.schedule_builder.repositories.profile_repository import ProfileRepository
+        from app.schedule_builder.services.profile_service import ProfileService
+
+        async with async_session_factory() as session:
+            await ProfileService(ProfileRepository(session)).seed_default_profile()
+    except Exception as exc:
+        logger.warning("Could not seed default activation profile: %s", exc)
+
     # Catch-up rollover: if the Saturday-night transition was missed while the
     # server was down, run it now (idempotent — no-op if already advanced).
     try:

@@ -92,6 +92,21 @@ class InsufficientPermissionsException(AppBaseException):
     message = Messages.ERR_AUTH_FAILED
 
 
+# ── Part B — schedule builder ─────────────────────────────────────────
+
+class ProfileNotFoundException(AppBaseException):
+    """Raised when an activation profile does not exist."""
+    status_code = 404
+    message = "פרופיל לא נמצא"
+
+
+class ProfileDeleteBlockedException(AppBaseException):
+    """Raised when deleting a profile would leave no profiles, or remove the
+    sole default profile."""
+    status_code = 409
+    message = "לא ניתן למחוק את הפרופיל האחרון שנותר"
+
+
 # ── Global exception handlers ─────────────────────────────────────────
 
 

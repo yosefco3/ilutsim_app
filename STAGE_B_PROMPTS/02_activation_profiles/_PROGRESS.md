@@ -14,3 +14,10 @@
   upgrade/downgrade נקי. · קבצים: `schedule_builder/models/activation_profile.py` (+`__init__`), `app/models/__init__.py`,
   `alembic/versions/6abbd8e22af6_*.py`, `tests/test_activation_profile_model.py` (4 טסטים) · backend 247 ·
   commit `feat(builder): ActivationProfile model + migration`
+- **02** · `ProfileRepository` (get_all_ordered/get_default/count/max_display_order) + `ProfileService`
+  (list/get/create/rename/delete/**duplicate**/seed). מחיקה חסומה אם נותר פרופיל יחיד; rename לא נוגע ב-is_default;
+  `_copy_positions` כ-no-op מוכן ל-deep-copy (task 03). חריגים `ProfileNotFoundException`/`ProfileDeleteBlockedException`.
+  factory `get_profile_service` ב-`schedule_builder/dependencies.py`. זריעת "שגרה" idempotent ב-`main.py` lifespan.
+  · קבצים: `schedule_builder/repositories/profile_repository.py`, `schedule_builder/services/profile_service.py`,
+  `schedule_builder/dependencies.py`, `app/exceptions.py`, `app/main.py`, `tests/test_profile_service.py` (10 טסטים) ·
+  backend 257 · commit `feat(builder): profile repository + service (CRUD, duplicate, seed default)`
