@@ -61,11 +61,7 @@ describe('ProfilesPage', () => {
     fireEvent.click(screen.getByText('פרופיל חדש'));
 
     await waitFor(() =>
-      expect(createProfile).toHaveBeenCalledWith({
-        name: 'חג',
-        kind: null,
-        description: null,
-      }),
+      expect(createProfile).toHaveBeenCalledWith({ name: 'חג' }),
     );
     expect(listProfiles).toHaveBeenCalledTimes(2); // initial + after create
   });
@@ -104,11 +100,7 @@ describe('ProfilesPage', () => {
     fireEvent.click(screen.getByText('שמור'));
 
     await waitFor(() =>
-      expect(updateProfile).toHaveBeenCalledWith('p1', {
-        name: 'שגרה ראשית',
-        kind: 'רגיל',
-        description: null,
-      }),
+      expect(updateProfile).toHaveBeenCalledWith('p1', { name: 'שגרה ראשית' }),
     );
   });
 });

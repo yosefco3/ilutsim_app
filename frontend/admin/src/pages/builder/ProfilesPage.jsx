@@ -10,7 +10,7 @@ import { useToast } from '../../components/Toast';
 import ConfirmDialog from '../../components/ConfirmDialog';
 import messages from '../../utils/messages';
 
-const EMPTY_FORM = { name: '', kind: '', description: '' };
+const EMPTY_FORM = { name: '' };
 
 export default function ProfilesPage() {
   const toast = useToast();
@@ -41,11 +41,7 @@ export default function ProfilesPage() {
     e.preventDefault();
     if (!form.name.trim()) return;
     try {
-      await createProfile({
-        name: form.name.trim(),
-        kind: form.kind.trim() || null,
-        description: form.description.trim() || null,
-      });
+      await createProfile({ name: form.name.trim() });
       setForm(EMPTY_FORM);
       toast.success(m.created);
       await load();
@@ -68,11 +64,7 @@ export default function ProfilesPage() {
     e.preventDefault();
     if (!editing.name.trim()) return;
     try {
-      await updateProfile(editing.id, {
-        name: editing.name.trim(),
-        kind: editing.kind?.trim() || null,
-        description: editing.description?.trim() || null,
-      });
+      await updateProfile(editing.id, { name: editing.name.trim() });
       setEditing(null);
       toast.success(m.updated);
       await load();
@@ -108,21 +100,7 @@ export default function ProfilesPage() {
           aria-label={m.name}
           placeholder={m.namePlaceholder}
           value={form.name}
-          onChange={(e) => setForm({ ...form, name: e.target.value })}
-        />
-        <input
-          type="text"
-          aria-label={m.kind}
-          placeholder={m.kindPlaceholder}
-          value={form.kind}
-          onChange={(e) => setForm({ ...form, kind: e.target.value })}
-        />
-        <input
-          type="text"
-          aria-label={m.description}
-          placeholder={m.descriptionPlaceholder}
-          value={form.description}
-          onChange={(e) => setForm({ ...form, description: e.target.value })}
+          onChange={(e) => setForm({ name: e.target.value })}
         />
         <button type="submit" className="btn btn-primary" disabled={!form.name.trim()}>
           {m.newProfile}
@@ -137,14 +115,10 @@ export default function ProfilesPage() {
             <div key={p.id} className="profile-card">
               <div className="profile-card-header">
                 <span className="profile-card-name">{p.name}</span>
-                {p.kind && <span className="profile-card-kind">{p.kind}</span>}
                 {p.is_default && (
                   <span className="profile-card-default">{m.default}</span>
                 )}
               </div>
-              {p.description && (
-                <p className="profile-card-desc">{p.description}</p>
-              )}
               <p className="profile-card-positions">{m.noPositionsYet}</p>
               <div className="profile-card-actions">
                 <button className="btn btn-secondary btn-sm" onClick={() => handleDuplicate(p)}>
@@ -152,7 +126,7 @@ export default function ProfilesPage() {
                 </button>
                 <button
                   className="btn btn-secondary btn-sm"
-                  onClick={() => setEditing({ ...p, kind: p.kind || '', description: p.description || '' })}
+                  onClick={() => setEditing({ id: p.id, name: p.name })}
                 >
                   {m.edit}
                 </button>
@@ -177,22 +151,6 @@ export default function ProfilesPage() {
                   aria-label={`${m.edit}-${m.name}`}
                   value={editing.name}
                   onChange={(e) => setEditing({ ...editing, name: e.target.value })}
-                />
-              </label>
-              <label>
-                {m.kind}
-                <input
-                  type="text"
-                  value={editing.kind}
-                  onChange={(e) => setEditing({ ...editing, kind: e.target.value })}
-                />
-              </label>
-              <label>
-                {m.description}
-                <input
-                  type="text"
-                  value={editing.description}
-                  onChange={(e) => setEditing({ ...editing, description: e.target.value })}
                 />
               </label>
               <div className="modal-actions">
