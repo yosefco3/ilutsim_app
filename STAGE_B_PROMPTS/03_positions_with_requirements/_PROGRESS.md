@@ -40,3 +40,14 @@
   `controllers/position_controller.py`, `controllers/attribute_controller.py`, `app/main.py`,
   `tests/test_position_api.py` (10), `tests/test_attribute_api.py` (7) · backend 306 ·
   commit `feat(builder): positions + attributes REST API`
+- **05** · מסך העמדות (frontend) + תיעוד + גרף. `builderApiClient.js`: list/create/get/update/delete לעמדות
+  + list/create/update/delete למאפיינים. `pages/builder/PositionsPage.jsx`: בורר פרופיל (דיפולט=is_default),
+  עמדות מקובצות לפי משמרת, עורך מודלי עם רשת 7-ימים (צ'קבוקס פעיל + שעות start/end → `day_schedules`)
+  וצ'קבוקסי דרישות מאוצר-המאפיינים, מחיקה עם ConfirmDialog, מודל "נהל מאפיינים" (הוספה/מחיקה).
+  route `/builder/positions` + קישור "עמדות" בניווט + מחרוזות `positions.*`/`nav.positions` + CSS.
+  עודכן `APP_OVERVIEW.md` (מודלים/endpoints/דפים/מיגרציות/היסטוריה/תאריך) + הגרף. · קבצים:
+  `api/builderApiClient.js`, `pages/builder/PositionsPage.jsx`, `App.jsx`, `components/Navbar.jsx`,
+  `utils/messages.js`, `styles/admin.css`, `tests/builderPositionsPage.test.jsx` (4) · frontend 144 · build ✓ ·
+  commit `feat(builder): positions management page (per-day hours + requirements)`
+
+✅ All prompts completed

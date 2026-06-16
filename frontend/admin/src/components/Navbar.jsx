@@ -35,6 +35,7 @@ export default function Navbar() {
         <span className="navbar-group-sep" aria-hidden="true">|</span>
         <span className="navbar-group-label">{messages.nav.builderGroup}</span>
         <NavLink to="/builder/profiles">{messages.nav.profiles}</NavLink>
+        <NavLink to="/builder/positions">{messages.nav.positions}</NavLink>
         <button className="btn btn-secondary btn-sm" onClick={handleLogout}>
           {messages.nav.logout}
         </button>
