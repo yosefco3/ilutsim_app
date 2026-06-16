@@ -15,6 +15,7 @@ from app.models.system_setting import SystemSetting
 # sees them in Base.metadata. The code itself lives under app/schedule_builder/.
 from app.schedule_builder.models.activation_profile import ActivationProfile  # noqa: E402,F401
 from app.schedule_builder.models.position import Position  # noqa: E402,F401
+from app.schedule_builder.models.requirement_attribute import RequirementAttribute  # noqa: E402,F401
 
 __all__ = [
     "Base",

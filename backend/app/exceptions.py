@@ -107,6 +107,18 @@ class ProfileDeleteBlockedException(AppBaseException):
     message = "לא ניתן למחוק את הפרופיל האחרון שנותר"
 
 
+class AttributeNotFoundException(AppBaseException):
+    """Raised when a requirement attribute does not exist."""
+    status_code = 404
+    message = "מאפיין לא נמצא"
+
+
+class AttributeKeyConflictException(AppBaseException):
+    """Raised when creating an attribute whose key already exists."""
+    status_code = 409
+    message = "מפתח מאפיין כבר קיים"
+
+
 # ── Global exception handlers ─────────────────────────────────────────
 
 

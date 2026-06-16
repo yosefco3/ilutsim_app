@@ -61,6 +61,18 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     except Exception as exc:
         logger.warning("Could not seed default activation profile: %s", exc)
 
+    # Part B (schedule builder): ensure the default requirement-attribute
+    # vocabulary exists (configurable; editable later from the UI).
+    try:
+        from app.database import async_session_factory
+        from app.schedule_builder.repositories.attribute_repository import AttributeRepository
+        from app.schedule_builder.services.attribute_service import AttributeService
+
+        async with async_session_factory() as session:
+            await AttributeService(AttributeRepository(session)).seed_default_attributes()
+    except Exception as exc:
+        logger.warning("Could not seed default requirement attributes: %s", exc)
+
     # Catch-up rollover: if the Saturday-night transition was missed while the
     # server was down, run it now (idempotent — no-op if already advanced).
     try:
