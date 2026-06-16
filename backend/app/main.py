@@ -22,6 +22,7 @@ from app.controllers import (
     admin_admins_router,
     constraints_import_router,
 )
+from app.schedule_builder.controllers.profile_controller import router as profile_router
 from app.exceptions import (
     AppBaseException,
     app_exception_handler,
@@ -148,6 +149,9 @@ def create_app() -> FastAPI:
     app.include_router(admin_settings_router)
     app.include_router(admin_admins_router)
     app.include_router(constraints_import_router)
+
+    # ── Part B — Schedule Builder routers ──
+    app.include_router(profile_router)
 
     # Health check endpoint
     @app.get("/health")

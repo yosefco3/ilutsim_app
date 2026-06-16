@@ -21,3 +21,9 @@
   · קבצים: `schedule_builder/repositories/profile_repository.py`, `schedule_builder/services/profile_service.py`,
   `schedule_builder/dependencies.py`, `app/exceptions.py`, `app/main.py`, `tests/test_profile_service.py` (10 טסטים) ·
   backend 257 · commit `feat(builder): profile repository + service (CRUD, duplicate, seed default)`
+- **03** · API פרופילים. Schemas (`ProfileCreate`/`ProfileUpdate` עם ולידציית ≥שדה-אחד/`ProfileDuplicate`/`ProfileResponse`)
+  + controller `/admin/builder/profiles` (GET list, POST create, GET one, PATCH rename, POST /{id}/duplicate, DELETE)
+  מאחורי `require_admin_role`, מיפוי `AppBaseException`→HTTPException. נרשם ב-`main.py` בקבוצת "Part B".
+  · קבצים: `schedule_builder/schemas/profile_schemas.py`, `schedule_builder/controllers/profile_controller.py`,
+  `app/main.py`, `tests/test_profile_api.py` (8 טסטים, fake service) · backend 265 ·
+  commit `feat(builder): profiles REST API (/admin/builder/profiles)`
