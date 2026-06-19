@@ -483,6 +483,24 @@ body {
 }
 .week-card-buttons { display: flex; gap: 0.5rem; flex-wrap: wrap; }
 
+/* Automation indicators (shown in place of a manual button when auto is on) */
+.week-auto-indicator {
+  font-size: 0.85rem;
+  color: var(--text-muted, #6c757d);
+  display: inline-flex;
+  align-items: center;
+}
+.automation-banner {
+  margin: 0 0 1rem;
+  padding: 0.6rem 0.9rem;
+  background: var(--surface-2, #eef2f7);
+  border: 1px solid var(--border-strong, #cdd5df);
+  border-radius: var(--radius-sm, 6px);
+  color: var(--text, #1f2937);
+  font-size: 0.9rem;
+  direction: rtl;
+}
+
 /* Modal title */
 .modal-title { margin: 0 0 0.75rem; font-size: 1.1rem; color: var(--text); }
 

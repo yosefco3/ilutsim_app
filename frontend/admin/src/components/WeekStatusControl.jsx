@@ -1,11 +1,18 @@
 /**
  * WeekStatusControl — status badge + action buttons for a single week card.
  *
- * Props: week, onOpen, onLock, onPublish, loading
+ * Props: week, onOpen, onLock, onPublish, loading, autoOpen, autoLock
+ *
+ * When auto-open/auto-lock is enabled the corresponding manual button is hidden
+ * (the scheduler manages it) and a "will happen automatically" indicator is
+ * shown instead. "Publish" is always manual.
  */
 import { useState } from 'react';
 import messages from '../utils/messages';
+import { formatSchedule } from '../utils/automation';
 import ConfirmDialog from './ConfirmDialog';
+
+const A = messages.weeks.automation;
 
 const STATUS_CFG = {
   closed:    { label: messages.weeks.statusClosed,    bg: '#e2e3e5', color: '#383d41', icon: '⏳' },
@@ -14,7 +21,15 @@ const STATUS_CFG = {
   published: { label: messages.weeks.publishedLabel,   bg: '#cce5ff', color: '#004085', icon: '📢' },
 };
 
-export default function WeekStatusControl({ week, onOpen, onLock, onPublish, loading }) {
+export default function WeekStatusControl({
+  week,
+  onOpen,
+  onLock,
+  onPublish,
+  loading,
+  autoOpen = { enabled: false },
+  autoLock = { enabled: false },
+}) {
   const status = week.status || 'closed';
   const cfg = STATUS_CFG[status] || STATUS_CFG.closed;
   const [showPublishConfirm, setShowPublishConfirm] = useState(false);
@@ -32,7 +47,7 @@ export default function WeekStatusControl({ week, onOpen, onLock, onPublish, loa
 
         {/* Action buttons by status */}
         <div className="week-card-buttons">
-          {(status === 'locked' || status === 'closed') && (
+          {(status === 'locked' || status === 'closed') && !autoOpen.enabled && (
             <button
               className="btn btn-primary btn-sm"
               disabled={loading}
@@ -42,7 +57,13 @@ export default function WeekStatusControl({ week, onOpen, onLock, onPublish, loa
             </button>
           )}
 
-          {status === 'open' && (
+          {status === 'closed' && autoOpen.enabled && (
+            <span className="week-auto-indicator">
+              ⏰ {A.willOpenAuto} · {formatSchedule(autoOpen.weekday, autoOpen.time)}
+            </span>
+          )}
+
+          {status === 'open' && !autoLock.enabled && (
             <button
               className="btn btn-warning btn-sm"
               disabled={loading}
@@ -50,6 +71,12 @@ export default function WeekStatusControl({ week, onOpen, onLock, onPublish, loa
             >
               🔒 {messages.weeks.lock}
             </button>
+          )}
+
+          {status === 'open' && autoLock.enabled && (
+            <span className="week-auto-indicator">
+              ⏰ {A.willLockAuto} · {formatSchedule(autoLock.weekday, autoLock.time)}
+            </span>
           )}
 
           {status === 'locked' && (

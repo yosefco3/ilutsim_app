@@ -1,9 +1,16 @@
 import { useWeeks } from '../hooks/useWeeks';
+import { useSettings } from '../hooks/useSettings';
 import WeekStatusControl from '../components/WeekStatusControl';
 import messages from '../utils/messages';
+import { deriveAutomation, formatSchedule } from '../utils/automation';
+
+const A = messages.weeks.automation;
 
 export default function WeeksPage() {
   const { weeks, loading, setStatus, openForSubmission, publish } = useWeeks();
+  const { settings, loading: settingsLoading } = useSettings();
+  const { autoOpen, autoLock } = deriveAutomation(settings);
+  const automationOn = autoOpen.enabled || autoLock.enabled;
 
   const handleOpen = async (weekId) => {
     await openForSubmission(weekId);
@@ -17,13 +24,23 @@ export default function WeeksPage() {
     await publish(weekId);
   };
 
-  if (loading) return <div className="loading">{messages.common.loading}</div>;
+  // Wait for settings too, so the manual/auto buttons don't flicker on load.
+  if (loading || settingsLoading) return <div className="loading">{messages.common.loading}</div>;
+
+  const slot = (block) =>
+    block.enabled ? formatSchedule(block.weekday, block.time) : A.manual;
 
   return (
     <div className="page">
       <div className="page-header">
         <h2>{messages.weeks.title}</h2>
       </div>
+
+      {automationOn && (
+        <div className="automation-banner">
+          🤖 {A.bannerOpen}: {slot(autoOpen)} · {A.bannerLock}: {slot(autoLock)} · {A.bannerPublish}: {A.manual}
+        </div>
+      )}
 
       {!weeks.length ? (
         <p className="empty-state">{messages.weeks.empty}</p>
@@ -46,6 +63,8 @@ export default function WeeksPage() {
                 onLock={handleLock}
                 onPublish={handlePublish}
                 loading={loading}
+                autoOpen={autoOpen}
+                autoLock={autoLock}
               />
             </div>
           ))}

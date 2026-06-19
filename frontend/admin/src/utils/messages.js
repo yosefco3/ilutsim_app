@@ -180,6 +180,23 @@ export default {
     publishConfirmTitle: 'פרסום השבוע',
     publishConfirm: 'לאחר פרסום, יוצג שבוע חדש במצב "נעול", והשבוע הזה לא יהיה ניתן יותר לעריכת משמרות. פעולה זו בלתי הפיכה. האם אתה מעוניין להמשיך?',
     publishConfirmLabel: 'כן, פרסם',
+    automation: {
+      willOpenAuto: 'תיפתח אוטומטית',
+      willLockAuto: 'תינעל אוטומטית',
+      bannerOpen: 'פתיחה',
+      bannerLock: 'נעילה',
+      bannerPublish: 'פרסום',
+      manual: 'ידני',
+      weekdays: {
+        sunday: 'ראשון',
+        monday: 'שני',
+        tuesday: 'שלישי',
+        wednesday: 'רביעי',
+        thursday: 'חמישי',
+        friday: 'שישי',
+        saturday: 'שבת',
+      },
+    },
   },
   submissions: {
     title: 'דיווחים שהתקבלו',

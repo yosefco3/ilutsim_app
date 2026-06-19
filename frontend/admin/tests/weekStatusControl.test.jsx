@@ -4,7 +4,7 @@ import WeekStatusControl from '../src/components/WeekStatusControl';
 
 const noop = vi.fn();
 
-function renderWeek(status, handlers = {}) {
+function renderWeek(status, handlers = {}, auto = {}) {
   return render(
     <WeekStatusControl
       week={{ id: 'w1', status }}
@@ -12,6 +12,8 @@ function renderWeek(status, handlers = {}) {
       onLock={handlers.onLock || noop}
       onPublish={handlers.onPublish || noop}
       loading={false}
+      autoOpen={auto.autoOpen || { enabled: false }}
+      autoLock={auto.autoLock || { enabled: false }}
     />,
   );
 }
@@ -63,5 +65,41 @@ describe('WeekStatusControl', () => {
     fireEvent.click(screen.getByText(/📢/));
     fireEvent.click(screen.getByText(/ביטול|בטל/));
     expect(onPublish).not.toHaveBeenCalled();
+  });
+
+  // ── automation gating ──────────────────────────────────────────────────────
+
+  it('hides "open for submission" and shows an indicator when auto-open is on', () => {
+    renderWeek('closed', {}, { autoOpen: { enabled: true, weekday: 'sunday', time: '07:00' } });
+    expect(screen.queryByText(/פתח להגשה/)).not.toBeInTheDocument();
+    expect(screen.getByText(/תיפתח אוטומטית/)).toBeInTheDocument();
+    expect(screen.getByText(/ראשון 07:00/)).toBeInTheDocument();
+  });
+
+  it('hides "lock" and shows an indicator on an open week when auto-lock is on', () => {
+    renderWeek('open', {}, { autoLock: { enabled: true, weekday: 'wednesday', time: '12:00' } });
+    expect(screen.queryByText(/^נעל$/)).not.toBeInTheDocument();
+    expect(screen.getByText(/תינעל אוטומטית/)).toBeInTheDocument();
+    expect(screen.getByText(/רביעי 12:00/)).toBeInTheDocument();
+  });
+
+  it('keeps the manual buttons when both switches are off', () => {
+    const { unmount } = renderWeek('closed');
+    expect(screen.getByText(/פתח להגשה/)).toBeInTheDocument();
+    unmount();
+    renderWeek('open');
+    expect(screen.getByText(/נעל/)).toBeInTheDocument();
+  });
+
+  it('always keeps "publish" on a locked week, even with automation on', () => {
+    renderWeek(
+      'locked',
+      {},
+      { autoOpen: { enabled: true, weekday: 'sunday', time: '07:00' },
+        autoLock: { enabled: true, weekday: 'wednesday', time: '12:00' } },
+    );
+    expect(screen.getByText(/📢/)).toBeInTheDocument();
+    // manual open is hidden on locked when auto-open is on
+    expect(screen.queryByText(/פתח להגשה/)).not.toBeInTheDocument();
   });
 });
