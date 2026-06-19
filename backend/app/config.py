@@ -43,6 +43,12 @@ class Settings(BaseSettings):
     # Environment
     ENVIRONMENT: str = "dev"
 
+    # Feature flags
+    # Part B (schedule builder + constraints import). When False the related
+    # routers are NOT registered (endpoints return 404) and the part-B default
+    # seed is skipped. Production hides this half of the app via this flag.
+    SCHEDULE_BUILDER_ENABLED: bool = True
+
     # Cron / Scheduling
     CRON_WEEKLY_OPEN_DAY: str = "sunday"
     CRON_WEEKLY_OPEN_HOUR: str = "09:00"

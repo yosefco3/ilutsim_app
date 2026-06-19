@@ -1,12 +1,14 @@
 /**
  * Guard API client — for Telegram-authenticated guard submissions.
  * Uses Telegram initData for auth (not JWT).
- * All requests go through Vite proxy (/api → localhost:8000).
+ * Dev: requests go through the Vite proxy (/api → localhost:8000).
+ * Prod (single origin): built with VITE_API_URL='' so requests hit the backend
+ * at the same origin root. `??` keeps an explicit empty value (unlike `||`).
  */
 
 import { messages } from '../utils/guardMessages.js';
 
-const API_BASE = import.meta.env.VITE_API_URL || '/api';
+const API_BASE = import.meta.env.VITE_API_URL ?? '/api';
 
 /**
  * Perform an HTTP request with Telegram initData auth.

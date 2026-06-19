@@ -17,6 +17,11 @@ import ProfilesPage from './pages/builder/ProfilesPage';
 import PositionsPage from './pages/builder/PositionsPage';
 import './styles/admin.css';
 
+// Part B (schedule builder + constraints import) is hidden in production via a
+// build-time flag. Build with VITE_SCHEDULE_BUILDER_ENABLED=false to drop the
+// routes entirely so end users never see that half of the app.
+const BUILDER_ENABLED = import.meta.env.VITE_SCHEDULE_BUILDER_ENABLED !== 'false';
+
 export default function App() {
   return (
     <BrowserRouter>
@@ -46,10 +51,14 @@ function AppContent() {
           <Route path="/submissions" element={<ProtectedRoute><SubmissionsPage /></ProtectedRoute>} />
           <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
           <Route path="/export" element={<ProtectedRoute><ExportPage /></ProtectedRoute>} />
-          <Route path="/import" element={<ProtectedRoute><ImportConstraintsPage /></ProtectedRoute>} />
-          {/* Part B — Schedule Builder */}
-          <Route path="/builder/profiles" element={<ProtectedRoute><ProfilesPage /></ProtectedRoute>} />
-          <Route path="/builder/positions" element={<ProtectedRoute><PositionsPage /></ProtectedRoute>} />
+          {/* Part B — constraints import + Schedule Builder (feature-flagged) */}
+          {BUILDER_ENABLED && (
+            <>
+              <Route path="/import" element={<ProtectedRoute><ImportConstraintsPage /></ProtectedRoute>} />
+              <Route path="/builder/profiles" element={<ProtectedRoute><ProfilesPage /></ProtectedRoute>} />
+              <Route path="/builder/positions" element={<ProtectedRoute><PositionsPage /></ProtectedRoute>} />
+            </>
+          )}
           <Route path="*" element={<Navigate to="/guards" replace />} />
         </Routes>
       </main>

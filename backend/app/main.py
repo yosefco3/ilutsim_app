@@ -57,28 +57,30 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     except Exception as exc:
         logger.warning("Could not ensure initial week: %s", exc)
 
-    # Part B (schedule builder): ensure the default "שגרה" profile exists.
-    try:
-        from app.database import async_session_factory
-        from app.schedule_builder.repositories.profile_repository import ProfileRepository
-        from app.schedule_builder.services.profile_service import ProfileService
+    # Part B (schedule builder) seed — only when the feature is enabled.
+    if settings.SCHEDULE_BUILDER_ENABLED:
+        # ensure the default "שגרה" profile exists.
+        try:
+            from app.database import async_session_factory
+            from app.schedule_builder.repositories.profile_repository import ProfileRepository
+            from app.schedule_builder.services.profile_service import ProfileService
 
-        async with async_session_factory() as session:
-            await ProfileService(ProfileRepository(session)).seed_default_profile()
-    except Exception as exc:
-        logger.warning("Could not seed default activation profile: %s", exc)
+            async with async_session_factory() as session:
+                await ProfileService(ProfileRepository(session)).seed_default_profile()
+        except Exception as exc:
+            logger.warning("Could not seed default activation profile: %s", exc)
 
-    # Part B (schedule builder): ensure the default requirement-attribute
-    # vocabulary exists (configurable; editable later from the UI).
-    try:
-        from app.database import async_session_factory
-        from app.schedule_builder.repositories.attribute_repository import AttributeRepository
-        from app.schedule_builder.services.attribute_service import AttributeService
+        # ensure the default requirement-attribute vocabulary exists
+        # (configurable; editable later from the UI).
+        try:
+            from app.database import async_session_factory
+            from app.schedule_builder.repositories.attribute_repository import AttributeRepository
+            from app.schedule_builder.services.attribute_service import AttributeService
 
-        async with async_session_factory() as session:
-            await AttributeService(AttributeRepository(session)).seed_default_attributes()
-    except Exception as exc:
-        logger.warning("Could not seed default requirement attributes: %s", exc)
+            async with async_session_factory() as session:
+                await AttributeService(AttributeRepository(session)).seed_default_attributes()
+        except Exception as exc:
+            logger.warning("Could not seed default requirement attributes: %s", exc)
 
     # Catch-up rollover: if the Saturday-night transition was missed while the
     # server was down, run it now (idempotent — no-op if already advanced).
@@ -170,17 +172,46 @@ def create_app() -> FastAPI:
     app.include_router(admin_export_router)
     app.include_router(admin_settings_router)
     app.include_router(admin_admins_router)
-    app.include_router(constraints_import_router)
 
-    # ── Part B — Schedule Builder routers ──
-    app.include_router(profile_router)
-    app.include_router(position_router)
-    app.include_router(attribute_router)
+    # ── Part B — schedule builder + constraints import (feature-flagged) ──
+    # When SCHEDULE_BUILDER_ENABLED is False these routers are not registered,
+    # so /admin/builder/* and /admin/import/constraints/* return 404.
+    if settings.SCHEDULE_BUILDER_ENABLED:
+        app.include_router(constraints_import_router)
+        app.include_router(profile_router)
+        app.include_router(position_router)
+        app.include_router(attribute_router)
 
     # Health check endpoint
     @app.get("/health")
     async def health_check() -> dict[str, str]:
         return {"status": "ok"}
+
+    # ── Serve the built frontend (single-origin production) ──
+    # Only when a built `frontend_dist/` is present next to the backend (i.e. in
+    # the production Docker image). In local dev the frontend runs on Vite, so
+    # this block is skipped and the API stays API-only.
+    from pathlib import Path
+
+    dist = Path(__file__).resolve().parent.parent / "frontend_dist"
+    if dist.is_dir():
+        from fastapi.responses import FileResponse
+        from fastapi.staticfiles import StaticFiles
+
+        assets = dist / "assets"
+        if assets.is_dir():
+            app.mount("/assets", StaticFiles(directory=assets), name="assets")
+
+        index_file = dist / "index.html"
+
+        # SPA fallback: any non-API path returns index.html. Registered after all
+        # API routers, so /auth, /admin, /submissions, /health match first.
+        @app.get("/{full_path:path}")
+        async def spa_fallback(full_path: str) -> FileResponse:
+            return FileResponse(
+                index_file,
+                headers={"Cache-Control": "no-cache, no-store, must-revalidate"},
+            )
 
     return app
 

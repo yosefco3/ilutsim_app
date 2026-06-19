@@ -2,6 +2,10 @@ import { NavLink, useNavigate } from 'react-router-dom';
 import { adminLogout, isLoggedIn } from '../api/adminApiClient';
 import messages from '../utils/messages';
 
+// Part B (constraints import + schedule builder) is hidden in production via a
+// build-time flag, matching the gated routes in App.jsx.
+const BUILDER_ENABLED = import.meta.env.VITE_SCHEDULE_BUILDER_ENABLED !== 'false';
+
 export default function Navbar() {
   const navigate = useNavigate();
   const authenticated = isLoggedIn();
@@ -29,13 +33,17 @@ export default function Navbar() {
         <NavLink to="/guards">{messages.nav.guards}</NavLink>
         <NavLink to="/weeks">{messages.nav.weeks}</NavLink>
         <NavLink to="/submissions">{messages.nav.submissions}</NavLink>
-        <NavLink to="/import">{messages.nav.import}</NavLink>
+        {BUILDER_ENABLED && <NavLink to="/import">{messages.nav.import}</NavLink>}
         <NavLink to="/export">{messages.nav.export}</NavLink>
         <NavLink to="/settings">{messages.nav.settings}</NavLink>
-        <span className="navbar-group-sep" aria-hidden="true">|</span>
-        <span className="navbar-group-label">{messages.nav.builderGroup}</span>
-        <NavLink to="/builder/profiles">{messages.nav.profiles}</NavLink>
-        <NavLink to="/builder/positions">{messages.nav.positions}</NavLink>
+        {BUILDER_ENABLED && (
+          <>
+            <span className="navbar-group-sep" aria-hidden="true">|</span>
+            <span className="navbar-group-label">{messages.nav.builderGroup}</span>
+            <NavLink to="/builder/profiles">{messages.nav.profiles}</NavLink>
+            <NavLink to="/builder/positions">{messages.nav.positions}</NavLink>
+          </>
+        )}
         <button className="btn btn-secondary btn-sm" onClick={handleLogout}>
           {messages.nav.logout}
         </button>

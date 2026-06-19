@@ -1,9 +1,11 @@
 /**
  * Admin API client — thin wrapper around fetch for the admin dashboard.
- * All requests go through Vite proxy (/api → localhost:8000).
+ * Dev: requests go through the Vite proxy (/api → localhost:8000).
+ * Prod (single origin): built with VITE_API_URL='' so requests hit the backend
+ * at the same origin root (/auth, /admin, …). `??` keeps an explicit empty value.
  */
 
-const API_BASE = import.meta.env.VITE_API_URL || '/api';
+const API_BASE = import.meta.env.VITE_API_URL ?? '/api';
 
 function getToken() {
   return localStorage.getItem('admin_token');
