@@ -1,20 +1,20 @@
 # Test Coverage Graph
 
-_נוצר אוטומטית ב: 2026-06-16 19:54_
-**טרנד:**  ↓5%
+_נוצר אוטומטית ב: 2026-06-19 09:36_
+**טרנד:**  →0%
 
 ## סיכום
 
 | מדד | ערך |
 |---|---|
-| קבצי קוד backend | 67 |
+| קבצי קוד backend | 77 |
 | קבצי קוד מכוסים בטסטים | 33 |
-| קבצי קוד ללא טסטים | 34 |
-| אחוז כיסוי | 49% ↓5% |
-| טסטים עוברים (backend) | 35 ✅ |
+| קבצי קוד ללא טסטים | 44 |
+| אחוז כיסוי | 42% →0% |
+| טסטים עוברים (backend) | 41 ✅ |
 | טסטים נכשלים (backend) | 0 ❌ |
 | קבצי קוד frontend (ממופים) | 10 |
-| טסטים עוברים (frontend) | 27 ✅ |
+| טסטים עוברים (frontend) | 28 ✅ |
 | טסטים נכשלים (frontend) | 0 ❌ |
 
 ## Backend: מיפוי קוד → טסטים
@@ -92,10 +92,20 @@ _נוצר אוטומטית ב: 2026-06-16 19:54_
 | 🟡 MEDIUM | `inline_kb.py` | `app/bot/keyboards` |
 | 🟡 MEDIUM | `auth.py` | `app/bot/middlewares` |
 | 🟡 MEDIUM | `webapp.py` | `app/bot` |
+| 🟡 MEDIUM | `attribute_controller.py` | `app/schedule_builder/controllers` |
+| 🟡 MEDIUM | `position_controller.py` | `app/schedule_builder/controllers` |
 | 🟡 MEDIUM | `profile_controller.py` | `app/schedule_builder/controllers` |
 | 🟡 MEDIUM | `activation_profile.py` | `app/schedule_builder/models` |
+| 🟡 MEDIUM | `position.py` | `app/schedule_builder/models` |
+| 🟡 MEDIUM | `requirement_attribute.py` | `app/schedule_builder/models` |
+| 🟡 MEDIUM | `attribute_repository.py` | `app/schedule_builder/repositories` |
+| 🟡 MEDIUM | `position_repository.py` | `app/schedule_builder/repositories` |
 | 🟡 MEDIUM | `profile_repository.py` | `app/schedule_builder/repositories` |
+| 🟡 MEDIUM | `attribute_schemas.py` | `app/schedule_builder/schemas` |
+| 🟡 MEDIUM | `position_schemas.py` | `app/schedule_builder/schemas` |
 | 🟡 MEDIUM | `profile_schemas.py` | `app/schedule_builder/schemas` |
+| 🟡 MEDIUM | `attribute_service.py` | `app/schedule_builder/services` |
+| 🟡 MEDIUM | `position_service.py` | `app/schedule_builder/services` |
 | 🟡 MEDIUM | `profile_service.py` | `app/schedule_builder/services` |
 | 🟡 MEDIUM | `scheduler.py` | `app` |
 | 🟡 MEDIUM | `constraints_import.py` | `app/schemas` |
@@ -132,6 +142,8 @@ _נוצר אוטומטית ב: 2026-06-16 19:54_
 | `test_activation_profile_model.py` | 1 | 🟢 |
 | `test_admin_published_guard.py` | 1 | 🟢 |
 | `test_admin_submission.py` | 1 | 🟢 |
+| `test_attribute_api.py` | 1 | 🟢 |
+| `test_attribute_service.py` | 1 | 🟢 |
 | `test_auto_advance.py` | 1 | 🟢 |
 | `test_auto_rotate.py` | 1 | 🟢 |
 | `test_bot.py` | 4 | 🟢 |
@@ -150,9 +162,13 @@ _נוצר אוטומטית ב: 2026-06-16 19:54_
 | `test_initial_seed.py` | 1 | 🟢 |
 | `test_models.py` | 8 | 🟢 |
 | `test_notification_on_open.py` | 2 | 🟢 |
+| `test_position_api.py` | 1 | 🟢 |
+| `test_position_model.py` | 1 | 🟢 |
+| `test_position_service.py` | 1 | 🟢 |
 | `test_profile_api.py` | 1 | 🟢 |
 | `test_profile_service.py` | 1 | 🟢 |
 | `test_repositories.py` | 6 | 🟢 |
+| `test_requirement_attribute_model.py` | 1 | 🟢 |
 | `test_retention.py` | 1 | 🟢 |
 | `test_scheduler.py` | 1 | 🟢 |
 | `test_schemas.py` | 5 | 🟢 |

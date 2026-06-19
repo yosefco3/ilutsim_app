@@ -376,6 +376,10 @@ class TestAdminNotificationsController:
         body = resp.json()
         assert body["reminded"] == 1
         assert body["total_active"] == 3
+        # Two guards haven't submitted; one of them has no Telegram link and so
+        # is reported as skipped rather than silently treated as "submitted".
+        assert body["missing"] == 2
+        assert body["skipped_no_telegram"] == 1
         mock_notify.assert_awaited_once()
         # Only the missing guard WITH a telegram_id is reminded, greeted by name.
         recipients = mock_notify.await_args.kwargs["recipients"]

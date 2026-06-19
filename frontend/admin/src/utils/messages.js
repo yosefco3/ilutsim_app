@@ -200,6 +200,7 @@ export default {
     inactiveToggle: 'הצג מאבטחים לא פעילים',
     reminderSent: 'נשלחו תזכורות',
     reminderNone: 'כל המאבטחים כבר שלחו — אין למי לשלוח תזכורת',
+    reminderNoTelegram: 'יש מאבטחים שטרם הגישו אך אין להם טלגרם מקושר — לא נשלחה תזכורת',
   },
   settings: {
     title: 'הגדרות מערכת',

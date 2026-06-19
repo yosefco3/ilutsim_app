@@ -59,6 +59,10 @@ export default function SubmissionsPage() {
       const result = await sendWeekReminders(selectedWeek);
       if (result?.reminded > 0) {
         toast.success(`${messages.submissions.reminderSent} (${result.reminded})`);
+      } else if (result?.skipped_no_telegram > 0) {
+        // Someone still hasn't submitted but has no Telegram linked, so no
+        // reminder could be delivered — say so instead of "everyone submitted".
+        toast.info(`${messages.submissions.reminderNoTelegram} (${result.skipped_no_telegram})`);
       } else {
         toast.info(messages.submissions.reminderNone);
       }
