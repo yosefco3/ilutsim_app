@@ -227,6 +227,17 @@ export default {
       auto_lock_weekday: 'יום נעילה אוטומטית',
       auto_lock_time: 'שעת נעילה אוטומטית',
     },
+    changePassword: {
+      title: 'החלפת סיסמה',
+      current: 'סיסמה נוכחית',
+      newPass: 'סיסמה חדשה',
+      confirm: 'אימות סיסמה חדשה',
+      submit: 'החלף סיסמה',
+      success: 'הסיסמה הוחלפה בהצלחה',
+      mismatch: 'הסיסמה החדשה ואימותה אינם תואמים',
+      weak: 'הסיסמה חייבת להכיל לפחות 10 תווים, אות וספרה',
+      required: 'יש למלא את כל השדות',
+    },
   },
   export: {
     title: 'ייצוא אילוצים',

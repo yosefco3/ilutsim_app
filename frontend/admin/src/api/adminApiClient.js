@@ -40,7 +40,8 @@ export async function request(endpoint, options = {}) {
 
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));
-    throw new Error(body.detail || `HTTP ${res.status}`);
+    // FastAPI HTTPException uses `detail`; app exceptions use `error`.
+    throw new Error(body.detail || body.error || `HTTP ${res.status}`);
   }
 
   // Handle 204 No Content (e.g. DELETE responses)
@@ -69,6 +70,18 @@ export function adminLogin(username, password) {
 
 export function adminLogout() {
   clearToken();
+}
+
+// Change the logged-in admin's own password. The backend takes the admin id
+// from the JWT, never from the body.
+export function changeAdminPassword(currentPassword, newPassword) {
+  return request('/auth/admin/change-password', {
+    method: 'POST',
+    body: JSON.stringify({
+      current_password: currentPassword,
+      new_password: newPassword,
+    }),
+  });
 }
 
 export function getAdminProfile() {
@@ -259,6 +272,7 @@ export const sendReminder = sendWeekReminders;
 export default {
   adminLogin,
   adminLogout,
+  changeAdminPassword,
   getAdminProfile,
   fetchGuards,
   fetchGuard,

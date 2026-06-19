@@ -416,6 +416,15 @@ body {
   box-shadow: 0 0 0 3px var(--primary-soft);
 }
 
+/* Change-password card — stacks its fields + submit button on the side */
+.change-password-form { margin-top: 1.5rem; }
+.change-password-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  align-items: flex-end;
+}
+
 /* Status Grid */
 .status-grid {
   display: grid;

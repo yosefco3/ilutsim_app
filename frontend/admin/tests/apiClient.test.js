@@ -57,6 +57,35 @@ describe('Admin API Client', () => {
     expect(call[1].headers.Authorization).toBe('Bearer my-token');
   });
 
+  it('changeAdminPassword posts current + new password to the endpoint', async () => {
+    localStorage.setItem('admin_token', 'my-token');
+    global.fetch.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      json: async () => ({ success: true }),
+    });
+
+    await adminApi.changeAdminPassword('oldpass1234', 'newpass5678');
+
+    const call = global.fetch.mock.calls[0];
+    expect(call[0]).toContain('/auth/admin/change-password');
+    expect(call[1].method).toBe('POST');
+    const body = JSON.parse(call[1].body);
+    expect(body.current_password).toBe('oldpass1234');
+    expect(body.new_password).toBe('newpass5678');
+  });
+
+  it('surfaces app-exception `error` field on failure', async () => {
+    global.fetch.mockResolvedValueOnce({
+      ok: false,
+      status: 400,
+      statusText: 'Bad Request',
+      json: async () => ({ success: false, error: 'סיסמה נוכחית שגויה' }),
+    });
+
+    await expect(adminApi.changeAdminPassword('x', 'y')).rejects.toThrow('סיסמה נוכחית שגויה');
+  });
+
   it('throws on failed request', async () => {
     global.fetch.mockResolvedValueOnce({
       ok: false,

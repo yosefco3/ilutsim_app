@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render as rtlRender, screen, fireEvent, waitFor } from '@testing-library/react';
 
 vi.mock('../src/hooks/useSettings', () => ({
   useSettings: vi.fn(),
@@ -7,6 +7,12 @@ vi.mock('../src/hooks/useSettings', () => ({
 
 import { useSettings } from '../src/hooks/useSettings';
 import SettingsPage from '../src/pages/SettingsPage';
+import { ToastProvider } from '../src/components/Toast';
+
+// SettingsPage embeds ChangePasswordForm, which uses the toast context.
+function render(ui, opts) {
+  return rtlRender(<ToastProvider>{ui}</ToastProvider>, opts);
+}
 
 function mockHook(overrides = {}) {
   useSettings.mockReturnValue({

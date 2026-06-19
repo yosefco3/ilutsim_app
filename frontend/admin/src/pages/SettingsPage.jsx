@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useSettings } from '../hooks/useSettings';
+import ChangePasswordForm from '../components/ChangePasswordForm';
 import messages from '../utils/messages';
 
 export default function SettingsPage() {
@@ -54,6 +55,8 @@ export default function SettingsPage() {
           </button>
         </>
       )}
+
+      <ChangePasswordForm />
     </div>
   );
 }
