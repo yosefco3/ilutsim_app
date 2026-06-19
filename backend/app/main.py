@@ -42,6 +42,11 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     logger = logging.getLogger("ilutzim")
     logger.info("Application starting", extra={"extra_data": {"environment": settings.ENVIRONMENT}})
 
+    # Fail-fast on weak production secrets (warns only in dev/staging).
+    from app.config import validate_production_secrets
+
+    validate_production_secrets(settings, logger)
+
     # Ensure at least one week exists on startup
     try:
         from app.database import async_session_factory

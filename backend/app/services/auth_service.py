@@ -9,13 +9,40 @@ from jose import JWTError, jwt
 from passlib.context import CryptContext
 
 from app.config import Settings
-from app.exceptions import AuthenticationFailedException
+from app.exceptions import AuthenticationFailedException, ValidationException
 from app.models.admin import Admin
 from app.repositories.admin_repository import AdminRepository
 
 logger = logging.getLogger("ilutzim")
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+# ── Password policy ───────────────────────────────────────────────────────────
+PASSWORD_MIN_LENGTH = 10
+
+
+def password_strength_errors(password: str) -> list[str]:
+    """Return a list of policy violations (empty list means the password is OK).
+
+    Pure function — no side effects. Policy: at least 10 characters, with at
+    least one letter and one digit. Reused by seeding and the change-password
+    endpoint.
+    """
+    errors: list[str] = []
+    if len(password or "") < PASSWORD_MIN_LENGTH:
+        errors.append(f"הסיסמה חייבת להכיל לפחות {PASSWORD_MIN_LENGTH} תווים")
+    if not any(c.isalpha() for c in (password or "")):
+        errors.append("הסיסמה חייבת להכיל לפחות אות אחת")
+    if not any(c.isdigit() for c in (password or "")):
+        errors.append("הסיסמה חייבת להכיל לפחות ספרה אחת")
+    return errors
+
+
+def validate_password_strength(password: str) -> None:
+    """Raise ValidationException if the password violates the policy."""
+    errors = password_strength_errors(password)
+    if errors:
+        raise ValidationException("; ".join(errors))
 
 
 class AuthService:

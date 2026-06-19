@@ -17,7 +17,7 @@ from app.database import async_session_factory
 from app.models.admin import Admin
 from app.models.schedule_week import ScheduleWeek
 from app.repositories.schedule_week_repository import ScheduleWeekRepository
-from app.services.auth_service import AuthService
+from app.services.auth_service import AuthService, password_strength_errors
 from app.utils.date_utils import week_range
 
 logger = logging.getLogger("ilutzim")
@@ -28,6 +28,13 @@ async def seed_admin() -> None:
     email = settings.SEED_ADMIN_EMAIL
     password = settings.SEED_ADMIN_PASSWORD
     full_name = settings.SEED_ADMIN_FULL_NAME
+
+    pw_errors = password_strength_errors(password)
+    if pw_errors:
+        msg = "SEED_ADMIN_PASSWORD חלשה: " + "; ".join(pw_errors)
+        if settings.ENVIRONMENT == "production":
+            raise RuntimeError(msg + " — קבע סיסמה חזקה ב-env לפני seed בפרודקשן.")
+        logger.warning("%s (יחסם בפרודקשן)", msg)
 
     async with async_session_factory() as session:
         result = await session.execute(

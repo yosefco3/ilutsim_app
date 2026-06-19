@@ -3,7 +3,7 @@
 > **⚠️ מסמך זה מתעדכן בכל שינוי משמעותי באפליקציה.**
 > אם הנך מוסיף/משנה פיצ'ר — עדכן גם כאן.
 >
-> עדכון אחרון: 19 יוני 2026 (⚠️ אזהרות חריגה מכללי-האילוץ לאדמין בדף הדיווחים — מינימום משמרות/לילות/ערבים, מקסימום ימים רצופים)
+> עדכון אחרון: 19 יוני 2026 (🔒 הקשחת סודות לפרודקשן — fail-fast על JWT secret/סיסמת אדמין חלשים, מדיניות סיסמה)
 
 ---
 
@@ -327,6 +327,13 @@ ilutzim_app/
 - **`__DEV_MODE__`** — עקיפת אימות השומר פעילה **רק** כש-`ENVIRONMENT == "dev"`; בכל סביבה אחרת היא נדחית כ-401 (אין דלת אחורית בפרודקשן).
 - **קריאות הגשות מרובות** (`GET /submissions/week/{id}`, `GET /submissions/user/{id}`) — **אדמין בלבד** (`require_admin_role`), מונע דליפת זמינות שומרים ו-IDOR.
 
+### הקשחת סודות לפרודקשן (fail-fast)
+
+- **ולידציית סודות בעליית השרת** — `validate_production_secrets` (ב-`config.py`, נקרא ב-lifespan): ב-`production` השרת **לא עולה** אם `JWT_SECRET_KEY` חסר/קצר מ-32 תווים/ערך-דמו ידוע (`changeme`, ה-default של `.env.example`), או אם `SEED_ADMIN_PASSWORD` חלשה. ב-`dev`/`staging` — אזהרת log בלבד.
+- **מדיניות סיסמה** — `password_strength_errors`/`validate_password_strength` (`auth_service.py`): מינימום 10 תווים, לפחות אות וספרה. בשימוש ב-seed ובהחלפת-סיסמה.
+- **seed מוקשה** — `seed_admin` דוחה (`production`) או מזהיר (`dev`) על `SEED_ADMIN_PASSWORD` חלשה. נשאר אידמפוטנטי — אדמין קיים לא משתנה.
+- **סודות לא ב-git** — `.env` ב-`.gitignore`; `.env.example` מכיל placeholders בלבד + הנחיה ליצירת `JWT_SECRET_KEY` אקראי בשרת.
+
 ---
 
 ## API Endpoints (עיקריים)
@@ -374,6 +381,7 @@ ilutzim_app/
 
 | תאריך     | שינוי                                                |
 |-----------|-------------------------------------------------------|
+| 19 יוני 2026 | 🔒 **הקשחת סודות לפרודקשן (fail-fast)** — `validate_production_secrets` (`config.py`, נקרא ב-lifespan): ב-`production` השרת לא עולה אם `JWT_SECRET_KEY` חסר/קצר מ-32/ערך-דמו, או אם `SEED_ADMIN_PASSWORD` חלשה; ב-`dev` אזהרה בלבד. מדיניות סיסמה טהורה `password_strength_errors`/`validate_password_strength` (`auth_service.py`, מינ' 10 תווים + אות + ספרה) בשימוש ב-seed ובהחלפת-סיסמה. `seed_admin` דוחה/מזהיר על סיסמה חלשה (אידמפוטנטי). `.env.example` עודכן עם הנחיות + placeholders |
 | 19 יוני 2026 | ⚠️ **אזהרות חריגה מכללי-האילוץ לאדמין בדף הדיווחים** — בהרחבת שורת מאבטח ב-`StatusGrid` מוצג באנר אזהרות רכות (מינימום משמרות/לילות/ערבים, מקסימום ימים רצופים), במקביל לאזהרות שבטופס המאבטח. לוגיקה טהורה `computeAdminWarnings` (`utils/submissionWarnings.js`) מותאמת למבנה `shift_windows` של ה-detailed-API; הספים נמשכים מ-`GET /submissions/constraint-rules` (`fetchConstraintRules`), אותם ניסוחי הודעות (`guardMessages.WARN_*`) |
 | 16 יוני 2026 | 🏗️ **חלק ב' — בונה הסידור, משימה 03 (עמדות עם דרישות)** — מודל `Position` (שייך לפרופיל, cascade): שם, משמרת, `day_schedules` (JSON יום→שעות, נוכחות=פעיל — מאחד ימים-פעילים+שעות-פר-יום), `required_attributes` (מפתחות רכים). מודל `RequirementAttribute` — אוצר-מאפיינים **קונפיגורבילי** (key→label, נערך מה-UI בלי מיגרציה, נזרע מ-`data.js`). שכבת repo/service לעמדות + ולידציית schemas (מפתחות-יום 0-6, שעות HH:MM, לילה חוצה-חצות מותר). `ProfileService._copy_positions` מומש → **שכפול פרופיל מעתיק את עמדותיו**. API `/admin/builder/profiles/{id}/positions`, `/positions/{id}`, `/attributes`. מסך `PositionsPage` (בורר פרופיל, עמדות מקובצות לפי משמרת, עורך עם רשת שעות-פר-יום + צ'קבוקסי דרישות, ניהול אוצר-מאפיינים). מיגרציות `aae292ee0218`+`95be7724eba5` |
 | 16 יוני 2026 | 🏗️ **חלק ב' — בונה הסידור, משימה 02 (פרופילי הפעלה)** — הוצב גבול קוד נפרד (`app/schedule_builder/` + `pages/builder/` + `builderApiClient.js`, תלות חד-כיוונית ב'→א'). מודל `ActivationProfile` (תבנית לשימוש חוזר: שם, סוג חופשי, תיאור, ברירת-מחדל) + מיגרציה `6abbd8e22af6`. שכבת `ProfileRepository`/`ProfileService` (CRUD, **שכפול** עם `_copy_positions` מוכן ל-deep-copy, זריעת "שגרה" idempotent ב-startup). API `/admin/builder/profiles` (list/create/get/rename/duplicate/delete). מסך `ProfilesPage` + קבוצת ניווט "בונה הסידור". העמדות עצמן — משימה 03 |

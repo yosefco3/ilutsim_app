@@ -3,6 +3,7 @@ Application configuration management using Pydantic BaseSettings.
 All values are read from .env file — zero hard coding.
 """
 
+import logging
 from functools import lru_cache
 from typing import Optional
 
@@ -83,6 +84,64 @@ class Settings(BaseSettings):
 def get_settings() -> Settings:
     """Return cached Settings singleton."""
     return Settings()
+
+
+# ── Production secret validation ──────────────────────────────────────────────
+JWT_SECRET_MIN_LENGTH = 32
+
+# Known placeholder / demo secret values that must never reach production.
+WEAK_JWT_SECRETS = {
+    "changeme",
+    "secret",
+    "your-jwt-secret-key-change-in-production",
+}
+
+
+def production_secret_issues(settings: "Settings") -> list[str]:
+    """Return a list of secret-hardening problems (empty list means OK).
+
+    Pure function — does not raise or log. Checks the JWT secret strength and
+    the seeded admin password strength. Used by ``validate_production_secrets``.
+    """
+    from app.services.auth_service import password_strength_errors
+
+    issues: list[str] = []
+    secret = settings.JWT_SECRET_KEY or ""
+    if len(secret) < JWT_SECRET_MIN_LENGTH:
+        issues.append(
+            f"JWT_SECRET_KEY קצר מדי (פחות מ-{JWT_SECRET_MIN_LENGTH} תווים)"
+        )
+    if secret in WEAK_JWT_SECRETS:
+        issues.append("JWT_SECRET_KEY הוא ערך-דמו ידוע — יש להחליפו בערך אקראי חזק")
+
+    pw_errors = password_strength_errors(settings.SEED_ADMIN_PASSWORD)
+    if pw_errors:
+        issues.append("SEED_ADMIN_PASSWORD חלשה: " + "; ".join(pw_errors))
+
+    return issues
+
+
+def validate_production_secrets(
+    settings: "Settings", logger: Optional[logging.Logger] = None
+) -> None:
+    """Fail-fast on weak secrets in production; warn (log) otherwise.
+
+    In ``production`` any issue raises ``RuntimeError`` to abort startup. In
+    ``dev``/``staging`` issues are logged as a warning so local work is not
+    blocked.
+    """
+    issues = production_secret_issues(settings)
+    if not issues:
+        return
+
+    log = logger or logging.getLogger("ilutzim")
+    summary = "בעיות אבטחה בהגדרות הסביבה: " + " | ".join(issues)
+    if settings.ENVIRONMENT == "production":
+        raise RuntimeError(
+            summary
+            + " — קבע ערכים חזקים ב-env של השרת לפני העלייה (ראה .env.example)."
+        )
+    log.warning("%s (יחסם בעליית production)", summary)
 
 
 settings = get_settings()
