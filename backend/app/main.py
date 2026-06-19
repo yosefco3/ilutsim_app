@@ -92,9 +92,12 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     # Start the weekly rollover scheduler (Sun 00:00 Israel time).
     scheduler = None
     try:
-        from app.scheduler import start_scheduler
+        from app.scheduler import start_scheduler, sync_automation_jobs
 
         scheduler = start_scheduler()
+        if scheduler is not None:
+            # Register the auto-open/auto-lock cron jobs from the DB settings.
+            await sync_automation_jobs(scheduler)
     except Exception as exc:
         logger.warning("Failed to start rollover scheduler: %s", exc)
 

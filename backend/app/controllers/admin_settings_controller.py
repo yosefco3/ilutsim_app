@@ -34,10 +34,22 @@ async def update_settings(
 ):
     """Apply a partial {settings: {key: value}} update; returns the full list."""
     try:
-        return await settings_service.update_settings(data)
+        result = await settings_service.update_settings(data)
     except Exception as e:
         logger.error(f"Settings update failed: {e}")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e),
         )
+
+    # If any auto-open/lock setting changed, reschedule the cron jobs so the
+    # change takes effect immediately (no restart needed).
+    if any(key.startswith(("auto_open", "auto_lock")) for key in data.settings):
+        try:
+            from app.scheduler import sync_automation_jobs
+
+            await sync_automation_jobs()
+        except Exception as exc:
+            logger.warning("Failed to reschedule automation jobs: %s", exc)
+
+    return result

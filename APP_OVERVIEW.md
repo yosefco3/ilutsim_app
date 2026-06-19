@@ -3,7 +3,7 @@
 > **⚠️ מסמך זה מתעדכן בכל שינוי משמעותי באפליקציה.**
 > אם הנך מוסיף/משנה פיצ'ר — עדכן גם כאן.
 >
-> עדכון אחרון: 19 יוני 2026 (🛡️ הגנת brute-force בכניסת אדמין — נעילה זמנית אחרי 5 כשלונות)
+> עדכון אחרון: 19 יוני 2026 (⏰ cron אוטומטי לפתיחה/נעילה של שבועות לפי ההגדרות)
 
 ---
 
@@ -167,6 +167,14 @@
 - **"לא משנה מה יקרה"**: גם אם האדמין לא נעל/פרסם ידנית — מרגע שנכנס השבוע, הוא ננעל אוטומטית. אם האדמין כן
   פעל ידנית — הכלל לא משנה כלום (אין שבוע פתוח שהתחיל). השבועות הישנים נשארים ברשימה כהיסטוריה **עד תקרת הרטנציה** (ראו למטה).
 - **מחיקת שבוע**: אפשרית רק לשבועות שלא פורסמו (שומר היסטוריה); כפתור המחיקה מוסתר לשבוע שפורסם
+
+### פתיחה/נעילה אוטומטית לפי ההגדרות (cron מתוזמן מה-DB)
+- **שני jobs נוספים** ב-`app/scheduler.py` שמתוזמנים **לפי ההגדרות שבדף ההגדרות** (יום + שעה), נפרד מהרולאובר השבועי הקבוע:
+  - **`auto_open_week`** — אם `auto_open_enabled`: בכל `auto_open_weekday`/`auto_open_time` קורא ל-`WeekService.auto_open_relevant_week` → פותח את השבוע ה-`closed` הקרוב (`closed → open`) **ומשדר לשומרים** (`notify=True`).
+  - **`auto_lock_week`** — אם `auto_lock_enabled`: בכל `auto_lock_weekday`/`auto_lock_time` קורא ל-`auto_lock_open_week` → נועל את השבוע ה-`open` **בשקט** (`notify=False`).
+- **קריאה מההגדרות**: `SettingsService.get_auto_open/get_auto_lock` ממירים את שדות ה-DB לערכים מטיופסים (`automation_settings.py`: `parse_weekday`→טוקן APScheduler, `parse_hhmm`, `as_bool`; קלט שגוי→ברירת-מחדל + לוג, לא קורס).
+- **רענון מיידי**: `sync_automation_jobs` נרשם בעליית השרת (אחרי הסקדולר) ונקרא שוב מ-`PUT /admin/settings` כשמשתנה מפתח `auto_*` — id קבוע + `replace_existing=True`, כך שעריכה מחדשת את הטריגר בלי כפילות ובלי restart. דגל `enabled=false` מסיר את ה-job.
+- **פרסום נשאר ידני** — אין job לפרסום. שני ה-jobs דורשים שהסקדולר רץ (`AUTO_ROLLOVER_ENABLED=true`) ומשתמשים תמיד ב-`SCHEDULER_TIMEZONE`. כל job פותח session משלו ובולע שגיאות (לא מפיל את הסקדולר).
 
 ### מדיניות רטנציה (Data Retention) — שמירת 60 השבועות האחרונים
 - כדי שמסד הנתונים לא יגדל ללא הגבלה, המערכת שומרת רק את **60 השבועות האחרונים** (לפי `start_date` יורד)
@@ -389,6 +397,7 @@ ilutzim_app/
 
 | תאריך     | שינוי                                                |
 |-----------|-------------------------------------------------------|
+| 19 יוני 2026 | ⏰ **cron פתיחה/נעילה אוטומטית לפי ההגדרות** — שני jobs דינמיים ב-`scheduler.py` (`auto_open_week`/`auto_lock_week`) שמתוזמנים מ-`get_auto_open/get_auto_lock` (יום+שעה מה-DB). פתיחה `closed→open` משדרת לשומרים, נעילה `open→locked` שקטה, פרסום נשאר ידני. `sync_automation_jobs` נרשם בעליית השרת ומרוענן מ-`PUT /admin/settings` (id קבוע + `replace_existing`, ללא restart). מודול פרסור טהור `automation_settings.py` ומתודות `WeekService.auto_open_relevant_week/auto_lock_open_week` (אידמפוטנטיות, crash-safe) |
 | 19 יוני 2026 | 🛡️ **הגנת brute-force בכניסת אדמין** — `LoginThrottle` (in-memory, per-process, שעון מוזרק): אחרי 5 כשלונות (`MAX_LOGIN_ATTEMPTS`) תוך חלון (`LOGIN_ATTEMPT_WINDOW_MINUTES`) → נעילה 15 דק' (`LOGIN_LOCKOUT_MINUTES`), `POST /auth/admin/login` מחזיר 429 עם הודעה גנרית. הצלחה מאפסת. ערכים env-overridable ב-`config.py` |
 | 19 יוני 2026 | 🔑 **UI להחלפת סיסמת אדמין** — `ChangePasswordForm` בדף ההגדרות: 3 שדות (נוכחית/חדשה/אימות), ולידציית צד-לקוח (התאמה + מדיניות מינ' 10 תווים/אות/ספרה), Toast להצלחה/שגיאה. `changeAdminPassword` ב-`adminApiClient`. ה-`request` helper מציג גם שדה `error` של app-exceptions (לא רק `detail`) |
 | 19 יוני 2026 | 🔑 **endpoint להחלפת סיסמת אדמין** — `POST /auth/admin/change-password` (מוגן ב-`get_current_admin`): `AuthService.change_password` מאמת סיסמה נוכחית, אוכף מדיניות סיסמה (`password_strength_errors`), דוחה סיסמה זהה לנוכחית, ושומר hash חדש. ה-`admin_id` תמיד מה-token (`sub`), לעולם לא מגוף הבקשה. חריגה `PasswordChangeException` (400). schema `ChangePasswordRequest` |
