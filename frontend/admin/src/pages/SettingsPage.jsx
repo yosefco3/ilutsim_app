@@ -1,6 +1,6 @@
-import { useState } from 'react';
 import { useSettings } from '../hooks/useSettings';
 import ChangePasswordForm from '../components/ChangePasswordForm';
+import { useToast } from '../components/Toast';
 import messages from '../utils/messages';
 
 // Weekday options for the auto open/lock selects — value matches the backend
@@ -29,6 +29,9 @@ const FIELD_TYPES = {
   min_nights: 'number',
   min_evenings: 'number',
   max_consecutive_days: 'number',
+  shift_default_morning: 'timerange',
+  shift_default_afternoon: 'timerange',
+  shift_default_night: 'timerange',
 };
 
 // Logical grouping for the page — each section renders only the keys that the
@@ -85,6 +88,18 @@ function TimeSelect({ value, onChange }) {
   );
 }
 
+// A shift range "HH:MM-HH:MM" edited as two TimeSelects (start / end).
+function TimeRange({ value, onChange }) {
+  const [start = '00:00', end = '00:00'] = String(value ?? '').split('-');
+  return (
+    <div className="time-range">
+      <TimeSelect value={start} onChange={(v) => onChange(`${v}-${end}`)} />
+      <span className="time-range-sep">{messages.importConstraints.weekJoin}</span>
+      <TimeSelect value={end} onChange={(v) => onChange(`${start}-${v}`)} />
+    </div>
+  );
+}
+
 function SettingControl({ item, value, onChange }) {
   const type = FIELD_TYPES[item.key] || 'text';
 
@@ -122,6 +137,10 @@ function SettingControl({ item, value, onChange }) {
     return <TimeSelect value={value} onChange={(v) => onChange(item.key, v)} />;
   }
 
+  if (type === 'timerange') {
+    return <TimeRange value={value} onChange={(v) => onChange(item.key, v)} />;
+  }
+
   return (
     <input
       type={type === 'number' ? 'number' : 'text'}
@@ -134,16 +153,16 @@ function SettingControl({ item, value, onChange }) {
 
 export default function SettingsPage() {
   const { settings, draft, loading, saving, error, dirty, setValue, save } = useSettings();
-  const [saved, setSaved] = useState(false);
+  const toast = useToast();
 
   if (loading) return <div className="loading">{messages.common.loading}</div>;
 
   const handleSave = async () => {
     const ok = await save();
-    if (ok) {
-      setSaved(true);
-      setTimeout(() => setSaved(false), 3000);
-    }
+    // Feedback as a toast — the save button sits at the bottom of the page, so a
+    // banner up top would scroll off-screen and the save would look like a no-op.
+    if (ok) toast.success(messages.settings.saved);
+    else toast.error(messages.common.error);
   };
 
   const byKey = Object.fromEntries(settings.map((s) => [s.key, s]));
@@ -171,7 +190,6 @@ export default function SettingsPage() {
     <div className="page">
       <h2>{messages.settings.title}</h2>
       {error && <div className="error-banner">{error}</div>}
-      {saved && <div className="success-banner">{messages.settings.saved}</div>}
 
       {!settings.length ? (
         <p className="empty-state">{messages.settings.empty}</p>
