@@ -3,7 +3,7 @@
 > **⚠️ מסמך זה מתעדכן בכל שינוי משמעותי באפליקציה.**
 > אם הנך מוסיף/משנה פיצ'ר — עדכן גם כאן.
 >
-> עדכון אחרון: 19 יוני 2026 (🔑 UI להחלפת סיסמת אדמין בדף ההגדרות)
+> עדכון אחרון: 19 יוני 2026 (🛡️ הגנת brute-force בכניסת אדמין — נעילה זמנית אחרי 5 כשלונות)
 
 ---
 
@@ -325,6 +325,7 @@ ilutzim_app/
 - **שומר** — מילוי/קריאת אילוצים (`POST /submissions`, `GET /submissions/my`) דורש `get_current_user`: אימות Telegram WebApp `init_data` ב-HMAC-SHA256 + השומר חייב להתקיים ב-DB לפי `telegram_id`.
 - **בקרת רעננות (replay protection)** — `init_data` עם `auth_date` ישן מ-24 שעות נדחה גם אם ה-HMAC תקין (`telegram_auth.py`, `DEFAULT_MAX_AGE_SECONDS`).
 - **`__DEV_MODE__`** — עקיפת אימות השומר פעילה **רק** כש-`ENVIRONMENT == "dev"`; בכל סביבה אחרת היא נדחית כ-401 (אין דלת אחורית בפרודקשן).
+- **הגנת brute-force בכניסת אדמין** — `LoginThrottle` (`services/login_throttle.py`): אחרי `MAX_LOGIN_ATTEMPTS` (ברירת מחדל 5) כשלונות תוך `LOGIN_ATTEMPT_WINDOW_MINUTES` → נעילה ל-`LOGIN_LOCKOUT_MINUTES` (ברירת מחדל 15 דק') והכניסה מוחזרת 429 (ללא חשיפה אם המשתמש קיים). כניסה מוצלחת מאפסת את המונה. **מצב בזיכרון per-process** — אם יעברו לכמה workers יש להעביר ל-DB/Redis.
 - **קריאות הגשות מרובות** (`GET /submissions/week/{id}`, `GET /submissions/user/{id}`) — **אדמין בלבד** (`require_admin_role`), מונע דליפת זמינות שומרים ו-IDOR.
 
 ### הקשחת סודות לפרודקשן (fail-fast)
@@ -388,6 +389,7 @@ ilutzim_app/
 
 | תאריך     | שינוי                                                |
 |-----------|-------------------------------------------------------|
+| 19 יוני 2026 | 🛡️ **הגנת brute-force בכניסת אדמין** — `LoginThrottle` (in-memory, per-process, שעון מוזרק): אחרי 5 כשלונות (`MAX_LOGIN_ATTEMPTS`) תוך חלון (`LOGIN_ATTEMPT_WINDOW_MINUTES`) → נעילה 15 דק' (`LOGIN_LOCKOUT_MINUTES`), `POST /auth/admin/login` מחזיר 429 עם הודעה גנרית. הצלחה מאפסת. ערכים env-overridable ב-`config.py` |
 | 19 יוני 2026 | 🔑 **UI להחלפת סיסמת אדמין** — `ChangePasswordForm` בדף ההגדרות: 3 שדות (נוכחית/חדשה/אימות), ולידציית צד-לקוח (התאמה + מדיניות מינ' 10 תווים/אות/ספרה), Toast להצלחה/שגיאה. `changeAdminPassword` ב-`adminApiClient`. ה-`request` helper מציג גם שדה `error` של app-exceptions (לא רק `detail`) |
 | 19 יוני 2026 | 🔑 **endpoint להחלפת סיסמת אדמין** — `POST /auth/admin/change-password` (מוגן ב-`get_current_admin`): `AuthService.change_password` מאמת סיסמה נוכחית, אוכף מדיניות סיסמה (`password_strength_errors`), דוחה סיסמה זהה לנוכחית, ושומר hash חדש. ה-`admin_id` תמיד מה-token (`sub`), לעולם לא מגוף הבקשה. חריגה `PasswordChangeException` (400). schema `ChangePasswordRequest` |
 | 19 יוני 2026 | 🔒 **הקשחת סודות לפרודקשן (fail-fast)** — `validate_production_secrets` (`config.py`, נקרא ב-lifespan): ב-`production` השרת לא עולה אם `JWT_SECRET_KEY` חסר/קצר מ-32/ערך-דמו, או אם `SEED_ADMIN_PASSWORD` חלשה; ב-`dev` אזהרה בלבד. מדיניות סיסמה טהורה `password_strength_errors`/`validate_password_strength` (`auth_service.py`, מינ' 10 תווים + אות + ספרה) בשימוש ב-seed ובהחלפת-סיסמה. `seed_admin` דוחה/מזהיר על סיסמה חלשה (אידמפוטנטי). `.env.example` עודכן עם הנחיות + placeholders |

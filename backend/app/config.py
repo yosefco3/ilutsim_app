@@ -32,6 +32,11 @@ class Settings(BaseSettings):
     JWT_ALGORITHM: str = "HS256"
     JWT_ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
 
+    # Brute-force protection on admin login (per-process, in-memory).
+    MAX_LOGIN_ATTEMPTS: int = 5
+    LOGIN_ATTEMPT_WINDOW_MINUTES: int = 15
+    LOGIN_LOCKOUT_MINUTES: int = 15
+
     # Logging
     LOG_LEVEL: str = "INFO"
 

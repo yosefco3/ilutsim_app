@@ -9,6 +9,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from app.dependencies import get_auth_service, get_current_admin, get_settings_service
 from app.schemas.user_schemas import ChangePasswordRequest, LoginRequest
 from app.services.auth_service import AuthService
+from app.services.login_throttle import get_login_throttle
 from app.services.settings_service import SettingsService
 from app.utils.telegram_auth import get_telegram_user_id
 
@@ -75,15 +76,29 @@ async def admin_login(
             detail="Username and password are required",
         )
 
+    throttle = get_login_throttle()
+    # Same message whether or not the identity exists — do not leak account
+    # existence via the lockout response.
+    if throttle.is_locked(body.username):
+        minutes = throttle.minutes_until_unlock(body.username)
+        logger.warning("Admin login blocked (locked): %s", body.username)
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail=f"יותר מדי נסיונות התחברות. נסה שוב בעוד {minutes} דקות.",
+        )
+
     try:
         result = await auth_service.login_admin(body.username, body.password)
-        return result
     except Exception as e:
-        logger.error(f"Admin login failed: {e}")
+        throttle.record_failure(body.username)
+        logger.warning("Admin login failed for '%s': %s", body.username, e)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid credentials",
         )
+
+    throttle.reset(body.username)
+    return result
 
 
 @router.post("/admin/change-password")
