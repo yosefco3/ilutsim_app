@@ -192,6 +192,71 @@ class WeekService:
             raise UserNotFoundException()
         logger.info(f"Week {week_id} deleted (was {week.status})")
 
+    async def auto_open_relevant_week(self) -> Optional[WeekResponse]:
+        """Open the upcoming closed week for submissions (cron entry point).
+
+        Broadcasts to guards (``notify=True``). Idempotent and crash-safe:
+          - if a week is already OPEN → no-op, returns ``None`` (don't open two).
+          - if there is no upcoming CLOSED week → no-op (auto_rotate creates it).
+          - any error is logged, never raised, so the cron job keeps running.
+
+        Publishing stays manual — this only does closed → open.
+        """
+        try:
+            existing_open = await self._week_repo.get_current_open_week()
+            if existing_open is not None:
+                logger.info(
+                    "auto_open: a week is already open (id=%s) — skipping",
+                    existing_open.id,
+                )
+                return None
+
+            candidate = await self._week_repo.get_upcoming_closed_week(date.today())
+            if candidate is None:
+                logger.info("auto_open: no upcoming closed week to open — skipping")
+                return None
+
+            result = await self.change_week_status(
+                candidate.id, WeekStatus.OPEN, notify=True
+            )
+            logger.info(
+                "auto_open: opened week %s – %s (id=%s)",
+                candidate.start_date,
+                candidate.end_date,
+                candidate.id,
+            )
+            return result
+        except Exception as exc:
+            logger.warning("auto_open_relevant_week failed: %s", exc)
+            return None
+
+    async def auto_lock_open_week(self) -> Optional[WeekResponse]:
+        """Silently lock the currently open week (cron entry point).
+
+        Locks OPEN → LOCKED with ``notify=False`` (no broadcast). Idempotent and
+        crash-safe: no open week → no-op; published weeks are never touched
+        (only an OPEN week is selected); errors are logged, not raised.
+        """
+        try:
+            week = await self._week_repo.get_current_open_week()
+            if week is None:
+                logger.info("auto_lock: no open week — skipping")
+                return None
+
+            result = await self.change_week_status(
+                week.id, WeekStatus.LOCKED, notify=False
+            )
+            logger.info(
+                "auto_lock: locked week %s – %s (id=%s)",
+                week.start_date,
+                week.end_date,
+                week.id,
+            )
+            return result
+        except Exception as exc:
+            logger.warning("auto_lock_open_week failed: %s", exc)
+            return None
+
     async def auto_advance_weeks(self) -> None:
         """Perform the automatic weekly rollover (idempotent, self-healing).
 

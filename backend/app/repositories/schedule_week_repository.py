@@ -72,6 +72,25 @@ class ScheduleWeekRepository(BaseRepository[ScheduleWeek]):
         result = await self.session.execute(stmt)
         return result.scalar_one_or_none()
 
+    async def get_upcoming_closed_week(self, today: date) -> ScheduleWeek | None:
+        """Return the nearest CLOSED week that has not ended yet.
+
+        This is the next week the admin (or the auto-open cron) would open for
+        submissions. Ordered by start_date ascending so the soonest candidate
+        wins.
+        """
+        stmt = (
+            select(self.model_class)
+            .where(
+                ScheduleWeek.status == WeekStatus.CLOSED,
+                ScheduleWeek.end_date >= today,
+            )
+            .order_by(ScheduleWeek.start_date.asc())
+            .limit(1)
+        )
+        result = await self.session.execute(stmt)
+        return result.scalar_one_or_none()
+
     async def get_latest_week(self) -> ScheduleWeek | None:
         """Return the most recent week (by start_date), regardless of status."""
         stmt = (
