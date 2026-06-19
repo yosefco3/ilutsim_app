@@ -8,6 +8,7 @@ from typing import Any
 from app.exceptions import ValidationException
 from app.repositories.system_settings_repository import SystemSettingsRepository
 from app.schemas.common_schemas import SettingItem, SettingsUpdateRequest
+from app.services.automation_settings import as_bool, parse_hhmm, parse_weekday
 
 logger = logging.getLogger("ilutzim")
 
@@ -79,6 +80,26 @@ class SettingsService:
         if value is not None:
             return value
         return SETTINGS_DEFAULTS.get(key)
+
+    async def _get_auto(self, prefix: str) -> dict:
+        """Read a typed {enabled, weekday, hour, minute} block from settings.
+
+        ``prefix`` is "auto_open" or "auto_lock". Values come from the DB (else
+        defaults); parsing is tolerant — bad input yields a safe disabled/default
+        rather than crashing the scheduler.
+        """
+        enabled = as_bool(await self.get_setting(f"{prefix}_enabled"))
+        weekday = parse_weekday(str(await self.get_setting(f"{prefix}_weekday")))
+        hour, minute = parse_hhmm(str(await self.get_setting(f"{prefix}_time")))
+        return {"enabled": enabled, "weekday": weekday, "hour": hour, "minute": minute}
+
+    async def get_auto_open(self) -> dict:
+        """Typed accessor for the weekly auto-open schedule."""
+        return await self._get_auto("auto_open")
+
+    async def get_auto_lock(self) -> dict:
+        """Typed accessor for the weekly auto-lock schedule."""
+        return await self._get_auto("auto_lock")
 
     async def get_effective_bot_token(self) -> str:
         """Active Telegram bot token, sourced exclusively from the environment.
