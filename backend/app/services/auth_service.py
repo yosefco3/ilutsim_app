@@ -9,7 +9,11 @@ from jose import JWTError, jwt
 from passlib.context import CryptContext
 
 from app.config import Settings
-from app.exceptions import AuthenticationFailedException, ValidationException
+from app.exceptions import (
+    AuthenticationFailedException,
+    PasswordChangeException,
+    ValidationException,
+)
 from app.models.admin import Admin
 from app.repositories.admin_repository import AdminRepository
 
@@ -99,6 +103,35 @@ class AuthService:
             "admin_id": admin.id,
             "role": admin.role.value,
         }
+
+    async def change_password(
+        self, admin_id: int, current_password: str, new_password: str
+    ) -> None:
+        """Change a logged-in admin's password.
+
+        Verifies the current password, enforces the password policy, and rejects
+        an unchanged password. The admin_id always comes from the caller's token,
+        never from the request body.
+        """
+        admin = await self._admin_repo.get_by_id(admin_id)
+        if admin is None or not admin.is_active:
+            raise PasswordChangeException("המשתמש לא נמצא או אינו פעיל")
+
+        if not pwd_context.verify(current_password, admin.password_hash):
+            logger.warning("Password change failed — wrong current password: id=%s", admin_id)
+            raise PasswordChangeException("סיסמה נוכחית שגויה")
+
+        pw_errors = password_strength_errors(new_password)
+        if pw_errors:
+            raise PasswordChangeException("; ".join(pw_errors))
+
+        if pwd_context.verify(new_password, admin.password_hash):
+            raise PasswordChangeException("הסיסמה החדשה זהה לסיסמה הנוכחית")
+
+        await self._admin_repo.update_admin(
+            admin_id, password_hash=self.hash_password(new_password)
+        )
+        logger.info("Admin password changed: id=%s", admin_id)
 
     def verify_token(self, token: str) -> dict:
         """Decode and validate a JWT token. Returns payload dict."""

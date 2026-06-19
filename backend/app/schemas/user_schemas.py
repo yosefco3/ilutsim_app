@@ -148,3 +148,9 @@ class TokenResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
     user: AdminResponse
+
+
+class ChangePasswordRequest(BaseModel):
+    """Schema for admin self-service password change."""
+    current_password: str
+    new_password: str

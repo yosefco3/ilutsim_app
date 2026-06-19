@@ -3,7 +3,7 @@
 > **⚠️ מסמך זה מתעדכן בכל שינוי משמעותי באפליקציה.**
 > אם הנך מוסיף/משנה פיצ'ר — עדכן גם כאן.
 >
-> עדכון אחרון: 19 יוני 2026 (🔒 הקשחת סודות לפרודקשן — fail-fast על JWT secret/סיסמת אדמין חלשים, מדיניות סיסמה)
+> עדכון אחרון: 19 יוני 2026 (🔑 endpoint להחלפת סיסמת אדמין — `POST /auth/admin/change-password`)
 
 ---
 
@@ -347,6 +347,13 @@ ilutzim_app/
 | POST   | `/api/submissions/admin`  | **אדמין** ממלא אילוצים עבור מאבטח (override_lock) |
 | GET    | `/api/submissions/constraint-rules` | ספי כללי-אילוץ לטופס (אזהרות רכות) — ציבורי |
 
+### אימות (Auth)
+| Method | Path                          | תיאור                     |
+|--------|-------------------------------|---------------------------|
+| POST   | `/auth/admin/login`           | התחברות אדמין (שם משתמש/סיסמה → JWT) |
+| POST   | `/auth/admin/change-password` | **החלפת סיסמת אדמין** — דורש token; `admin_id` מה-token, אימות סיסמה נוכחית + מדיניות סיסמה |
+| GET    | `/auth/me`                    | פרטי האדמין המחובר מה-JWT |
+
 ### אדמין
 | Method | Path                      | תיאור                     |
 |--------|---------------------------|---------------------------|
@@ -381,6 +388,7 @@ ilutzim_app/
 
 | תאריך     | שינוי                                                |
 |-----------|-------------------------------------------------------|
+| 19 יוני 2026 | 🔑 **endpoint להחלפת סיסמת אדמין** — `POST /auth/admin/change-password` (מוגן ב-`get_current_admin`): `AuthService.change_password` מאמת סיסמה נוכחית, אוכף מדיניות סיסמה (`password_strength_errors`), דוחה סיסמה זהה לנוכחית, ושומר hash חדש. ה-`admin_id` תמיד מה-token (`sub`), לעולם לא מגוף הבקשה. חריגה `PasswordChangeException` (400). schema `ChangePasswordRequest` |
 | 19 יוני 2026 | 🔒 **הקשחת סודות לפרודקשן (fail-fast)** — `validate_production_secrets` (`config.py`, נקרא ב-lifespan): ב-`production` השרת לא עולה אם `JWT_SECRET_KEY` חסר/קצר מ-32/ערך-דמו, או אם `SEED_ADMIN_PASSWORD` חלשה; ב-`dev` אזהרה בלבד. מדיניות סיסמה טהורה `password_strength_errors`/`validate_password_strength` (`auth_service.py`, מינ' 10 תווים + אות + ספרה) בשימוש ב-seed ובהחלפת-סיסמה. `seed_admin` דוחה/מזהיר על סיסמה חלשה (אידמפוטנטי). `.env.example` עודכן עם הנחיות + placeholders |
 | 19 יוני 2026 | ⚠️ **אזהרות חריגה מכללי-האילוץ לאדמין בדף הדיווחים** — בהרחבת שורת מאבטח ב-`StatusGrid` מוצג באנר אזהרות רכות (מינימום משמרות/לילות/ערבים, מקסימום ימים רצופים), במקביל לאזהרות שבטופס המאבטח. לוגיקה טהורה `computeAdminWarnings` (`utils/submissionWarnings.js`) מותאמת למבנה `shift_windows` של ה-detailed-API; הספים נמשכים מ-`GET /submissions/constraint-rules` (`fetchConstraintRules`), אותם ניסוחי הודעות (`guardMessages.WARN_*`) |
 | 16 יוני 2026 | 🏗️ **חלק ב' — בונה הסידור, משימה 03 (עמדות עם דרישות)** — מודל `Position` (שייך לפרופיל, cascade): שם, משמרת, `day_schedules` (JSON יום→שעות, נוכחות=פעיל — מאחד ימים-פעילים+שעות-פר-יום), `required_attributes` (מפתחות רכים). מודל `RequirementAttribute` — אוצר-מאפיינים **קונפיגורבילי** (key→label, נערך מה-UI בלי מיגרציה, נזרע מ-`data.js`). שכבת repo/service לעמדות + ולידציית schemas (מפתחות-יום 0-6, שעות HH:MM, לילה חוצה-חצות מותר). `ProfileService._copy_positions` מומש → **שכפול פרופיל מעתיק את עמדותיו**. API `/admin/builder/profiles/{id}/positions`, `/positions/{id}`, `/attributes`. מסך `PositionsPage` (בורר פרופיל, עמדות מקובצות לפי משמרת, עורך עם רשת שעות-פר-יום + צ'קבוקסי דרישות, ניהול אוצר-מאפיינים). מיגרציות `aae292ee0218`+`95be7724eba5` |

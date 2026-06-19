@@ -7,7 +7,7 @@ import logging
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.dependencies import get_auth_service, get_current_admin, get_settings_service
-from app.schemas.user_schemas import LoginRequest
+from app.schemas.user_schemas import ChangePasswordRequest, LoginRequest
 from app.services.auth_service import AuthService
 from app.services.settings_service import SettingsService
 from app.utils.telegram_auth import get_telegram_user_id
@@ -84,6 +84,24 @@ async def admin_login(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid credentials",
         )
+
+
+@router.post("/admin/change-password")
+async def admin_change_password(
+    body: ChangePasswordRequest,
+    admin: dict = Depends(get_current_admin),
+    auth_service: AuthService = Depends(get_auth_service),
+):
+    """Change the logged-in admin's own password.
+
+    The admin id is taken from the JWT (`sub`), never from the body, so an admin
+    can only change their own password. Requires the current password.
+    """
+    admin_id = int(admin.get("sub"))
+    await auth_service.change_password(
+        admin_id, body.current_password, body.new_password
+    )
+    return {"success": True}
 
 
 @router.get("/me")

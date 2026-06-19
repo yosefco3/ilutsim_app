@@ -92,6 +92,13 @@ class InsufficientPermissionsException(AppBaseException):
     message = Messages.ERR_AUTH_FAILED
 
 
+class PasswordChangeException(AppBaseException):
+    """Raised when an admin password change is rejected (wrong current password,
+    weak new password, or unchanged password)."""
+    status_code = 400
+    message = "שינוי סיסמה נכשל"
+
+
 # ── Part B — schedule builder ─────────────────────────────────────────
 
 class ProfileNotFoundException(AppBaseException):
