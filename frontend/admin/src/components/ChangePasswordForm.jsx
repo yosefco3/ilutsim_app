@@ -84,7 +84,7 @@ export default function ChangePasswordForm() {
           value={confirm}
           onChange={(e) => setConfirm(e.target.value)}
         />
-        <button type="submit" className="btn-primary" disabled={submitting}>
+        <button type="submit" className="btn btn-primary" disabled={submitting}>
           {submitting ? messages.common.loading : t.submit}
         </button>
       </div>

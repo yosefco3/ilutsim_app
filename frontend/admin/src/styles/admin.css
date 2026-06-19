@@ -480,6 +480,11 @@ body {
   box-shadow: 0 0 0 3px var(--primary-soft);
 }
 
+/* Time picker — separate hour + minute selects */
+.time-select { display: inline-flex; align-items: center; gap: 0.4rem; direction: ltr; }
+.time-select .time-part { width: 72px; text-align: center; }
+.time-colon { color: var(--text-muted); font-weight: 650; }
+
 /* Change-password card — stacks its fields + submit button on the side */
 .change-password-form { margin-top: 1.5rem; }
 .change-password-fields {

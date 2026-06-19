@@ -55,6 +55,36 @@ const GROUPS = [
 
 const isOn = (value) => String(value).toLowerCase() === 'true';
 
+// Hours 00..23 and minutes in half-hour steps (00, 30) for the time selects.
+const HOURS = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0'));
+const MINUTES = ['00', '30'];
+
+// Two selects (hour + minute) bound to a single "HH:MM" string value.
+function TimeSelect({ value, onChange }) {
+  const [hh = '00', mm = '00'] = String(value ?? '').split(':');
+  const hour = HOURS.includes(hh) ? hh : '00';
+  const minute = MINUTES.includes(mm) ? mm : '00';
+  return (
+    <div className="time-select">
+      <select
+        className="settings-input time-part"
+        value={hour}
+        onChange={(e) => onChange(`${e.target.value}:${minute}`)}
+      >
+        {HOURS.map((h) => <option key={h} value={h}>{h}</option>)}
+      </select>
+      <span className="time-colon">:</span>
+      <select
+        className="settings-input time-part"
+        value={minute}
+        onChange={(e) => onChange(`${hour}:${e.target.value}`)}
+      >
+        {MINUTES.map((m) => <option key={m} value={m}>{m}</option>)}
+      </select>
+    </div>
+  );
+}
+
 function SettingControl({ item, value, onChange }) {
   const type = FIELD_TYPES[item.key] || 'text';
 
@@ -88,9 +118,13 @@ function SettingControl({ item, value, onChange }) {
     );
   }
 
+  if (type === 'time') {
+    return <TimeSelect value={value} onChange={(v) => onChange(item.key, v)} />;
+  }
+
   return (
     <input
-      type={type === 'number' ? 'number' : type === 'time' ? 'time' : 'text'}
+      type={type === 'number' ? 'number' : 'text'}
       value={value ?? ''}
       onChange={(e) => onChange(item.key, e.target.value)}
       className="settings-input"
