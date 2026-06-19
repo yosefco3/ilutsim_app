@@ -202,6 +202,20 @@ body {
 .submissions-missing-count { color: var(--text); font-size: 0.9rem; font-weight: 500; }
 .submissions-missing-count strong { color: var(--warning); font-weight: 700; font-size: 1.05rem; }
 
+/* Soft constraint-rule warnings inside an expanded submission row */
+.detail-warnings {
+  margin-bottom: 0.85rem;
+  padding: 0.6rem 0.85rem;
+  background: var(--warning-soft);
+  border: 1px solid rgba(245,158,11,.3);
+  border-radius: var(--radius-sm);
+  color: #fcd34d;
+  font-size: 0.88rem;
+}
+.detail-warnings strong { display: block; margin-bottom: 0.35rem; }
+.detail-warnings ul { margin: 0; padding-inline-start: 1.2rem; }
+.detail-warnings li { margin-bottom: 0.2rem; }
+
 /* Inactive guards section (collapsible, below the active list) */
 .inactive-section { margin-top: 1.5rem; }
 .inactive-toggle { margin-bottom: 0.75rem; }

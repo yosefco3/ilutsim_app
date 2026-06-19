@@ -3,7 +3,7 @@ import { useWeeks } from '../hooks/useWeeks';
 import { useSubmissions } from '../hooks/useSubmissions';
 import StatusGrid from '../components/StatusGrid';
 import { useToast } from '../components/Toast';
-import { sendWeekReminders } from '../api/adminApiClient';
+import { sendWeekReminders, fetchConstraintRules } from '../api/adminApiClient';
 import messages from '../utils/messages';
 
 export default function SubmissionsPage() {
@@ -14,6 +14,13 @@ export default function SubmissionsPage() {
   const [reminding, setReminding] = useState(false);
 
   const [showInactive, setShowInactive] = useState(false);
+
+  // Constraint-rule thresholds — drive the soft warnings shown per submission.
+  // Fetched once; failure is silent (warnings simply won't appear).
+  const [rules, setRules] = useState(null);
+  useEffect(() => {
+    fetchConstraintRules().then(setRules).catch(() => {});
+  }, []);
 
   // Default the week selector to the relevant week (the single 'open' one) once
   // weeks load — that's the week the admin almost always wants, and it makes the
@@ -105,6 +112,7 @@ export default function SubmissionsPage() {
             submissions={activeSubmissions}
             detailsByUser={detailsByUser}
             canFillConstraints={canFillConstraints}
+            rules={rules}
           />
 
           {inactiveSubmissions.length > 0 && (
@@ -123,6 +131,7 @@ export default function SubmissionsPage() {
                   submissions={inactiveSubmissions}
                   detailsByUser={detailsByUser}
                   canFillConstraints={canFillConstraints}
+                  rules={rules}
                 />
               )}
             </div>

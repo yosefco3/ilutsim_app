@@ -5,7 +5,10 @@ import { MemoryRouter } from 'react-router-dom';
 vi.mock('../src/hooks/useWeeks', () => ({ useWeeks: vi.fn() }));
 vi.mock('../src/hooks/useSubmissions', () => ({ useSubmissions: vi.fn() }));
 vi.mock('../src/components/Toast', () => ({ useToast: () => vi.fn() }));
-vi.mock('../src/api/adminApiClient', () => ({ sendWeekReminders: vi.fn() }));
+vi.mock('../src/api/adminApiClient', () => ({
+  sendWeekReminders: vi.fn(),
+  fetchConstraintRules: vi.fn().mockResolvedValue(null),
+}));
 
 import { useWeeks } from '../src/hooks/useWeeks';
 import { useSubmissions } from '../src/hooks/useSubmissions';

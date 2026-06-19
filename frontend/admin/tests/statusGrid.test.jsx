@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import StatusGrid from '../src/components/StatusGrid';
 import messages from '../src/utils/messages';
@@ -46,5 +46,42 @@ describe('StatusGrid — fill-constraints button gating', () => {
       name: messages.guards.fillConstraints,
     })[0];
     expect(button).toBeInTheDocument();
+  });
+});
+
+describe('StatusGrid — soft constraint-rule warnings', () => {
+  const RULES = {
+    min_shifts_per_guard: 5,
+    min_nights: 2,
+    min_evenings: 2,
+    max_consecutive_days: 6,
+  };
+  // One guard who submitted a single morning shift — breaches min shifts/nights/evenings.
+  const detailsByUser = {
+    g1: {
+      user_id: 'g1',
+      days: [
+        {
+          date: '2026-06-21',
+          is_available: true,
+          shift_windows: [{ shift_type: 'morning', start_time: '07:00', end_time: '16:00' }],
+        },
+      ],
+    },
+  };
+
+  it('shows the warnings banner only after the row is expanded', () => {
+    renderGrid({ detailsByUser, rules: RULES });
+    // Hidden until expanded.
+    expect(screen.queryByText(messages.submissions.warningsTitle)).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'הצג' }));
+    expect(screen.getByText(messages.submissions.warningsTitle)).toBeInTheDocument();
+    expect(screen.getByText(/לילות/)).toBeInTheDocument();
+  });
+
+  it('shows no banner when rules are not loaded', () => {
+    renderGrid({ detailsByUser, rules: null });
+    fireEvent.click(screen.getByRole('button', { name: 'הצג' }));
+    expect(screen.queryByText(messages.submissions.warningsTitle)).not.toBeInTheDocument();
   });
 });

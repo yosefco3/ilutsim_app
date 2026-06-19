@@ -152,6 +152,13 @@ export function fetchSubmissionsDetailed(weekId) {
   return request(`/admin/weeks/${weekId}/submissions/detailed`);
 }
 
+// Constraint-rule thresholds (min shifts/nights/evenings, max consecutive days).
+// Public endpoint, admin-editable via /admin/settings. Used to surface soft,
+// non-blocking warnings on submissions the guard sent.
+export function fetchConstraintRules() {
+  return request('/submissions/constraint-rules');
+}
+
 // A guard's existing submission for one week (admin-only), or null. Used to
 // pre-fill the admin constraints form so the admin can edit what the guard
 // (or a previous admin) already submitted — including Telegram submissions.

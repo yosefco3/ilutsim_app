@@ -2,8 +2,9 @@ import { Fragment, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import messages from '../utils/messages';
 import { DAY_NAMES, SHIFT_LABELS } from '../utils/guardMessages';
+import { computeAdminWarnings } from '../utils/submissionWarnings';
 
-export default function StatusGrid({ submissions, detailsByUser = {}, canFillConstraints = false }) {
+export default function StatusGrid({ submissions, detailsByUser = {}, canFillConstraints = false, rules = null }) {
   const [expandedUser, setExpandedUser] = useState(null);
   const navigate = useNavigate();
 
@@ -30,6 +31,7 @@ export default function StatusGrid({ submissions, detailsByUser = {}, canFillCon
         {submissions.map((s) => {
           const detail = detailsByUser[s.user_id];
           const expanded = expandedUser === s.user_id;
+          const warnings = detail ? computeAdminWarnings(detail, rules) : [];
           return (
             <Fragment key={s.user_id}>
               <tr>
@@ -67,6 +69,16 @@ export default function StatusGrid({ submissions, detailsByUser = {}, canFillCon
                 <tr className="detail-row">
                   <td colSpan={colCount}>
                     <div className="detail-content">
+                      {warnings.length > 0 && (
+                        <div className="detail-warnings">
+                          <strong>{messages.submissions.warningsTitle}</strong>
+                          <ul>
+                            {warnings.map((w, wi) => (
+                              <li key={wi}>{w}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
                       {detail.days?.map((day, idx) => (
                         <div key={idx} className="detail-day">
                           <strong>{DAY_NAMES[idx] || `יום ${idx}`}</strong>
