@@ -337,7 +337,30 @@ body {
 .badge-warning   { background: var(--warning-soft); color: #fcd34d; border-color: rgba(245,158,11,.25); }
 .badge-danger    { background: var(--danger-soft);  color: #fca5a5; border-color: rgba(239,68,68,.25); }
 .badge-secondary { background: var(--surface-3);    color: var(--text-muted); border-color: var(--border-strong); }
-.violation-flag  { margin-inline-start: 0.5rem; white-space: nowrap; cursor: help; }
+/* Violation marker — fixed-position orange dot at the end of a submission row.
+   Lives in its own narrow column so it stays aligned regardless of name length. */
+.violation-col { width: 2.5rem; text-align: center; }
+.violation-dot {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.4rem;
+  height: 1.4rem;
+  padding: 0 0.3rem;
+  border: none;
+  border-radius: 999px;
+  background: var(--warning);
+  color: #1a1205;
+  font-size: 0.78rem;
+  font-weight: 700;
+  font-family: inherit;
+  line-height: 1;
+  cursor: pointer;
+  box-shadow: 0 0 0 4px var(--warning-soft);
+  transition: transform .1s, box-shadow .15s;
+}
+.violation-dot:hover { transform: scale(1.1); box-shadow: 0 0 0 5px var(--warning-soft); }
+.violation-dot:focus-visible { outline: 2px solid var(--warning); outline-offset: 2px; }
 
 /* Confirm Dialog */
 .overlay {

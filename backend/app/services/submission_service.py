@@ -111,6 +111,25 @@ class SubmissionService:
             return None
         return SubmissionResponse.model_validate(sub)
 
+    async def set_violation_acknowledged(
+        self, submission_id: uuid.UUID, acknowledged: bool
+    ) -> Optional[SubmissionResponse]:
+        """Acknowledge (or un-acknowledge) a submission's rule violations.
+
+        Returns the updated submission, or ``None`` if it doesn't exist.
+        """
+        sub = await self._submission_repo.set_violation_acknowledged(
+            submission_id, acknowledged
+        )
+        if sub is None:
+            return None
+        logger.info(
+            "Violation acknowledgement set: submission=%s acknowledged=%s",
+            submission_id,
+            acknowledged,
+        )
+        return SubmissionResponse.model_validate(sub)
+
     async def get_submission_counts(self) -> dict[uuid.UUID, int]:
         """Return ``{week_id: submission_count}`` for every week."""
         return await self._submission_repo.count_by_week()

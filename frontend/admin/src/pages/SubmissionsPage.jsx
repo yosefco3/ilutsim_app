@@ -9,7 +9,7 @@ import messages from '../utils/messages';
 export default function SubmissionsPage() {
   const { weeks, loading: weeksLoading } = useWeeks();
   const [selectedWeek, setSelectedWeek] = useState('');
-  const { submissions, detailedData, loading: subsLoading } = useSubmissions(selectedWeek, { detailed: true });
+  const { submissions, detailedData, loading: subsLoading, acknowledgeViolation } = useSubmissions(selectedWeek, { detailed: true });
   const toast = useToast();
   const [reminding, setReminding] = useState(false);
 
@@ -57,6 +57,15 @@ export default function SubmissionsPage() {
 
   // Only active guards receive reminders, so count missing among them only.
   const missingCount = activeSubmissions.filter((s) => !s.submitted_at).length;
+
+  async function handleAcknowledgeViolation(submissionId) {
+    try {
+      await acknowledgeViolation(submissionId, true);
+      toast.success(messages.submissions.violationAcknowledged);
+    } catch (err) {
+      toast.error(messages.common.error + ': ' + err.message);
+    }
+  }
 
   async function handleRemind() {
     if (!selectedWeek || reminding) return;
@@ -112,6 +121,7 @@ export default function SubmissionsPage() {
             detailsByUser={detailsByUser}
             canFillConstraints={canFillConstraints}
             rules={rules}
+            onAcknowledgeViolation={handleAcknowledgeViolation}
           />
 
           {inactiveSubmissions.length > 0 && (

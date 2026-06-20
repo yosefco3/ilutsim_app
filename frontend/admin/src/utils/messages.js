@@ -219,8 +219,10 @@ export default {
     reminderNone: 'כל המאבטחים כבר שלחו — אין למי לשלוח תזכורת',
     reminderNoTelegram: 'יש מאבטחים שטרם הגישו אך אין להם טלגרם מקושר — לא נשלחה תזכורת',
     warningsTitle: 'שים לב — המאבטח חרג מהכללים:',
-    violationBadge: 'חריגה',
-    violationBadgeTitle: 'המאבטח חרג מהכללים — פתח את הפירוט לפרטים',
+    violationDotTitle: 'המאבטח חרג מהכללים — לחץ לפרטים ולאישור',
+    violationDialogTitle: 'חריגה מהכללים',
+    violationAcknowledge: 'אשר חריגה',
+    violationAcknowledged: 'החריגה אושרה',
   },
   settings: {
     title: 'הגדרות מערכת',

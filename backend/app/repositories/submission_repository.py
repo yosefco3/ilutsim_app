@@ -120,6 +120,22 @@ class SubmissionRepository(BaseRepository[WeeklySubmission]):
         result = await self.session.execute(stmt)
         return result.scalar_one()
 
+    async def set_violation_acknowledged(
+        self, submission_id: uuid.UUID, acknowledged: bool
+    ) -> WeeklySubmission | None:
+        """Set the violation_acknowledged flag and return the eager-loaded row.
+
+        Returns ``None`` if no submission matches the given id.
+        """
+        stmt = self._eager_load_query().where(WeeklySubmission.id == submission_id)
+        result = await self.session.execute(stmt)
+        submission = result.scalar_one_or_none()
+        if submission is None:
+            return None
+        submission.violation_acknowledged = acknowledged
+        await self.session.flush()
+        return submission
+
     async def get_submissions_for_week(
         self, week_id: uuid.UUID
     ) -> list[WeeklySubmission]:

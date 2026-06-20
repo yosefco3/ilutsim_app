@@ -3,20 +3,37 @@ import { useNavigate } from 'react-router-dom';
 import messages from '../utils/messages';
 import { DAY_NAMES, SHIFT_LABELS } from '../utils/guardMessages';
 import { computeAdminWarnings } from '../utils/submissionWarnings';
+import ConfirmDialog from './ConfirmDialog';
 
-export default function StatusGrid({ submissions, detailsByUser = {}, canFillConstraints = false, rules = null }) {
+export default function StatusGrid({
+  submissions,
+  detailsByUser = {},
+  canFillConstraints = false,
+  rules = null,
+  onAcknowledgeViolation,
+}) {
   const [expandedUser, setExpandedUser] = useState(null);
+  // The submission whose violation-acknowledge dialog is open: { id, name, warnings }
+  const [violationDialog, setViolationDialog] = useState(null);
   const navigate = useNavigate();
 
-  // Detail row spans all columns; the actions column only exists when the
-  // selected week is editable (the relevant 'open' week).
-  const colCount = canFillConstraints ? 5 : 4;
+  // Detail row spans all columns. There's always a trailing violation-marker
+  // column; the actions column only exists when the week is editable.
+  const colCount = canFillConstraints ? 6 : 5;
 
   if (!submissions.length) {
     return <p className="empty-state">{messages.submissions.empty}</p>;
   }
 
+  function handleConfirmAcknowledge() {
+    if (violationDialog && onAcknowledgeViolation) {
+      onAcknowledgeViolation(violationDialog.id);
+    }
+    setViolationDialog(null);
+  }
+
   return (
+    <>
     <table className="data-table">
       <thead>
         <tr>
@@ -25,6 +42,7 @@ export default function StatusGrid({ submissions, detailsByUser = {}, canFillCon
           <th>{messages.submissions.submittedAt}</th>
           <th>{messages.submissions.viewDetails}</th>
           {canFillConstraints && <th>{messages.common.actions}</th>}
+          <th className="violation-col" aria-label="חריגות"></th>
         </tr>
       </thead>
       <tbody>
@@ -35,17 +53,7 @@ export default function StatusGrid({ submissions, detailsByUser = {}, canFillCon
           return (
             <Fragment key={s.user_id}>
               <tr>
-                <td>
-                  {s.full_name || s.user_id}
-                  {warnings.length > 0 && (
-                    <span
-                      className="badge badge-warning violation-flag"
-                      title={messages.submissions.violationBadgeTitle}
-                    >
-                      ⚠ {messages.submissions.violationBadge} ({warnings.length})
-                    </span>
-                  )}
-                </td>
+                <td>{s.full_name || s.user_id}</td>
                 <td>
                   <span className={`badge ${s.submitted_at ? 'badge-success' : 'badge-warning'}`}>
                     {s.submitted_at ? messages.submissions.submitted : messages.submissions.missing}
@@ -74,6 +82,24 @@ export default function StatusGrid({ submissions, detailsByUser = {}, canFillCon
                     </button>
                   </td>
                 )}
+                <td className="violation-col">
+                  {warnings.length > 0 && !detail.violation_acknowledged && (
+                    <button
+                      type="button"
+                      className="violation-dot"
+                      title={messages.submissions.violationDotTitle}
+                      onClick={() =>
+                        setViolationDialog({
+                          id: detail.id,
+                          name: s.full_name || s.user_id,
+                          warnings,
+                        })
+                      }
+                    >
+                      {warnings.length}
+                    </button>
+                  )}
+                </td>
               </tr>
               {expanded && detail && (
                 <tr className="detail-row">
@@ -119,5 +145,23 @@ export default function StatusGrid({ submissions, detailsByUser = {}, canFillCon
         })}
       </tbody>
     </table>
+    {violationDialog && (
+      <ConfirmDialog
+        title={messages.submissions.violationDialogTitle}
+        message={
+          <>
+            {violationDialog.name} — {messages.submissions.warningsTitle}
+            <br />
+            {violationDialog.warnings.map((w, i) => (
+              <span key={i}>• {w}<br /></span>
+            ))}
+          </>
+        }
+        confirmLabel={messages.submissions.violationAcknowledge}
+        onConfirm={handleConfirmAcknowledge}
+        onCancel={() => setViolationDialog(null)}
+      />
+    )}
+    </>
   );
 }

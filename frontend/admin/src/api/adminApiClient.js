@@ -170,6 +170,15 @@ export function fetchSubmissionsDetailed(weekId) {
   return request(`/admin/weeks/${weekId}/submissions/detailed`);
 }
 
+// Admin acknowledges (or clears) a submission's rule violations. When
+// acknowledged the submissions grid hides the orange violation marker.
+export function acknowledgeSubmissionViolation(submissionId, acknowledged = true) {
+  return request(`/submissions/${submissionId}/acknowledge-violation`, {
+    method: 'PATCH',
+    body: JSON.stringify({ acknowledged }),
+  });
+}
+
 // Constraint-rule thresholds (min shifts/nights/evenings, max consecutive days).
 // Public endpoint, admin-editable via /admin/settings. Used to surface soft,
 // non-blocking warnings on submissions the guard sent.
@@ -294,6 +303,7 @@ export default {
   deleteWeek,
   fetchSubmissions,
   fetchSubmissionsDetailed,
+  acknowledgeSubmissionViolation,
   sendNotifications,
   exportWeekExcel,
   fetchSettings,

@@ -19,6 +19,7 @@ from app.dependencies import (
 from app.messages import Messages
 from app.models.user import User
 from app.schemas.submission_schemas import (
+    AcknowledgeViolationRequest,
     AdminSubmissionRequest,
     GuardSubmissionRequest,
     ShiftWindowInput,
@@ -237,6 +238,29 @@ async def get_constraint_rules(
         except (TypeError, ValueError):
             result[key] = 0
     return result
+
+
+@router.patch(
+    "/{submission_id}/acknowledge-violation",
+    response_model=SubmissionResponse,
+    dependencies=[Depends(require_admin_role)],
+)
+async def acknowledge_violation(
+    submission_id: uuid.UUID,
+    data: AcknowledgeViolationRequest,
+    submission_service: SubmissionService = Depends(get_submission_service),
+):
+    """Acknowledge (or un-acknowledge) a submission's rule violations. **Admin
+    only.** Acknowledging hides the violation marker in the submissions grid."""
+    updated = await submission_service.set_violation_acknowledged(
+        submission_id, data.acknowledged
+    )
+    if updated is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Submission not found",
+        )
+    return updated
 
 
 @router.get(

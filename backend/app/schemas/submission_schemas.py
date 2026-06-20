@@ -126,6 +126,8 @@ class SubmissionResponse(BaseModel):
     week_id: uuid.UUID
     general_notes: str | None = None
     submitted_at: datetime
+    # True once an admin has acknowledged this submission's rule violations.
+    violation_acknowledged: bool = False
     # ORM exposes the relation as ``daily_statuses``; the API contract is ``days``.
     days: list[DayStatusResponse] = Field(
         default_factory=list,
@@ -159,6 +161,11 @@ class WeekSubmissionsDetailed(BaseModel):
     submitted: list[SubmissionWithName]
     missing: list[MissingGuardInfo]
     week_label: str
+
+
+class AcknowledgeViolationRequest(BaseModel):
+    """Admin toggle for acknowledging a submission's rule violations."""
+    acknowledged: bool = True
 
 
 class DeviationDetail(BaseModel):

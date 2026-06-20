@@ -28,6 +28,12 @@ class WeeklySubmission(BaseModel):
     )
     general_notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     has_deviation: Mapped[bool] = mapped_column(Boolean, default=False)
+    # Admin acknowledged the guard's rule violations for this submission, so the
+    # UI hides the violation marker. Computed warnings still exist; this just
+    # records that an admin reviewed and accepted them.
+    violation_acknowledged: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=False, server_default="false",
+    )
     submitted_at: Mapped[datetime] = mapped_column(
         DateTime, nullable=False, default=datetime.now,
     )

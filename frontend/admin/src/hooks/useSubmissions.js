@@ -1,5 +1,9 @@
-import { useState, useEffect } from 'react';
-import { fetchSubmissions, fetchSubmissionsDetailed } from '../api/adminApiClient';
+import { useState, useEffect, useCallback } from 'react';
+import {
+  fetchSubmissions,
+  fetchSubmissionsDetailed,
+  acknowledgeSubmissionViolation,
+} from '../api/adminApiClient';
 
 export function useSubmissions(weekId, { detailed = false } = {}) {
   const [submissions, setSubmissions] = useState([]);
@@ -40,5 +44,27 @@ export function useSubmissions(weekId, { detailed = false } = {}) {
     return () => { cancelled = true; };
   }, [weekId, detailed]);
 
-  return { submissions, detailedData, loading, error };
+  // Acknowledge (or clear) a submission's rule violations. Updates the matching
+  // row in detailedData in place so the violation marker reflects the new state
+  // without a full refetch.
+  const acknowledgeViolation = useCallback(
+    async (submissionId, acknowledged = true) => {
+      const updated = await acknowledgeSubmissionViolation(submissionId, acknowledged);
+      setDetailedData((prev) => {
+        if (!prev?.submitted) return prev;
+        return {
+          ...prev,
+          submitted: prev.submitted.map((s) =>
+            s.id === submissionId
+              ? { ...s, violation_acknowledged: updated.violation_acknowledged }
+              : s,
+          ),
+        };
+      });
+      return updated;
+    },
+    [],
+  );
+
+  return { submissions, detailedData, loading, error, acknowledgeViolation };
 }
