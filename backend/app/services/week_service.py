@@ -304,19 +304,21 @@ class WeekService:
         await self.purge_old_weeks()
 
     async def lock_expired_open_weeks(self) -> None:
-        """Auto-lock OPEN weeks whose submission window has already begun.
+        """Finalize started weeks to LOCKED at the Sunday rollover.
 
-        An open submission week is meant to be a future week. The moment its
-        ``start_date`` arrives it is no longer relevant, so it is transitioned
-        OPEN → LOCKED **silently** (no Telegram broadcast at midnight). The
-        admin's manual lock/publish flow is untouched: a week that was already
-        locked/published, or an open *future* week, is never affected.
+        The moment a week's ``start_date`` arrives it is no longer a relevant
+        submission target, so the rollover finalizes it OPEN/CLOSED → LOCKED
+        **silently** (no Telegram broadcast at midnight). LOCKED is the final,
+        non-reopenable state. Only a week that already had its submission window
+        is finalized (OPEN, or CLOSED with ``opened_at`` set); a never-opened
+        CLOSED week — the upcoming/current week waiting to be opened — and
+        terminal weeks (already LOCKED/PUBLISHED) are never touched.
         """
         today = date.today()
         try:
-            stale = await self._week_repo.get_open_weeks_started_on_or_before(today)
+            stale = await self._week_repo.get_weeks_to_finalize_on_or_before(today)
         except Exception as exc:
-            logger.warning(f"Failed to query expired open weeks: {exc}")
+            logger.warning(f"Failed to query weeks to finalize: {exc}")
             return
 
         for week in stale:
@@ -325,11 +327,11 @@ class WeekService:
                     week.id, WeekStatus.LOCKED, notify=False
                 )
                 logger.info(
-                    f"Auto-locked expired open week {week.start_date} – "
-                    f"{week.end_date} (id={week.id})"
+                    f"Rollover finalized week {week.start_date} – "
+                    f"{week.end_date} to LOCKED (id={week.id})"
                 )
             except Exception as exc:
-                logger.warning(f"Failed to auto-lock week {week.id}: {exc}")
+                logger.warning(f"Failed to finalize week {week.id}: {exc}")
 
     async def auto_rotate_weeks(self) -> None:
         """Ensure the upcoming week always exists, created CLOSED.

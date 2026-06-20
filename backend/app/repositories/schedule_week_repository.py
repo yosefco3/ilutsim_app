@@ -5,7 +5,7 @@ ScheduleWeek repository — data access for weekly schedule periods.
 import uuid
 from datetime import date
 
-from sqlalchemy import func, select
+from sqlalchemy import and_, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.constants import WeekStatus
@@ -25,22 +25,34 @@ class ScheduleWeekRepository(BaseRepository[ScheduleWeek]):
         result = await self.session.execute(stmt)
         return result.scalar_one_or_none()
 
-    async def get_open_weeks_started_on_or_before(
+    async def get_weeks_to_finalize_on_or_before(
         self, today: date
     ) -> list[ScheduleWeek]:
-        """Return all OPEN weeks whose submission window has begun.
+        """Return weeks the Sunday rollover should finalize to LOCKED.
 
-        A week that is open for submission is meant to be a *future* week. Once
-        its ``start_date`` arrives (``start_date <= today``) it is no longer a
-        relevant submission target and should be auto-locked. Returns a list
-        (normally 0 or 1) ordered by start_date so the auto-advance can lock
-        every stale open week deterministically.
+        A week whose ``start_date`` has arrived (``start_date <= today``) is no
+        longer a relevant submission target. The rollover finalizes it to LOCKED
+        when it either:
+          - is still OPEN, or
+          - is CLOSED but was already opened once (``opened_at IS NOT NULL``) —
+            i.e. its submission window ran and was closed by the auto-lock time.
+
+        A never-opened CLOSED week (``opened_at IS NULL``) is deliberately left
+        alone: that is the upcoming/current week still waiting to be opened, and
+        finalizing it would lock the current week. Ordered by start_date so the
+        rollover is deterministic.
         """
         stmt = (
             select(self.model_class)
             .where(
-                ScheduleWeek.status == WeekStatus.OPEN,
                 ScheduleWeek.start_date <= today,
+                or_(
+                    ScheduleWeek.status == WeekStatus.OPEN,
+                    and_(
+                        ScheduleWeek.status == WeekStatus.CLOSED,
+                        ScheduleWeek.opened_at.isnot(None),
+                    ),
+                ),
             )
             .order_by(ScheduleWeek.start_date.asc())
         )

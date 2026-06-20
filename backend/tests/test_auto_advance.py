@@ -39,7 +39,7 @@ async def test_lock_expired_open_weeks_locks_silently():
     stale = _week(WeekStatus.OPEN, today - timedelta(days=1), today + timedelta(days=5))
 
     repo = AsyncMock()
-    repo.get_open_weeks_started_on_or_before.return_value = [stale]
+    repo.get_weeks_to_finalize_on_or_before.return_value = [stale]
     repo.get_by_id.return_value = stale
     repo.update.return_value = _week(WeekStatus.LOCKED, stale.start_date, stale.end_date)
 
@@ -57,7 +57,7 @@ async def test_lock_expired_open_weeks_locks_silently():
 async def test_lock_expired_open_weeks_noop_when_none():
     """No stale open week → nothing is locked."""
     repo = AsyncMock()
-    repo.get_open_weeks_started_on_or_before.return_value = []
+    repo.get_weeks_to_finalize_on_or_before.return_value = []
 
     svc = WeekService(repo)
     await svc.lock_expired_open_weeks()
@@ -73,7 +73,7 @@ async def test_auto_advance_locks_and_creates_next():
     stale = _week(WeekStatus.OPEN, today - timedelta(days=1), today + timedelta(days=5))
 
     repo = AsyncMock()
-    repo.get_open_weeks_started_on_or_before.return_value = [stale]
+    repo.get_weeks_to_finalize_on_or_before.return_value = [stale]
     repo.get_by_id.return_value = stale
     repo.update.return_value = _week(WeekStatus.LOCKED, stale.start_date, stale.end_date)
     repo.get_by_date_range.return_value = None  # upcoming week missing
@@ -91,36 +91,82 @@ async def test_auto_advance_locks_and_creates_next():
 # ── Repository-level (real in-memory DB) ─────────────────────────────────────
 
 @pytest.mark.asyncio
-async def test_repo_returns_only_started_open_weeks(db_session):
-    """The query filters by status==OPEN AND start_date<=today."""
+async def test_repo_returns_started_weeks_to_finalize(db_session):
+    """Finalize-query returns started OPEN weeks and started CLOSED weeks that
+    were already opened — but NOT future weeks nor never-opened CLOSED weeks."""
+    from datetime import datetime
+
     from app.models.schedule_week import ScheduleWeek
 
     today = date.today()
-    started = ScheduleWeek(
+    open_started = ScheduleWeek(
         start_date=today - timedelta(days=2),
         end_date=today + timedelta(days=4),
         status=WeekStatus.OPEN,
     )
-    future = ScheduleWeek(
+    open_future = ScheduleWeek(
         start_date=today + timedelta(days=5),
         end_date=today + timedelta(days=11),
         status=WeekStatus.OPEN,
     )
-    closed_started = ScheduleWeek(
+    closed_started_opened = ScheduleWeek(
+        start_date=today - timedelta(days=9),
+        end_date=today - timedelta(days=3),
+        status=WeekStatus.CLOSED,
+        opened_at=datetime(2026, 1, 1, 12, 0, 0),  # had its submission window
+    )
+    closed_started_never_opened = ScheduleWeek(
         start_date=today - timedelta(days=2),
         end_date=today + timedelta(days=4),
         status=WeekStatus.CLOSED,
+        opened_at=None,  # the current week still waiting to be opened — keep!
     )
-    db_session.add_all([started, future, closed_started])
+    db_session.add_all(
+        [open_started, open_future, closed_started_opened, closed_started_never_opened]
+    )
     await db_session.commit()
 
     repo = ScheduleWeekRepository(db_session)
-    result = await repo.get_open_weeks_started_on_or_before(today)
+    result = await repo.get_weeks_to_finalize_on_or_before(today)
 
     ids = {w.id for w in result}
-    assert started.id in ids
-    assert future.id not in ids  # open but still in the future
-    assert closed_started.id not in ids  # started but not open
+    assert open_started.id in ids
+    assert closed_started_opened.id in ids  # already opened → finalize
+    assert open_future.id not in ids  # not started yet
+    assert closed_started_never_opened.id not in ids  # never opened → leave it
+
+
+@pytest.mark.asyncio
+async def test_rollover_finalizes_closed_opened_keeps_current(db_session):
+    """End-to-end rollover: a CLOSED week that already ran its window is finalized
+    to LOCKED, while the never-opened current week stays CLOSED (not finalized)."""
+    from datetime import datetime
+
+    from app.models.schedule_week import ScheduleWeek
+
+    today = date.today()
+    prev_cycle = ScheduleWeek(
+        start_date=today - timedelta(days=7),
+        end_date=today - timedelta(days=1),
+        status=WeekStatus.CLOSED,
+        opened_at=datetime(2026, 1, 1, 12, 0, 0),  # had its submission window
+    )
+    current = ScheduleWeek(
+        start_date=today,
+        end_date=today + timedelta(days=6),
+        status=WeekStatus.CLOSED,
+        opened_at=None,  # waiting to be opened
+    )
+    db_session.add_all([prev_cycle, current])
+    await db_session.commit()
+
+    svc = WeekService(ScheduleWeekRepository(db_session))
+    await svc.lock_expired_open_weeks()
+
+    await db_session.refresh(prev_cycle)
+    await db_session.refresh(current)
+    assert prev_cycle.status == WeekStatus.LOCKED  # finalized
+    assert current.status == WeekStatus.CLOSED  # current week untouched
 
 
 # ── Full flow (service + real DB) ────────────────────────────────────────────
