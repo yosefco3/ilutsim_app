@@ -39,7 +39,7 @@ export default function StatusGrid({ submissions, detailsByUser = {}, canFillCon
                   {s.full_name || s.user_id}
                   {warnings.length > 0 && (
                     <span
-                      className="badge badge-danger violation-flag"
+                      className="badge badge-warning violation-flag"
                       title={messages.submissions.violationBadgeTitle}
                     >
                       ⚠ {messages.submissions.violationBadge} ({warnings.length})
