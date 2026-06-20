@@ -121,28 +121,37 @@ def _apply_automation_job(scheduler, job_id, cfg, func, timezone) -> None:
         logger.info("Automation job %s is disabled (enabled=False) — not scheduled", job_id)
 
 
-async def sync_automation_jobs(scheduler=None) -> None:
-    """(Re)build the auto-open/auto-lock cron jobs from the DB settings.
+async def sync_automation_jobs(scheduler=None, *, auto_open=None, auto_lock=None) -> None:
+    """(Re)build the auto-open/auto-lock cron jobs from the settings.
 
-    Reads ``get_auto_open``/``get_auto_lock`` and registers fixed-id jobs
-    (``replace_existing=True`` so an edit never duplicates them). A disabled
-    block removes its job. Called on startup and after a settings update so a
-    change takes effect immediately, without a restart. No-op if the scheduler
-    is not running (e.g. AUTO_ROLLOVER_ENABLED=false).
+    Registers fixed-id jobs (``replace_existing=True`` so an edit never
+    duplicates them); a disabled block removes its job. Called on startup and
+    after a settings update so a change takes effect immediately, without a
+    restart. No-op if the scheduler is not running (e.g. AUTO_ROLLOVER_ENABLED=false).
+
+    ``auto_open``/``auto_lock`` may be passed in by the settings endpoint so the
+    reschedule uses the values from the *same* (already-written) request session.
+    Spinning up a fresh session here instead would read the previous COMMITTED
+    state — the admin's write is only flushed, not yet committed, until request
+    teardown — and reschedule to the OLD time (a silent no-op). When omitted
+    (startup path) the values are read from the DB with this function's own session.
     """
     scheduler = scheduler or _scheduler
     if scheduler is None:
         return
 
     try:
-        from app.database import get_session
-        from app.repositories.system_settings_repository import SystemSettingsRepository
-        from app.services.settings_service import SettingsService
+        if auto_open is None or auto_lock is None:
+            from app.database import get_session
+            from app.repositories.system_settings_repository import SystemSettingsRepository
+            from app.services.settings_service import SettingsService
 
-        async with get_session() as session:
-            settings_service = SettingsService(SystemSettingsRepository(session))
-            auto_open = await settings_service.get_auto_open()
-            auto_lock = await settings_service.get_auto_lock()
+            async with get_session() as session:
+                settings_service = SettingsService(SystemSettingsRepository(session))
+                if auto_open is None:
+                    auto_open = await settings_service.get_auto_open()
+                if auto_lock is None:
+                    auto_lock = await settings_service.get_auto_lock()
 
         timezone = get_settings().SCHEDULER_TIMEZONE
         _apply_automation_job(scheduler, _AUTO_OPEN_JOB_ID, auto_open, run_auto_open, timezone)

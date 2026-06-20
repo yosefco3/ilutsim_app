@@ -43,12 +43,18 @@ async def update_settings(
         )
 
     # If any auto-open/lock setting changed, reschedule the cron jobs so the
-    # change takes effect immediately (no restart needed).
+    # change takes effect immediately (no restart needed). Read the new values
+    # through the *same* request session (which sees its own flushed write) and
+    # hand them to the scheduler — letting sync_automation_jobs open its own
+    # session would read the still-uncommitted-elsewhere previous value and
+    # silently reschedule to the OLD time.
     if any(key.startswith(("auto_open", "auto_lock")) for key in data.settings):
         try:
             from app.scheduler import sync_automation_jobs
 
-            await sync_automation_jobs()
+            auto_open = await settings_service.get_auto_open()
+            auto_lock = await settings_service.get_auto_lock()
+            await sync_automation_jobs(auto_open=auto_open, auto_lock=auto_lock)
         except Exception as exc:
             logger.warning("Failed to reschedule automation jobs: %s", exc)
 

@@ -115,6 +115,28 @@ async def test_sync_reschedules_and_removes_on_change(monkeypatch, sch):
 
 
 @pytest.mark.asyncio
+async def test_sync_uses_passed_values_without_opening_session(monkeypatch, sch):
+    """When the settings endpoint passes the freshly-written values in, the
+    reschedule must use them and must NOT open its own session (which would read
+    the previous, still-committed value and silently keep the OLD schedule)."""
+    import app.database as db_mod
+
+    def _boom():
+        raise AssertionError("sync_automation_jobs opened a session despite passed values")
+
+    monkeypatch.setattr(db_mod, "get_session", _boom)
+
+    await sched_mod.sync_automation_jobs(
+        sch,
+        auto_open={"enabled": True, "weekday": "sat", "hour": 16, "minute": 0},
+        auto_lock={"enabled": True, "weekday": "sat", "hour": 16, "minute": 30},
+    )
+
+    lf = _fields(sch.get_job(sched_mod._AUTO_LOCK_JOB_ID))
+    assert lf["day_of_week"] == "sat" and lf["hour"] == "16" and lf["minute"] == "30"
+
+
+@pytest.mark.asyncio
 async def test_sync_noop_without_scheduler(monkeypatch):
     monkeypatch.setattr(sched_mod, "_scheduler", None)
     # Should not raise even though no scheduler is available.
