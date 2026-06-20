@@ -12,6 +12,18 @@ from app.services.automation_settings import as_bool, parse_hhmm, parse_weekday
 
 logger = logging.getLogger("ilutzim")
 
+# Weekday ordering for comparing the auto-open vs auto-lock moments. Sunday-first,
+# matching the admin UI weekday select and the Israeli work week.
+_WEEKDAY_ORDER: dict[str, int] = {
+    "sunday": 0, "sun": 0,
+    "monday": 1, "mon": 1,
+    "tuesday": 2, "tue": 2,
+    "wednesday": 3, "wed": 3,
+    "thursday": 4, "thu": 4,
+    "friday": 5, "fri": 5,
+    "saturday": 6, "sat": 6,
+}
+
 # Default settings keys and their types
 SETTINGS_DEFAULTS: dict[str, Any] = {
     "notifications_enabled": True,
@@ -66,13 +78,53 @@ class SettingsService:
         return items
 
     async def update_settings(self, req: SettingsUpdateRequest) -> list[SettingItem]:
-        """Apply a partial {key: value} update and return the full settings list."""
-        for key, value in req.settings.items():
+        """Apply a partial {key: value} update and return the full settings list.
+
+        Validation runs *before* any write, so a rejected save leaves settings
+        untouched (no partial application).
+        """
+        for key in req.settings:
             if key not in SETTINGS_DEFAULTS:
                 raise ValidationException(f"Unknown setting: {key}")
+        await self._validate_auto_window(req.settings)
+        for key, value in req.settings.items():
             await self._settings_repo.set(key, str(value))
             logger.info("Setting updated: %s", key)
         return await self.get_settings()
+
+    async def _effective(self, incoming: dict[str, str], key: str) -> Any:
+        """Value for ``key`` from this request if present, else the stored value.
+
+        Lets cross-field validation see the full post-save picture even when the
+        request only carries the keys the admin actually changed.
+        """
+        if key in incoming:
+            return incoming[key]
+        return await self.get_setting(key)
+
+    async def _auto_moment(self, incoming: dict[str, str], prefix: str) -> tuple[int, int, int]:
+        """The (weekday, hour, minute) moment a weekly auto job fires at."""
+        weekday = str(await self._effective(incoming, f"{prefix}_weekday"))
+        day = _WEEKDAY_ORDER.get(weekday.strip().lower(), 0)
+        hour, minute = parse_hhmm(str(await self._effective(incoming, f"{prefix}_time")))
+        return (day, hour, minute)
+
+    async def _validate_auto_window(self, incoming: dict[str, str]) -> None:
+        """Reject saves where the weekly auto-lock fires at/before the auto-open.
+
+        Only enforced when both auto-open and auto-lock are enabled — if either
+        is off, the two moments aren't both active and the order is irrelevant.
+        """
+        open_enabled = as_bool(await self._effective(incoming, "auto_open_enabled"))
+        lock_enabled = as_bool(await self._effective(incoming, "auto_lock_enabled"))
+        if not (open_enabled and lock_enabled):
+            return
+        open_moment = await self._auto_moment(incoming, "auto_open")
+        lock_moment = await self._auto_moment(incoming, "auto_lock")
+        if lock_moment <= open_moment:
+            raise ValidationException(
+                "הנעילה האוטומטית חייבת להיות אחרי הפתיחה האוטומטית"
+            )
 
     async def get_setting(self, key: str) -> Any:
         """Get a single setting value (DB value, else the default)."""

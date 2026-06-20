@@ -224,6 +224,7 @@ export default {
     title: 'הגדרות מערכת',
     save: 'שמור',
     saved: 'ההגדרות נשמרו בהצלחה',
+    lockBeforeOpen: 'הנעילה האוטומטית חייבת להיות אחרי הפתיחה האוטומטית',
     empty: 'אין הגדרות',
     submissionDeadline: 'דדליין הגשה (שעה)',
     reminderTime: 'שעת תזכורת',

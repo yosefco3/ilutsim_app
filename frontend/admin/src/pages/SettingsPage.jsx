@@ -58,6 +58,29 @@ const GROUPS = [
 
 const isOn = (value) => String(value).toLowerCase() === 'true';
 
+// Sunday-first weekday ordering, matching WEEKDAYS / the backend, so the
+// auto-open and auto-lock moments can be compared as (day, hour, minute).
+const WEEKDAY_ORDER = Object.fromEntries(WEEKDAYS.map(([val], i) => [val, i]));
+
+// The (weekday, hour, minute) moment a "HH:MM" + weekday pair fires at.
+const autoMoment = (weekday, time) => {
+  const [hh = '0', mm = '0'] = String(time ?? '').split(':');
+  return [WEEKDAY_ORDER[weekday] ?? 0, Number(hh) || 0, Number(mm) || 0];
+};
+
+// True when auto-lock would fire at/before auto-open (both enabled). Mirrors the
+// backend guard so the admin gets instant feedback without a round trip.
+const autoLockBeforeOpen = (draft) => {
+  if (!isOn(draft.auto_open_enabled) || !isOn(draft.auto_lock_enabled)) return false;
+  const open = autoMoment(draft.auto_open_weekday, draft.auto_open_time);
+  const lock = autoMoment(draft.auto_lock_weekday, draft.auto_lock_time);
+  // Lexicographic compare of [day, hour, minute].
+  for (let i = 0; i < open.length; i += 1) {
+    if (lock[i] !== open[i]) return lock[i] < open[i];
+  }
+  return true; // exactly equal — lock is not strictly after open
+};
+
 // Hours 00..23 and minutes in half-hour steps (00, 30) for the time selects.
 const HOURS = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0'));
 const MINUTES = ['00', '30'];
@@ -158,6 +181,10 @@ export default function SettingsPage() {
   if (loading) return <div className="loading">{messages.common.loading}</div>;
 
   const handleSave = async () => {
+    if (autoLockBeforeOpen(draft)) {
+      toast.error(messages.settings.lockBeforeOpen);
+      return;
+    }
     const ok = await save();
     // Feedback as a toast — the save button sits at the bottom of the page, so a
     // banner up top would scroll off-screen and the save would look like a no-op.

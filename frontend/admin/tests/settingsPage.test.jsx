@@ -59,4 +59,49 @@ describe('SettingsPage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'שמור' }));
     await waitFor(() => expect(save).toHaveBeenCalled());
   });
+
+  // The auto-open/lock window guard: lock must fire strictly after open when
+  // both are enabled, otherwise save() is never reached.
+  const autoDraft = (overrides) => ({
+    auto_open_enabled: 'true',
+    auto_open_weekday: 'thursday',
+    auto_open_time: '19:00',
+    auto_lock_enabled: 'true',
+    auto_lock_weekday: 'thursday',
+    auto_lock_time: '20:00',
+    ...overrides,
+  });
+
+  it('blocks save when auto-lock is before auto-open', async () => {
+    const save = vi.fn().mockResolvedValue(true);
+    mockHook({ dirty: true, save, draft: autoDraft({ auto_lock_time: '18:00' }) });
+    render(<SettingsPage />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'שמור' }));
+    expect(await screen.findByText('הנעילה האוטומטית חייבת להיות אחרי הפתיחה האוטומטית'))
+      .toBeInTheDocument();
+    expect(save).not.toHaveBeenCalled();
+  });
+
+  it('allows save when auto-lock is after auto-open', async () => {
+    const save = vi.fn().mockResolvedValue(true);
+    mockHook({ dirty: true, save, draft: autoDraft() });
+    render(<SettingsPage />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'שמור' }));
+    await waitFor(() => expect(save).toHaveBeenCalled());
+  });
+
+  it('skips the window guard when auto-lock is disabled', async () => {
+    const save = vi.fn().mockResolvedValue(true);
+    mockHook({
+      dirty: true,
+      save,
+      draft: autoDraft({ auto_lock_enabled: 'false', auto_lock_time: '18:00' }),
+    });
+    render(<SettingsPage />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'שמור' }));
+    await waitFor(() => expect(save).toHaveBeenCalled());
+  });
 });

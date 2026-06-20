@@ -119,6 +119,79 @@ async def test_update_settings_rejects_unknown_key():
     repo.set.assert_not_awaited()
 
 
+def _both_auto(open_time, lock_time, *, open_day="thursday", lock_day="thursday",
+               open_on=True, lock_on=True):
+    """A full auto-open/lock settings payload for the window-validation tests."""
+    return SettingsUpdateRequest(settings={
+        "auto_open_enabled": "true" if open_on else "false",
+        "auto_open_weekday": open_day,
+        "auto_open_time": open_time,
+        "auto_lock_enabled": "true" if lock_on else "false",
+        "auto_lock_weekday": lock_day,
+        "auto_lock_time": lock_time,
+    })
+
+
+@pytest.mark.asyncio
+async def test_update_settings_rejects_lock_before_open_same_day():
+    """Auto-lock at/before auto-open on the same day is rejected (no write)."""
+    repo = AsyncMock()
+    repo.get_all_settings.return_value = []
+
+    svc = SettingsService(repo)
+    with pytest.raises(ValidationException):
+        await svc.update_settings(_both_auto("19:00", "18:00"))
+    repo.set.assert_not_awaited()
+
+
+@pytest.mark.asyncio
+async def test_update_settings_rejects_lock_equal_open():
+    """An auto-lock exactly equal to auto-open is not 'after' — rejected."""
+    repo = AsyncMock()
+    repo.get_all_settings.return_value = []
+
+    svc = SettingsService(repo)
+    with pytest.raises(ValidationException):
+        await svc.update_settings(_both_auto("19:00", "19:00"))
+    repo.set.assert_not_awaited()
+
+
+@pytest.mark.asyncio
+async def test_update_settings_accepts_lock_after_open_same_day():
+    """Auto-lock after auto-open on the same day is accepted and persisted."""
+    repo = AsyncMock()
+    repo.get_all_settings.return_value = []
+
+    svc = SettingsService(repo)
+    await svc.update_settings(_both_auto("19:00", "19:30"))
+    assert repo.set.await_count == 6
+
+
+@pytest.mark.asyncio
+async def test_update_settings_lock_weekday_after_open_weekday_accepted():
+    """A later weekday wins even when its clock time is earlier in the day."""
+    repo = AsyncMock()
+    repo.get_all_settings.return_value = []
+
+    svc = SettingsService(repo)
+    # Thursday 20:00 → Saturday 08:00: later day, earlier time — still valid.
+    await svc.update_settings(
+        _both_auto("20:00", "08:00", open_day="thursday", lock_day="saturday")
+    )
+    assert repo.set.await_count == 6
+
+
+@pytest.mark.asyncio
+async def test_update_settings_skips_window_check_when_lock_disabled():
+    """With auto-lock off, an 'earlier' lock time doesn't block the save."""
+    repo = AsyncMock()
+    repo.get_all_settings.return_value = []
+
+    svc = SettingsService(repo)
+    await svc.update_settings(_both_auto("19:00", "18:00", lock_on=False))
+    assert repo.set.await_count == 6
+
+
 @pytest.mark.asyncio
 async def test_get_setting_falls_back_to_default():
     """get_setting returns the DB value when present, else the default."""
