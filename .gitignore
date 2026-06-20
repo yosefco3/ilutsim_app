@@ -6,6 +6,9 @@
 *.xlsx
 *.md
 
+# Keep test fixtures tracked (used by backend tests)
+!backend/tests/fixtures/*.xlsx
+
 
 
 # Python
