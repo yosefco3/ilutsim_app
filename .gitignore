@@ -3,7 +3,6 @@
 /features-prompts
 /.gitignore
 *.pdf
-*.xlsx
 *.md
 
 # Keep test fixtures tracked (used by backend tests)
