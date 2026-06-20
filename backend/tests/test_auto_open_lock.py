@@ -148,6 +148,37 @@ async def test_get_upcoming_closed_week_picks_nearest(db_session):
     assert result.id == near.id  # nearest non-ended CLOSED week
 
 
+@pytest.mark.asyncio
+async def test_get_upcoming_closed_week_skips_already_opened(db_session):
+    """Anti-loop: a CLOSED week that already had its submission window
+    (opened_at set) must NOT be returned — otherwise the auto-open cron would
+    re-open a week it just closed, forever."""
+    from datetime import datetime
+
+    from app.models.schedule_week import ScheduleWeek
+
+    today = date.today()
+    reopened_candidate = ScheduleWeek(
+        start_date=today + timedelta(days=1),
+        end_date=today + timedelta(days=7),
+        status=WeekStatus.CLOSED,
+        opened_at=datetime(2026, 1, 1, 12, 0, 0),  # already opened once
+    )
+    fresh = ScheduleWeek(
+        start_date=today + timedelta(days=2),
+        end_date=today + timedelta(days=8),
+        status=WeekStatus.CLOSED,
+        opened_at=None,  # never opened
+    )
+    db_session.add_all([reopened_candidate, fresh])
+    await db_session.commit()
+
+    repo = ScheduleWeekRepository(db_session)
+    result = await repo.get_upcoming_closed_week(today)
+    assert result is not None
+    assert result.id == fresh.id  # the never-opened week, not the closer-but-opened one
+
+
 # ── full flow (service + real DB) ────────────────────────────────────────────
 
 @pytest.mark.asyncio

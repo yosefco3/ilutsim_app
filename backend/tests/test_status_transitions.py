@@ -76,17 +76,61 @@ class TestValidTransitions:
         result = await svc.change_week_status(week.id, WeekStatus.OPEN)
         assert result.status == WeekStatus.OPEN
 
+    @pytest.mark.asyncio
+    async def test_open_to_closed(self):
+        """The auto-lock TIME closes the submission window: open → closed (reopenable)."""
+        week = _mock_week(WeekStatus.OPEN)
+        svc = _svc(week)
+
+        result = await svc.change_week_status(week.id, WeekStatus.CLOSED)
+        assert result.status == WeekStatus.CLOSED
+
+    @pytest.mark.asyncio
+    async def test_closed_to_published(self):
+        """Admin can publish a closed week directly."""
+        week = _mock_week(WeekStatus.CLOSED)
+        svc = _svc(week)
+
+        result = await svc.change_week_status(week.id, WeekStatus.PUBLISHED)
+        assert result.status == WeekStatus.PUBLISHED
+
+
+class TestOpenedAtStamp:
+    """``opened_at`` is stamped on the first OPEN and preserved on reopen."""
+
+    @pytest.mark.asyncio
+    async def test_opened_at_stamped_on_first_open(self):
+        week = _mock_week(WeekStatus.CLOSED)
+        week.opened_at = None
+        svc = _svc(week)
+
+        await svc.change_week_status(week.id, WeekStatus.OPEN)
+        assert week.opened_at is not None
+
+    @pytest.mark.asyncio
+    async def test_opened_at_preserved_on_reopen(self):
+        from datetime import datetime
+
+        original = datetime(2026, 1, 1, 12, 0, 0)
+        week = _mock_week(WeekStatus.LOCKED)
+        week.opened_at = original
+        svc = _svc(week)
+
+        await svc.change_week_status(week.id, WeekStatus.OPEN)
+        assert week.opened_at == original  # not overwritten
+
 
 class TestInvalidTransitions:
     """Illegal transitions that must raise AppBaseException."""
 
     @pytest.mark.asyncio
-    async def test_open_to_published_rejected(self):
-        week = _mock_week(WeekStatus.OPEN)
+    async def test_locked_to_closed_rejected(self):
+        """LOCKED is the finalized state — it cannot drop back to CLOSED."""
+        week = _mock_week(WeekStatus.LOCKED)
         svc = _svc(week)
 
         with pytest.raises(AppBaseException) as exc_info:
-            await svc.change_week_status(week.id, WeekStatus.PUBLISHED)
+            await svc.change_week_status(week.id, WeekStatus.CLOSED)
         assert exc_info.value.status_code == 400
 
     @pytest.mark.asyncio

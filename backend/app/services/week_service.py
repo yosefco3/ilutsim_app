@@ -4,7 +4,7 @@ WeekService — business logic for schedule week management.
 
 import logging
 import uuid
-from datetime import date
+from datetime import date, datetime, timezone
 from typing import Optional
 
 from app.constants import WeekStatus
@@ -17,12 +17,21 @@ from app.utils.date_utils import get_next_week_end, get_next_week_start, week_ra
 
 logger = logging.getLogger("ilutzim")
 
-# Allowed week-status transitions: open → locked → published.
-# Admin can also reopen a locked week: locked → open.
+# Allowed week-status transitions.
+#
+# New lifecycle (see features-prompts/week_lifecycle_rework):
+#   CLOSED    = submissions closed but REOPENABLE; admin may edit on behalf of guards.
+#   OPEN      = submissions accepted; stamps ``opened_at`` on first entry.
+#   LOCKED    = finalized by the Sunday rollover; non-reopenable (terminal in step 04).
+#   PUBLISHED = finalized by the publish button; terminal.
+#
+# This map is the permissive *superset* for the migration: it adds the new edges
+# (open→closed, closed→locked/published) while keeping the legacy locked→open/published
+# edges alive until step 04 moves publishing off LOCKED and makes it terminal.
 ALLOWED_TRANSITIONS: dict[str, list[str]] = {
-    "closed": ["open"],
-    "open": ["locked"],
-    "locked": ["open", "published"],
+    "closed": ["open", "locked", "published"],
+    "open": ["closed", "locked", "published"],
+    "locked": ["open", "published"],  # step 04 → [] (terminal)
     "published": [],  # terminal state
 }
 
@@ -84,7 +93,17 @@ class WeekService:
                 f" מעברים אפשריים: {allowed_str}"
             )
 
-        updated = await self._week_repo.update(week.id, status=new_status)
+        # Stamp the first time a week is opened. ``opened_at`` is what tells the
+        # auto-open cron a week was already opened, so it is never auto-reopened
+        # after its submission window closes (which now returns it to CLOSED).
+        # Re-opening a previously-opened week keeps the original timestamp.
+        update_fields: dict = {"status": new_status}
+        if new_status == WeekStatus.OPEN and week.opened_at is None:
+            # naive UTC to match the naive ``timestamp`` column (asyncpg rejects
+            # tz-aware values for ``timestamp without time zone``).
+            update_fields["opened_at"] = datetime.now(timezone.utc).replace(tzinfo=None)
+
+        updated = await self._week_repo.update(week.id, **update_fields)
         logger.info(f"Week {week_id}: {old_status} -> {new_status}")
 
         # Send Telegram notifications on status change (skipped for silent
