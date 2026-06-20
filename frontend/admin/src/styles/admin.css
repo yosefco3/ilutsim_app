@@ -337,6 +337,7 @@ body {
 .badge-warning   { background: var(--warning-soft); color: #fcd34d; border-color: rgba(245,158,11,.25); }
 .badge-danger    { background: var(--danger-soft);  color: #fca5a5; border-color: rgba(239,68,68,.25); }
 .badge-secondary { background: var(--surface-3);    color: var(--text-muted); border-color: var(--border-strong); }
+.violation-flag  { margin-inline-start: 0.5rem; white-space: nowrap; cursor: help; }
 
 /* Confirm Dialog */
 .overlay {

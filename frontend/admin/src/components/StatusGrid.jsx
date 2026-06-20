@@ -35,7 +35,17 @@ export default function StatusGrid({ submissions, detailsByUser = {}, canFillCon
           return (
             <Fragment key={s.user_id}>
               <tr>
-                <td>{s.full_name || s.user_id}</td>
+                <td>
+                  {s.full_name || s.user_id}
+                  {warnings.length > 0 && (
+                    <span
+                      className="badge badge-danger violation-flag"
+                      title={messages.submissions.violationBadgeTitle}
+                    >
+                      ⚠ {messages.submissions.violationBadge} ({warnings.length})
+                    </span>
+                  )}
+                </td>
                 <td>
                   <span className={`badge ${s.submitted_at ? 'badge-success' : 'badge-warning'}`}>
                     {s.submitted_at ? messages.submissions.submitted : messages.submissions.missing}
