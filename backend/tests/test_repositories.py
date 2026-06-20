@@ -224,7 +224,7 @@ class TestScheduleWeekRepository:
         # An already-ended week, the current (locked) week, and next week (closed).
         await repo.create(
             start_date=date(2026, 5, 25), end_date=date(2026, 5, 31),
-            status=WeekStatus.PUBLISHED,
+            status=WeekStatus.LOCKED,
         )
         await repo.create(
             start_date=date(2026, 6, 1), end_date=date(2026, 6, 7),

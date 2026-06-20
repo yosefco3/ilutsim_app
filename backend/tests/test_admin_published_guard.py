@@ -1,8 +1,10 @@
-"""Tests for the published-week edit guard in SubmissionService.create_submission.
+"""Tests for the edit gating in SubmissionService.create_submission (3-state model).
 
-A published week is final: shifts can no longer be edited by anyone — not even
-an admin via override_lock — to avoid conflicts after the schedule is published.
-Admins may still edit while the week is locked/open/closed (override_lock=True).
+- LOCKED is final: submissions can no longer be edited by anyone — not even an
+  admin via override_lock.
+- CLOSED: an admin may edit on behalf of guards (override_lock=True); a guard
+  without override is blocked.
+- OPEN: everyone may submit.
 """
 
 import uuid
@@ -35,9 +37,9 @@ def _service(week_status):
 
 
 @pytest.mark.asyncio
-async def test_admin_cannot_edit_published_week():
-    """override_lock does NOT bypass a published week → WeekLockedException."""
-    svc, sub_repo = _service(WeekStatus.PUBLISHED)
+async def test_admin_cannot_edit_locked_week():
+    """override_lock does NOT bypass a LOCKED (final) week → WeekLockedException."""
+    svc, sub_repo = _service(WeekStatus.LOCKED)
 
     with pytest.raises(WeekLockedException):
         await svc.create_submission(_data(), override_lock=True)
@@ -47,9 +49,9 @@ async def test_admin_cannot_edit_published_week():
 
 
 @pytest.mark.asyncio
-async def test_admin_can_edit_locked_week():
-    """A locked week is still editable by the admin (override_lock=True)."""
-    svc, sub_repo = _service(WeekStatus.LOCKED)
+async def test_admin_can_edit_closed_week():
+    """A CLOSED week is editable by the admin on behalf of guards (override_lock=True)."""
+    svc, sub_repo = _service(WeekStatus.CLOSED)
 
     with patch(
         "app.services.submission_service.SubmissionResponse.model_validate",
@@ -61,9 +63,20 @@ async def test_admin_can_edit_locked_week():
 
 
 @pytest.mark.asyncio
-async def test_guard_cannot_edit_published_week():
-    """A guard (no override) is likewise blocked on a published week."""
-    svc, sub_repo = _service(WeekStatus.PUBLISHED)
+async def test_guard_cannot_edit_closed_week():
+    """A guard (no override) is blocked on a CLOSED week."""
+    svc, sub_repo = _service(WeekStatus.CLOSED)
+
+    with pytest.raises(WeekLockedException):
+        await svc.create_submission(_data(), override_lock=False)
+
+    sub_repo.upsert_submission.assert_not_awaited()
+
+
+@pytest.mark.asyncio
+async def test_guard_cannot_edit_locked_week():
+    """A guard (no override) is likewise blocked on a LOCKED week."""
+    svc, sub_repo = _service(WeekStatus.LOCKED)
 
     with pytest.raises(WeekLockedException):
         await svc.create_submission(_data(), override_lock=False)

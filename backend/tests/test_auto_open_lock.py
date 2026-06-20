@@ -190,7 +190,7 @@ async def test_auto_lock_does_not_touch_published(db_session):
     published = ScheduleWeek(
         start_date=today,
         end_date=today + timedelta(days=6),
-        status=WeekStatus.PUBLISHED,
+        status=WeekStatus.LOCKED,
     )
     db_session.add(published)
     await db_session.commit()
@@ -201,7 +201,7 @@ async def test_auto_lock_does_not_touch_published(db_session):
 
     assert result is None
     await db_session.refresh(published)
-    assert published.status == WeekStatus.PUBLISHED
+    assert published.status == WeekStatus.LOCKED
 
 
 @pytest.mark.asyncio

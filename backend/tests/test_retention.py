@@ -22,7 +22,7 @@ from app.services.week_service import WeekService
 pytestmark = pytest.mark.asyncio
 
 
-async def _make_weeks(db_session, count, *, status=WeekStatus.PUBLISHED):
+async def _make_weeks(db_session, count, *, status=WeekStatus.LOCKED):
     """Create ``count`` weeks with descending start_date (week 0 = newest)."""
     base = date(2026, 1, 4)  # a Sunday
     weeks = []
@@ -105,7 +105,7 @@ async def test_purge_deletes_published_weeks(db_session, monkeypatch):
     monkeypatch.setattr(settings, "RETENTION_WEEKS", 2)
     monkeypatch.setattr(settings, "RETENTION_ENABLED", True)
 
-    await _make_weeks(db_session, 4, status=WeekStatus.PUBLISHED)
+    await _make_weeks(db_session, 4, status=WeekStatus.LOCKED)
 
     repo = ScheduleWeekRepository(db_session)
     purged = await WeekService(repo).purge_old_weeks()

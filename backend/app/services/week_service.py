@@ -17,22 +17,17 @@ from app.utils.date_utils import get_next_week_end, get_next_week_start, week_ra
 
 logger = logging.getLogger("ilutzim")
 
-# Allowed week-status transitions.
+# Allowed week-status transitions (3-state model).
 #
-# New lifecycle (see features-prompts/week_lifecycle_rework):
-#   CLOSED    = submissions closed but REOPENABLE; admin may edit on behalf of guards.
-#   OPEN      = submissions accepted; stamps ``opened_at`` on first entry.
-#   LOCKED    = finalized by the Sunday rollover; non-reopenable (terminal in step 04).
-#   PUBLISHED = finalized by the publish button; terminal.
-#
-# This map is the permissive *superset* for the migration: it adds the new edges
-# (open→closed, closed→locked/published) while keeping the legacy locked→open/published
-# edges alive until step 04 moves publishing off LOCKED and makes it terminal.
+#   CLOSED = submissions closed but REOPENABLE; admin may edit on behalf of guards
+#            (week creation, or the auto-lock TIME closing an OPEN week).
+#   OPEN   = submissions accepted; stamps ``opened_at`` on first entry.
+#   LOCKED = final, non-reopenable. Reached by the Sunday rollover (silent) or by
+#            the admin "publish" action (manual lock). There is no PUBLISHED.
 ALLOWED_TRANSITIONS: dict[str, list[str]] = {
-    "closed": ["open", "locked", "published"],
-    "open": ["closed", "locked", "published"],
-    "locked": ["open", "published"],  # step 04 → [] (terminal)
-    "published": [],  # terminal state
+    "closed": ["open", "locked"],
+    "open": ["closed", "locked"],
+    "locked": [],  # terminal — final, non-reopenable
 }
 
 
@@ -66,8 +61,8 @@ class WeekService:
     ) -> WeekResponse:
         """Transition a week to a new status.
 
-        Validates that the transition follows the allowed path:
-        open → locked → published.
+        Validates the transition against ALLOWED_TRANSITIONS (3-state model:
+        closed ⇄ open, and either → locked; locked is terminal).
 
         ``notify`` controls the Telegram broadcast. Manual admin transitions
         notify guards; the automatic Saturday-night rollover locks silently
@@ -110,7 +105,7 @@ class WeekService:
         # automatic transitions, e.g. the Saturday-night auto-lock).
         if notify:
             try:
-                from app.bot.notifications import notify_week_locked, notify_week_opened, notify_week_published
+                from app.bot.notifications import notify_week_locked, notify_week_opened
 
                 telegram_ids: list[int] = []
                 if self._user_repo is not None:
@@ -122,13 +117,14 @@ class WeekService:
                         await notify_week_opened(updated.start_date, updated.end_date, telegram_ids)
                     elif new_status == WeekStatus.LOCKED:
                         await notify_week_locked(updated.start_date, updated.end_date, telegram_ids)
-                    elif new_status == WeekStatus.PUBLISHED:
-                        await notify_week_published(updated.start_date, updated.end_date, telegram_ids)
             except Exception as exc:
                 logger.warning(f"Failed to send status-change notification: {exc}")
 
-        # Auto-create next week when publishing
-        if new_status == WeekStatus.PUBLISHED:
+        # A *manual* transition to LOCKED is the admin "publish" action — it
+        # finalizes the schedule, so ensure the next week exists. The Sunday
+        # rollover also locks weeks but with notify=False (auto_rotate already
+        # creates the upcoming week), so it is excluded here to avoid double work.
+        if new_status == WeekStatus.LOCKED and notify:
             try:
                 next_week = await self._ensure_next_week(updated)
                 logger.info(
@@ -198,12 +194,12 @@ class WeekService:
     async def delete_week(self, week_id: uuid.UUID) -> None:
         """Delete a schedule week by ID.
 
-        Only allows deletion of non-published weeks to preserve history.
+        Only allows deletion of non-finalized weeks to preserve history.
         """
         week = await self._get_week_or_raise(week_id)
-        if week.status == WeekStatus.PUBLISHED:
+        if week.status == WeekStatus.LOCKED:
             raise InvalidTransitionException(
-                "לא ניתן למחוק שבוע שפורסם — הוא חלק מההיסטוריה"
+                "לא ניתן למחוק שבוע נעול — הוא חלק מההיסטוריה"
             )
         deleted = await self._week_repo.delete(week_id)
         if not deleted:
@@ -312,7 +308,7 @@ class WeekService:
         non-reopenable state. Only a week that already had its submission window
         is finalized (OPEN, or CLOSED with ``opened_at`` set); a never-opened
         CLOSED week — the upcoming/current week waiting to be opened — and
-        terminal weeks (already LOCKED/PUBLISHED) are never touched.
+        already-LOCKED weeks are never touched.
         """
         today = date.today()
         try:
@@ -367,7 +363,7 @@ class WeekService:
         """Delete weeks older than the retention window. Returns the count purged.
 
         Keeps only the most recent ``RETENTION_WEEKS`` weeks (by ``start_date``)
-        and hard-deletes everything older — **including published weeks**, since
+        and hard-deletes everything older — **including locked/finalized weeks**, since
         the whole point of the retention cap is to bound how much history is
         kept. Children (submissions → daily statuses → shift windows) are removed
         by the ``ON DELETE CASCADE`` chain at the database level.
@@ -393,7 +389,7 @@ class WeekService:
         purged = 0
         for week in stale:
             try:
-                # Delete directly (not delete_week) to bypass the published guard:
+                # Delete directly (not delete_week) to bypass the locked-week guard:
                 # purging old history is the intended behavior here.
                 deleted = await self._week_repo.delete(week.id)
                 if deleted:

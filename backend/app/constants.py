@@ -13,11 +13,16 @@ class ShiftType(str, enum.Enum):
 
 
 class WeekStatus(str, enum.Enum):
-    """Weekly schedule lifecycle status."""
+    """Weekly schedule lifecycle status (3-state model).
+
+    CLOSED  — submissions closed but reopenable; admin may edit on behalf of guards.
+    OPEN    — submissions accepted.
+    LOCKED  — final, non-reopenable. Reached by the Sunday rollover or by the admin
+              "publish" action (which merged into LOCKED — there is no PUBLISHED).
+    """
     CLOSED = "closed"
     OPEN = "open"
     LOCKED = "locked"
-    PUBLISHED = "published"
 
 
 class SubmissionStatus(str, enum.Enum):

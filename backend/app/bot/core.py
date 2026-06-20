@@ -215,8 +215,8 @@ async def _show_main_menu(message: Message, display_name: str):
     - If a week is OPEN → check if user already submitted.
       - Submitted → button "עריכת אילוצים" → webapp
       - Not submitted → button "הגשת אילוצים" → webapp
-    - If latest week is LOCKED → "השבוע סגור להגשה" (no buttons)
-    - If latest week is PUBLISHED → "סידור העבודה לשבוע הבא כבר פורסם" (no buttons)
+    - If latest week is LOCKED → "השבוע נעול — ההגשה נסגרה" (no buttons)
+    - If latest week is CLOSED → "ההגשה סגורה כרגע" (no buttons)
     """
     from app.database import get_session
     from app.repositories.user_repository import UserRepository
@@ -282,10 +282,10 @@ async def _show_main_menu(message: Message, display_name: str):
             latest_week = await week_svc.get_latest_week()
 
             if latest_week is not None and latest_week.status == WeekStatus.LOCKED:
-                text = f"שלום {display_name}! 👋\nהשבוע סגור להגשה."
+                text = f"שלום {display_name}! 👋\nהשבוע נעול — ההגשה נסגרה."
                 kb = InlineKeyboardMarkup(inline_keyboard=[])
-            elif latest_week is not None and latest_week.status == WeekStatus.PUBLISHED:
-                text = f"שלום {display_name}! 👋\nסידור העבודה לשבוע הבא כבר פורסם."
+            elif latest_week is not None and latest_week.status == WeekStatus.CLOSED:
+                text = f"שלום {display_name}! 👋\nההגשה סגורה כרגע."
                 kb = InlineKeyboardMarkup(inline_keyboard=[])
             else:
                 # Fallback — no week exists at all

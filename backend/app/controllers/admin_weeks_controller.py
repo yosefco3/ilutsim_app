@@ -92,7 +92,7 @@ async def update_week_status(
     body: WeekStatusUpdate,
     week_service: WeekService = Depends(get_week_service),
 ):
-    """Change a week's status (open → locked → published)."""
+    """Change a week's status (closed ⇄ open, either → locked; locked is final)."""
     try:
         return await week_service.change_week_status(week_id, body.status)
     except Exception as e:
@@ -126,7 +126,7 @@ async def delete_week(
     week_id: uuid.UUID,
     week_service: WeekService = Depends(get_week_service),
 ):
-    """Delete a non-published schedule week."""
+    """Delete a non-locked schedule week."""
     try:
         await week_service.delete_week(week_id)
     except AppBaseException as exc:

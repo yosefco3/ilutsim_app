@@ -68,10 +68,10 @@ class TestGetCurrentWeek:
         assert resp.json()["status"] == "locked"
         app.dependency_overrides.clear()
 
-    def test_get_current_week_returns_published_with_status(self):
-        """When published, returns the week WITH status 'published' (not null)."""
+    def test_get_current_week_returns_locked_with_status(self):
+        """When locked, returns the week WITH status 'locked' (not null)."""
         mock_svc = AsyncMock()
-        mock_svc.get_relevant_week_with_days.return_value = _week_dict("published")
+        mock_svc.get_relevant_week_with_days.return_value = _week_dict("locked")
 
         app = _make_app()
         app.dependency_overrides[get_week_service] = lambda: mock_svc
@@ -79,7 +79,7 @@ class TestGetCurrentWeek:
 
         resp = client.get("/submissions/current-week")
         assert resp.status_code == 200
-        assert resp.json()["status"] == "published"
+        assert resp.json()["status"] == "locked"
         app.dependency_overrides.clear()
 
     def test_get_current_week_none_when_no_weeks(self):
@@ -123,7 +123,7 @@ class TestGetRelevantWeekWithDaysService:
         from app.constants import WeekStatus
         open_w = self._week(WeekStatus.OPEN)
         result = asyncio.run(self._run(open_w, self._week(WeekStatus.CLOSED),
-                                       self._week(WeekStatus.PUBLISHED)))
+                                       self._week(WeekStatus.LOCKED)))
         assert result.status == WeekStatus.OPEN
         assert len(result.days) == 7
 
@@ -142,9 +142,9 @@ class TestGetRelevantWeekWithDaysService:
         (typically a published) week."""
         import asyncio
         from app.constants import WeekStatus
-        latest_published = self._week(WeekStatus.PUBLISHED)
+        latest_published = self._week(WeekStatus.LOCKED)
         result = asyncio.run(self._run(None, None, latest_published))
-        assert result.status == WeekStatus.PUBLISHED
+        assert result.status == WeekStatus.LOCKED
 
     def test_none_when_no_weeks(self):
         import asyncio

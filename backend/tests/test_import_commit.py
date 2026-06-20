@@ -76,10 +76,12 @@ async def commit_service(db_session):
 @pytest_asyncio.fixture
 async def target_week(db_session):
     # Matches the sample file's title range (2026-06-14 .. 2026-06-20).
+    # Constraint import runs while the week is CLOSED — the admin editing on
+    # behalf of guards (override_lock). A LOCKED week is final and rejects edits.
     w = ScheduleWeek(
         start_date=date(2026, 6, 14),
         end_date=date(2026, 6, 20),
-        status=WeekStatus.LOCKED,
+        status=WeekStatus.CLOSED,
     )
     db_session.add(w)
     await db_session.commit()

@@ -1,9 +1,8 @@
 """Tests for week-status transition validation (P03).
 
-Validates that change_week_status only allows:
-  open → locked → published
-  locked → open  (admin can reopen a locked week)
-and rejects all illegal transitions with AppBaseException(400).
+Validates change_week_status for the 3-state model:
+  closed ⇄ open, and either closed/open → locked (LOCKED is terminal)
+and rejects all illegal transitions (incl. any locked → *) with AppBaseException(400).
 """
 
 import uuid
@@ -60,23 +59,6 @@ class TestValidTransitions:
         assert result.status == WeekStatus.LOCKED
 
     @pytest.mark.asyncio
-    async def test_locked_to_published(self):
-        week = _mock_week(WeekStatus.LOCKED)
-        svc = _svc(week)
-
-        result = await svc.change_week_status(week.id, WeekStatus.PUBLISHED)
-        assert result.status == WeekStatus.PUBLISHED
-
-    @pytest.mark.asyncio
-    async def test_locked_to_open(self):
-        """Admin can reopen a locked week."""
-        week = _mock_week(WeekStatus.LOCKED)
-        svc = _svc(week)
-
-        result = await svc.change_week_status(week.id, WeekStatus.OPEN)
-        assert result.status == WeekStatus.OPEN
-
-    @pytest.mark.asyncio
     async def test_open_to_closed(self):
         """The auto-lock TIME closes the submission window: open → closed (reopenable)."""
         week = _mock_week(WeekStatus.OPEN)
@@ -86,13 +68,22 @@ class TestValidTransitions:
         assert result.status == WeekStatus.CLOSED
 
     @pytest.mark.asyncio
-    async def test_closed_to_published(self):
-        """Admin can publish a closed week directly."""
+    async def test_closed_to_open(self):
+        """Admin reopens a closed week."""
         week = _mock_week(WeekStatus.CLOSED)
         svc = _svc(week)
 
-        result = await svc.change_week_status(week.id, WeekStatus.PUBLISHED)
-        assert result.status == WeekStatus.PUBLISHED
+        result = await svc.change_week_status(week.id, WeekStatus.OPEN)
+        assert result.status == WeekStatus.OPEN
+
+    @pytest.mark.asyncio
+    async def test_closed_to_locked(self):
+        """Admin 'publish' finalizes a closed week to LOCKED."""
+        week = _mock_week(WeekStatus.CLOSED)
+        svc = _svc(week)
+
+        result = await svc.change_week_status(week.id, WeekStatus.LOCKED)
+        assert result.status == WeekStatus.LOCKED
 
 
 class TestOpenedAtStamp:
@@ -112,7 +103,7 @@ class TestOpenedAtStamp:
         from datetime import datetime
 
         original = datetime(2026, 1, 1, 12, 0, 0)
-        week = _mock_week(WeekStatus.LOCKED)
+        week = _mock_week(WeekStatus.CLOSED)  # reopen a closed (already-opened) week
         week.opened_at = original
         svc = _svc(week)
 
@@ -134,8 +125,9 @@ class TestInvalidTransitions:
         assert exc_info.value.status_code == 400
 
     @pytest.mark.asyncio
-    async def test_published_to_open_rejected(self):
-        week = _mock_week(WeekStatus.PUBLISHED)
+    async def test_locked_to_open_rejected(self):
+        """LOCKED is terminal — it cannot be reopened."""
+        week = _mock_week(WeekStatus.LOCKED)
         svc = _svc(week)
 
         with pytest.raises(AppBaseException) as exc_info:

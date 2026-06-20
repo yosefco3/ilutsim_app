@@ -165,11 +165,10 @@ class TestFullWeekLifecycle:
         sub_svc.create_submission.return_value = _submission_obj(sub_id, week_id)
 
         # All status transitions go through change_week_status (controller):
-        #   open (step 3) → locked (step 6) → published (step 9) → open next (step 10)
+        #   open (step 3) → locked/finalized (step 6) → open next week (step 9)
         week_svc.change_week_status.side_effect = [
             _week_obj(week_id, WeekStatus.OPEN),
             _week_obj(week_id, WeekStatus.LOCKED),
-            _week_obj(week_id, WeekStatus.PUBLISHED),
             _week_obj(next_week_id, WeekStatus.OPEN,
                       start_date="2026-06-15", end_date="2026-06-21"),
         ]
@@ -228,15 +227,9 @@ class TestFullWeekLifecycle:
         )
         assert resp.status_code == 403
 
-        # Step 9: Admin publishes
-        resp = client.patch(
-            f"/admin/weeks/{week_id}/status",
-            json={"status": "published"},
-            headers=_admin_headers(),
-        )
-        assert resp.status_code == 200
-
-        # Step 10: Admin opens the NEXT (auto-created closed) week — different dates
+        # Step 9: Admin opens the NEXT (auto-created closed) week — different dates
+        # (locking in step 6 is the final/publish action; there is no separate
+        # PUBLISHED state in the 3-state model).
         resp = client.post(f"/admin/weeks/{next_week_id}/open", headers=_admin_headers())
         assert resp.status_code == 200
         new_week = resp.json()
@@ -251,11 +244,11 @@ class TestFullWeekLifecycle:
 class TestInvalidTransitions:
     """Guards against illegal state changes."""
 
-    def test_cannot_publish_from_open(self):
-        """Publishing directly from open (skip locked) should fail."""
+    def test_cannot_reopen_locked(self):
+        """Reopening a LOCKED (terminal) week should fail — LOCKED is final."""
         week_id = uuid.uuid4()
         week_svc = AsyncMock()
-        # Controller catches all Exception in status endpoint
+        # Controller catches all Exception in status endpoint → 400
         week_svc.change_week_status.side_effect = ValueError(
             "Invalid transition"
         )
@@ -265,7 +258,7 @@ class TestInvalidTransitions:
 
         resp = client.patch(
             f"/admin/weeks/{week_id}/status",
-            json={"status": "published"},
+            json={"status": "open"},
             headers=_admin_headers(),
         )
         assert resp.status_code == 400

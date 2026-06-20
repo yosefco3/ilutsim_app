@@ -56,14 +56,15 @@ class SubmissionService:
         if week is None:
             raise UserNotFoundException()
 
-        # A published week is final — shifts can no longer be edited by anyone,
-        # not even an admin via override_lock. This prevents conflicts once the
-        # schedule is published (admins edit while it is still 'locked').
-        if week.status == WeekStatus.PUBLISHED:
+        # LOCKED is final — submissions can no longer be edited by anyone, not
+        # even an admin via override_lock (the schedule is finalized/published).
+        if week.status == WeekStatus.LOCKED:
             raise WeekLockedException(
-                "השבוע פורסם — לא ניתן לערוך משמרות. עריכה אפשרית רק כששבוע נעול או פתוח."
+                "השבוע נעול סופית — לא ניתן לערוך אילוצים."
             )
 
+        # OPEN → guards (and admins) may submit. CLOSED → only an admin editing on
+        # behalf of guards (override_lock); a guard without override is blocked.
         if week.status != WeekStatus.OPEN and not override_lock:
             raise WeekLockedException()
 
