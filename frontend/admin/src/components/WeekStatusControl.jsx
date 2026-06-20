@@ -14,11 +14,11 @@ import ConfirmDialog from './ConfirmDialog';
 
 const A = messages.weeks.automation;
 
+// 3-state model: CLOSED (reopenable) / OPEN / LOCKED (final).
 const STATUS_CFG = {
   closed:    { label: messages.weeks.statusClosed,    bg: '#e2e3e5', color: '#383d41', icon: '⏳' },
   open:      { label: messages.weeks.statusOpen,      bg: '#d4edda', color: '#155724', icon: '🔓' },
   locked:    { label: messages.weeks.statusLocked,    bg: '#fff3cd', color: '#856404', icon: '🔒' },
-  published: { label: messages.weeks.publishedLabel,   bg: '#cce5ff', color: '#004085', icon: '📢' },
 };
 
 export default function WeekStatusControl({
@@ -45,9 +45,10 @@ export default function WeekStatusControl({
           {cfg.icon} {cfg.label}
         </span>
 
-        {/* Action buttons by status */}
+        {/* Action buttons by status (3-state model) */}
         <div className="week-card-buttons">
-          {(status === 'locked' || status === 'closed') && !autoOpen.enabled && (
+          {/* CLOSED → can be opened for submission (manually, unless auto-open). */}
+          {status === 'closed' && !autoOpen.enabled && (
             <button
               className="btn btn-primary btn-sm"
               disabled={loading}
@@ -63,13 +64,25 @@ export default function WeekStatusControl({
             </span>
           )}
 
+          {/* CLOSED → can be finalized ("publish" → LOCKED, terminal). */}
+          {status === 'closed' && (
+            <button
+              className="btn btn-success btn-sm"
+              disabled={loading}
+              onClick={() => setShowPublishConfirm(true)}
+            >
+              📢 {messages.weeks.published}
+            </button>
+          )}
+
+          {/* OPEN → can be closed (submission window ends → CLOSED, reopenable). */}
           {status === 'open' && !autoLock.enabled && (
             <button
               className="btn btn-warning btn-sm"
               disabled={loading}
               onClick={() => onLock(week.id)}
             >
-              🔒 {messages.weeks.lock}
+              🔒 {messages.weeks.closeForSubmission}
             </button>
           )}
 
@@ -79,15 +92,7 @@ export default function WeekStatusControl({
             </span>
           )}
 
-          {status === 'locked' && (
-            <button
-              className="btn btn-success btn-sm"
-              disabled={loading}
-              onClick={() => setShowPublishConfirm(true)}
-            >
-              📢 {messages.weeks.published}
-            </button>
-          )}
+          {/* LOCKED is terminal — no actions. */}
         </div>
       </div>
 

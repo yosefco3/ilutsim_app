@@ -91,9 +91,9 @@ describe('useAdminConstraints', () => {
     expect(result.current.saved).toBe(true);
   });
 
-  it('blocks editing a published week: isPublished + submit is a no-op', async () => {
+  it('blocks editing a locked (final) week: isPublished + submit is a no-op', async () => {
     fetchWeeks.mockResolvedValue([
-      { id: 'wp', status: 'published', week_label: 'שבוע פורסם', start_date: '2025-06-01' },
+      { id: 'wp', status: 'locked', week_label: 'שבוע נעול', start_date: '2025-06-01' },
     ]);
 
     const { result } = renderHook(() => useAdminConstraints('g1'));

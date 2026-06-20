@@ -14,8 +14,7 @@ import '../styles/guard.css';
 const WEEK_STATUS_LABELS = {
   open: 'פתוח',
   closed: 'סגור',
-  locked: 'נעול',
-  published: 'פורסם',
+  locked: 'נעול (סופי)',
 };
 
 export default function AdminConstraintsPage() {

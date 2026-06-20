@@ -137,21 +137,24 @@ export function sendWeekReminders(id) {
   return request(`/admin/notifications/remind/${id}`, { method: 'POST' });
 }
 
+// Close the submission window: open → closed (reopenable). Mirrors the auto-lock time.
 export function lockWeek(id) {
-  return updateWeekStatus(id, 'locked');
+  return updateWeekStatus(id, 'closed');
 }
 
 export function unlockWeek(id) {
   return updateWeekStatus(id, 'open');
 }
 
-// Open a week for submission (closed/locked → open). Sends guard notifications.
+// Open a week for submission (closed → open). Sends guard notifications.
 export function openWeek(id) {
   return request(`/admin/weeks/${id}/open`, { method: 'POST' });
 }
 
+// "Publish" finalizes a week → LOCKED (terminal, non-reopenable). 3-state model:
+// there is no separate 'published' status.
 export function publishWeek(id) {
-  return updateWeekStatus(id, 'published');
+  return updateWeekStatus(id, 'locked');
 }
 
 export function deleteWeek(id) {

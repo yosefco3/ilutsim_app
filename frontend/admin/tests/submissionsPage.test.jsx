@@ -46,8 +46,8 @@ describe('SubmissionsPage — admin fill-constraints gating by week status', () 
     fireEvent.change(screen.getByRole('combobox'), { target: { value: '1' } });
   }
 
-  it('shows the fill-constraints button when the week is locked (admin may still edit)', () => {
-    setup('locked');
+  it('shows the fill-constraints button when the week is closed (admin may edit on behalf)', () => {
+    setup('closed');
     selectWeek();
     expect(
       screen.getByRole('button', { name: messages.guards.fillConstraints }),
@@ -62,8 +62,8 @@ describe('SubmissionsPage — admin fill-constraints gating by week status', () 
     ).toBeInTheDocument();
   });
 
-  it('hides the fill-constraints button only once the week is published', () => {
-    setup('published');
+  it('hides the fill-constraints button once the week is locked (final)', () => {
+    setup('locked');
     selectWeek();
     expect(
       screen.queryByRole('button', { name: messages.guards.fillConstraints }),

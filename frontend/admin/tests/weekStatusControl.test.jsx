@@ -20,7 +20,7 @@ function renderWeek(status, handlers = {}, auto = {}) {
 
 describe('WeekStatusControl', () => {
   it('never shows a delete button — removed to prevent accidental data loss', () => {
-    for (const status of ['published', 'closed', 'open', 'locked']) {
+    for (const status of ['closed', 'open', 'locked']) {
       const { unmount } = renderWeek(status);
       expect(screen.queryByText(/מחק/)).not.toBeInTheDocument();
       unmount();
@@ -40,18 +40,18 @@ describe('WeekStatusControl', () => {
 
   it('does not publish immediately — asks for confirmation first', () => {
     const onPublish = vi.fn();
-    renderWeek('locked', { onPublish });
+    renderWeek('closed', { onPublish });  // publish (finalize → locked) lives on CLOSED
 
     // Clicking "פרסם" opens a confirm dialog instead of publishing right away.
     fireEvent.click(screen.getByText(/📢/));
     expect(onPublish).not.toHaveBeenCalled();
-    // The warning explains publish is irreversible (unlike lock).
+    // The warning explains publish is irreversible (the week becomes final/locked).
     expect(screen.getByText(/בלתי הפיכה/)).toBeInTheDocument();
   });
 
   it('publishes only after confirming the irreversible warning', () => {
     const onPublish = vi.fn();
-    renderWeek('locked', { onPublish });
+    renderWeek('closed', { onPublish });
 
     fireEvent.click(screen.getByText(/📢/));
     fireEvent.click(screen.getByText('כן, פרסם'));
@@ -60,7 +60,7 @@ describe('WeekStatusControl', () => {
 
   it('cancelling the publish confirm does not publish', () => {
     const onPublish = vi.fn();
-    renderWeek('locked', { onPublish });
+    renderWeek('closed', { onPublish });
 
     fireEvent.click(screen.getByText(/📢/));
     fireEvent.click(screen.getByText(/ביטול|בטל/));
@@ -88,18 +88,26 @@ describe('WeekStatusControl', () => {
     expect(screen.getByText(/פתח להגשה/)).toBeInTheDocument();
     unmount();
     renderWeek('open');
-    expect(screen.getByText(/נעל/)).toBeInTheDocument();
+    expect(screen.getByText(/סגור להגשה/)).toBeInTheDocument();
   });
 
-  it('always keeps "publish" on a locked week, even with automation on', () => {
+  it('keeps "publish" on a closed week, even with auto-open on', () => {
     renderWeek(
-      'locked',
+      'closed',
       {},
       { autoOpen: { enabled: true, weekday: 'sunday', time: '07:00' },
         autoLock: { enabled: true, weekday: 'wednesday', time: '12:00' } },
     );
+    // Publish (finalize → LOCKED) stays available...
     expect(screen.getByText(/📢/)).toBeInTheDocument();
-    // manual open is hidden on locked when auto-open is on
+    // ...but the manual open button is hidden when auto-open is on.
     expect(screen.queryByText(/פתח להגשה/)).not.toBeInTheDocument();
+  });
+
+  it('shows no action buttons on a LOCKED (terminal) week', () => {
+    renderWeek('locked');
+    expect(screen.queryByText(/📢/)).not.toBeInTheDocument();   // no publish
+    expect(screen.queryByText(/פתח להגשה/)).not.toBeInTheDocument();  // no reopen
+    expect(screen.queryByText(/סגור להגשה/)).not.toBeInTheDocument();  // no close
   });
 });

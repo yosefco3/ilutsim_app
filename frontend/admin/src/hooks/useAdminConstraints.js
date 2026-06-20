@@ -173,15 +173,16 @@ export function useAdminConstraints(guardId) {
     );
   }, []);
 
-  // A published week is final — its shifts can no longer be edited (mirrors the
-  // backend rule). Admins may still edit while the week is closed/open/locked.
+  // A LOCKED week is final — its constraints can no longer be edited (mirrors the
+  // backend rule). Admins may still edit while the week is closed/open.
+  // (Kept the name ``isPublished`` to match the admin "publish" terminology.)
   const selectedWeek = weeks.find((w) => w.id === selectedWeekId) || null;
-  const isPublished = selectedWeek?.status === 'published';
+  const isPublished = selectedWeek?.status === 'locked';
 
   const submit = useCallback(async () => {
     if (!selectedWeekId) return false;
     const week = weeks.find((w) => w.id === selectedWeekId);
-    if (week?.status === 'published') return false;
+    if (week?.status === 'locked') return false;
     setError(null);
     setSaved(false);
     setSaving(true);

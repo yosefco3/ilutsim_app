@@ -92,32 +92,3 @@ async def send_submission_reminder(
         "skipped_no_telegram": skipped_no_telegram,
         "reminded": sent_count,
     }
-
-
-@router.post("/publish/{week_id}")
-async def notify_week_published(
-    week_id: uuid.UUID,
-    week_service: WeekService = Depends(get_week_service),
-):
-    """Notify all guards that the schedule for a week has been published."""
-    # Raises a not-found exception if the week doesn't exist.
-    await week_service.get_week(week_id)
-
-    sent_count = 0
-    try:
-        from app.bot.notifications import notify_week_published as bot_notify
-
-        count = await bot_notify(week_id=week_id)
-        sent_count = count or 0
-    except Exception as exc:
-        logger.error("Failed to send publish notification: %s", exc)
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Bot service unavailable",
-        ) from exc
-
-    return {
-        "message": "Publish notification sent",
-        "week_id": str(week_id),
-        "notified_count": sent_count,
-    }

@@ -141,23 +141,23 @@ async def test_notify_week_locked_sends_to_all_guards():
 
 
 # ===========================================================================
-# Test: notify_week_published sends to all guards
+# Test: notify_week_locked (the manual finalize/publish broadcast) → all guards
 # ===========================================================================
 @pytest.mark.asyncio
-async def test_notify_week_published_sends_to_all_guards():
+async def test_notify_week_locked_sends_to_all_guards():
     """Should call send_message for every user with a telegram_id."""
-    from app.bot.notifications import notify_week_published
+    from app.bot.notifications import notify_week_locked
 
     ids = [111, 222, 333]
     with patch("app.bot.notifications.get_bot") as mock_bot_fn:
         mock_bot = AsyncMock()
         mock_bot_fn.return_value = mock_bot
 
-        count = await notify_week_published(date(2026, 6, 8), date(2026, 6, 14), ids)
+        count = await notify_week_locked(date(2026, 6, 8), date(2026, 6, 14), ids)
 
     assert count == 3
     assert mock_bot.send_message.call_count == 3
     # Verify message format
     call_args = mock_bot.send_message.call_args_list[0]
     assert "08/06/2026" in call_args.kwargs["text"]
-    assert "פורסם" in call_args.kwargs["text"]
+    assert "ננעל" in call_args.kwargs["text"]

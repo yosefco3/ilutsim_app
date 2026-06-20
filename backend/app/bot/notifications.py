@@ -73,22 +73,16 @@ async def notify_guard_welcome(telegram_id: int, first_name: str, last_name: str
 
 
 async def notify_week_locked(week_start: date, week_end: date, telegram_ids: list[int]):
-    """Notify users that a week was locked for submissions."""
+    """Notify users that a week was finalized (LOCKED) — no more edits.
+
+    This is the broadcast for a *manual* finalize (the admin "publish" action).
+    The Sunday rollover also locks weeks but does so silently (notify=False).
+    """
     start_fmt = week_start.strftime("%d/%m/%Y")
     end_fmt = week_end.strftime("%d/%m/%Y")
-    text = f"🔒 שבוע {start_fmt} - {end_fmt} נסגר להגשות"
+    text = f"🔒 שבוע {start_fmt} - {end_fmt} ננעל — לא ניתן עוד לעדכן אילוצים"
     count = await broadcast_notifications(telegram_ids, text)
     logger.info("Week-locked notification sent to %d/%d users", count, len(telegram_ids))
-    return count
-
-
-async def notify_week_published(week_start: date, week_end: date, telegram_ids: list[int]):
-    """Notify users that a week's schedule was published."""
-    start_fmt = week_start.strftime("%d/%m/%Y")
-    end_fmt = week_end.strftime("%d/%m/%Y")
-    text = f"✅ סידור העבודה לשבוע {start_fmt} - {end_fmt} פורסם!"
-    count = await broadcast_notifications(telegram_ids, text)
-    logger.info("Week-published notification sent to %d/%d users", count, len(telegram_ids))
     return count
 
 

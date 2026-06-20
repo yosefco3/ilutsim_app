@@ -163,7 +163,7 @@ export default {
     closeForSubmission: 'סגור להגשה',
     published: 'פרסם',
     statusOpen: 'פתוח להגשה',
-    statusLocked: 'סגור להגשה',
+    statusLocked: 'נעול (סופי)',
     statusPublished: 'פורסם',
     weekLabel: 'שבוע',
     empty: 'אין שבועות במערכת',
@@ -178,7 +178,7 @@ export default {
     deleteConfirm: 'האם למחוק את השבוע? פעולה זו אינה ניתנת לביטול.',
     deleted: 'השבוע נמחק בהצלחה',
     publishConfirmTitle: 'פרסום השבוע',
-    publishConfirm: 'לאחר פרסום, יוצג שבוע חדש במצב "נעול", והשבוע הזה לא יהיה ניתן יותר לעריכת משמרות. פעולה זו בלתי הפיכה. האם אתה מעוניין להמשיך?',
+    publishConfirm: 'לאחר פרסום, השבוע הזה יינעל סופית — לא ניתן יהיה לפתוח אותו מחדש או לערוך אילוצים (גם לא למנהל). שבוע חדש ייווצר במצב "סגור". פעולה זו בלתי הפיכה. להמשיך?',
     publishConfirmLabel: 'כן, פרסם',
     automation: {
       willOpenAuto: 'תיפתח אוטומטית',

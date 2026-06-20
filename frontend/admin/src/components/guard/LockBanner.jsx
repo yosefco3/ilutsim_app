@@ -4,10 +4,10 @@
  */
 import { messages } from "../../utils/guardMessages.js";
 
+// 3-state model: closed (reopenable) / locked (final). No 'published'.
 const STATUS_MESSAGES = {
   closed: messages.LOCK_STATUS_CLOSED,
   locked: messages.LOCK_STATUS_LOCKED,
-  published: messages.LOCK_STATUS_PUBLISHED,
 };
 
 export default function LockBanner({ status }) {

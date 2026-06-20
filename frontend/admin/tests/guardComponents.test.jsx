@@ -9,14 +9,9 @@ describe('LockBanner', () => {
     expect(screen.getByText(/נסגרה|נעול|לא נפתח/)).toBeInTheDocument();
   });
 
-  it('should render closed (not-yet-opened) message', () => {
+  it('should render closed (submissions currently closed) message', () => {
     render(<LockBanner status="closed" />);
-    expect(screen.getByText(/טרם נפתח|לא נפתח/)).toBeInTheDocument();
-  });
-
-  it('should render published message', () => {
-    render(<LockBanner status="published" />);
-    expect(screen.getByText(/פורסם/)).toBeInTheDocument();
+    expect(screen.getByText(/סגורה כרגע/)).toBeInTheDocument();
   });
 
   it('should render no-week message when status is null', () => {

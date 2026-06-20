@@ -17,7 +17,8 @@ export default function WeeksPage() {
   };
 
   const handleLock = async (weekId) => {
-    await setStatus(weekId, 'locked');
+    // Close the submission window → CLOSED (reopenable, admin can still edit).
+    await setStatus(weekId, 'closed');
   };
 
   const handlePublish = async (weekId) => {
