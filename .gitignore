@@ -2,6 +2,11 @@
 /.code-review-graph
 /features-prompts
 /.gitignore
+*.pdf
+*.xlsx
+*.md
+
+
 
 # Python
 __pycache__/
@@ -39,3 +44,7 @@ Thumbs.db
 
 # Claude Code local settings
 /.claude/settings.local.json
+
+# Local demo / scratch input files (constraints-import demo)
+/1.xlsx
+/השוואת_ייבוא_דמו.txt
