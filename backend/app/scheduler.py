@@ -75,7 +75,9 @@ async def run_auto_open() -> None:
 
 
 async def run_auto_lock() -> None:
-    """Cron job: silently lock the currently open week. Own committed session."""
+    """Cron job: silently close the currently open week's submission window
+    (OPEN → CLOSED, reopenable). Own committed session. (Job id kept as
+    ``auto_lock_week`` for settings-key stability.)"""
     try:
         from app.database import get_session
         from app.repositories.schedule_week_repository import ScheduleWeekRepository

@@ -89,13 +89,14 @@ async def test_auto_lock_locks_open_week_silently():
     repo = AsyncMock()
     repo.get_current_open_week.return_value = open_week
     repo.get_by_id.return_value = open_week
-    repo.update.return_value = _week(WeekStatus.LOCKED, open_week.start_date, open_week.end_date)
+    repo.update.return_value = _week(WeekStatus.CLOSED, open_week.start_date, open_week.end_date)
 
     user_repo = AsyncMock()
     svc = WeekService(repo, user_repo)
     result = await svc.auto_lock_open_week()
 
-    repo.update.assert_awaited_once_with(open_week.id, status=WeekStatus.LOCKED)
+    # auto-lock TIME closes the submission window (reopenable), it does not finalize.
+    repo.update.assert_awaited_once_with(open_week.id, status=WeekStatus.CLOSED)
     user_repo.get_all.assert_not_awaited()  # silent — no broadcast
     assert result is not None
 
@@ -227,10 +228,15 @@ async def test_auto_open_then_lock_full_cycle(db_session):
     # second call is idempotent — already open, no second open
     assert await svc.auto_open_relevant_week() is None
 
-    locked = await svc.auto_lock_open_week()
-    assert locked is not None
+    closed_again = await svc.auto_lock_open_week()
+    assert closed_again is not None
     await db_session.refresh(closed)
-    assert closed.status == WeekStatus.LOCKED
+    # auto-lock TIME returns the week to CLOSED (reopenable), not LOCKED.
+    assert closed.status == WeekStatus.CLOSED
+    assert closed.opened_at is not None  # but it remembers it was opened
 
-    # idempotent — nothing open now
+    # idempotent — nothing OPEN now
     assert await svc.auto_lock_open_week() is None
+
+    # anti-loop: the auto-open cron must NOT re-open this already-opened week
+    assert await svc.auto_open_relevant_week() is None

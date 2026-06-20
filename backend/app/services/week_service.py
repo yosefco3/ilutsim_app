@@ -250,11 +250,14 @@ class WeekService:
             return None
 
     async def auto_lock_open_week(self) -> Optional[WeekResponse]:
-        """Silently lock the currently open week (cron entry point).
+        """Close the currently open week's submission window (cron entry point).
 
-        Locks OPEN → LOCKED with ``notify=False`` (no broadcast). Idempotent and
-        crash-safe: no open week → no-op; published weeks are never touched
-        (only an OPEN week is selected); errors are logged, not raised.
+        Transitions OPEN → CLOSED (reopenable) with ``notify=False`` — the
+        scheduled lock TIME ends submissions but the week stays editable by an
+        admin and can be reopened; it is finalized to LOCKED only by the Sunday
+        rollover. Idempotent and crash-safe: no open week → no-op; terminal
+        weeks are never touched (only an OPEN week is selected); errors are
+        logged, not raised. (Job id stays ``auto_lock_week`` for settings stability.)
         """
         try:
             week = await self._week_repo.get_current_open_week()
@@ -263,10 +266,10 @@ class WeekService:
                 return None
 
             result = await self.change_week_status(
-                week.id, WeekStatus.LOCKED, notify=False
+                week.id, WeekStatus.CLOSED, notify=False
             )
             logger.info(
-                "auto_lock: locked week %s – %s (id=%s)",
+                "auto_lock: closed submission window for week %s – %s (id=%s)",
                 week.start_date,
                 week.end_date,
                 week.id,
