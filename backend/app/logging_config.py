@@ -35,14 +35,18 @@ def setup_logging(log_level: str, environment: str) -> None:
         environment: Deployment environment (dev, staging, production).
     """
     logger = logging.getLogger("ilutzim")
-    logger.setLevel(log_level.upper())
 
-    # Avoid adding duplicate handlers on repeated calls
-    if logger.handlers:
-        return
-
-    # Determine effective level by environment
-    if environment == "production":
+    # Honour an explicit LOG_LEVEL when it names a valid level; only fall back
+    # to a per-environment default when it doesn't. Previously production was
+    # hardcoded to WARNING, which silently hid every logger.info() — including
+    # the scheduler/bot lifecycle lines (Scheduled auto_open_job, Telegram bot
+    # started, ...) — leaving prod unobservable. Computed before the handler
+    # check so a repeated call still re-applies the level (and an invalid
+    # LOG_LEVEL no longer raises).
+    requested = logging.getLevelName(log_level.upper()) if log_level else None
+    if isinstance(requested, int):
+        effective_level = requested
+    elif environment == "production":
         effective_level = logging.WARNING
     elif environment == "staging":
         effective_level = logging.INFO
@@ -50,6 +54,10 @@ def setup_logging(log_level: str, environment: str) -> None:
         effective_level = logging.DEBUG
 
     logger.setLevel(effective_level)
+
+    # Avoid adding duplicate handlers on repeated calls
+    if logger.handlers:
+        return
 
     # Console handler with JSON output
     console_handler = logging.StreamHandler(sys.stdout)
