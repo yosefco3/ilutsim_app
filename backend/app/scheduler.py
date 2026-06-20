@@ -114,6 +114,11 @@ def _apply_automation_job(scheduler, job_id, cfg, func, timezone) -> None:
     elif scheduler.get_job(job_id) is not None:
         scheduler.remove_job(job_id)
         logger.info("Removed disabled automation job: %s", job_id)
+    else:
+        # enabled=False and no job registered. Log it explicitly so a missing
+        # auto-open/auto-lock is visible in the logs (silence here previously
+        # made a disabled job indistinguishable from a scheduling failure).
+        logger.info("Automation job %s is disabled (enabled=False) — not scheduled", job_id)
 
 
 async def sync_automation_jobs(scheduler=None) -> None:
