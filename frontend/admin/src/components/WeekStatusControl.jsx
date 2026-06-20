@@ -64,8 +64,12 @@ export default function WeekStatusControl({
             </span>
           )}
 
-          {/* CLOSED → can be finalized ("publish" → LOCKED, terminal). */}
-          {status === 'closed' && (
+          {/* CLOSED → can be finalized ("publish" → LOCKED, terminal).
+              HIDDEN FOR NOW: rollover covers the current need, so the manual
+              "publish" button is intentionally hidden from the UI. All wiring
+              (handler, confirm dialog, messages, API) is kept intact so we can
+              re-enable it later by un-commenting this block. */}
+          {/* {status === 'closed' && (
             <button
               className="btn btn-success btn-sm"
               disabled={loading}
@@ -73,7 +77,7 @@ export default function WeekStatusControl({
             >
               📢 {messages.weeks.published}
             </button>
-          )}
+          )} */}
 
           {/* OPEN → can be closed (submission window ends → CLOSED, reopenable). */}
           {status === 'open' && !autoLock.enabled && (
