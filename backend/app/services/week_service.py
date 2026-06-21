@@ -4,8 +4,9 @@ WeekService — business logic for schedule week management.
 
 import logging
 import uuid
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 from typing import Optional
+from zoneinfo import ZoneInfo
 
 from app.constants import WeekStatus
 from app.exceptions import InvalidTransitionException, WeekLockedException
@@ -28,6 +29,12 @@ ALLOWED_TRANSITIONS: dict[str, list[str]] = {
     "closed": ["open", "locked"],
     "open": ["closed", "locked"],
     "locked": [],  # terminal — final, non-reopenable
+}
+
+# APScheduler day_of_week tokens → Python ``date.weekday()`` index (Mon=0 … Sun=6).
+# Used to compute the weekly auto-open/auto-lock moments for the catch-up open.
+_PY_WEEKDAY: dict[str, int] = {
+    "mon": 0, "tue": 1, "wed": 2, "thu": 3, "fri": 4, "sat": 5, "sun": 6,
 }
 
 
@@ -245,6 +252,86 @@ class WeekService:
             logger.warning("auto_open_relevant_week failed: %s", exc)
             return None
 
+    @staticmethod
+    def _last_weekly_moment(
+        now: datetime, weekday_token: str, hour: int, minute: int
+    ) -> datetime:
+        """Most recent datetime ``<= now`` on ``weekday_token`` at ``hour:minute``.
+
+        ``weekday_token`` is an APScheduler day-of-week token ("sun".."sat").
+        Used to locate the current cycle's auto-open / auto-lock boundaries.
+        """
+        target_wd = _PY_WEEKDAY.get(weekday_token, 6)
+        delta = (now.weekday() - target_wd) % 7
+        moment = (now - timedelta(days=delta)).replace(
+            hour=hour, minute=minute, second=0, microsecond=0
+        )
+        if moment > now:  # the weekday matches today but the time hasn't arrived
+            moment -= timedelta(days=7)
+        return moment
+
+    @staticmethod
+    def _is_in_open_phase(now: datetime, auto_open: dict, auto_lock: dict) -> bool:
+        """Whether ``now`` is inside the weekly window the target week should be OPEN.
+
+        We are in the open phase when the most recent auto-open moment is more
+        recent than the most recent auto-lock moment (the latest boundary we
+        crossed was an open, not a lock). With auto-lock disabled the week stays
+        open until the Sunday rollover, so any time after an auto-open counts.
+        Returns False when auto-open is disabled.
+        """
+        if not auto_open.get("enabled"):
+            return False
+        open_moment = WeekService._last_weekly_moment(
+            now, auto_open["weekday"], auto_open["hour"], auto_open["minute"]
+        )
+        if auto_lock.get("enabled"):
+            lock_moment = WeekService._last_weekly_moment(
+                now, auto_lock["weekday"], auto_lock["hour"], auto_lock["minute"]
+            )
+            return open_moment > lock_moment
+        return True
+
+    async def auto_open_if_due(self) -> Optional[WeekResponse]:
+        """Catch-up auto-open for the self-heal / startup path.
+
+        The scheduled auto-open cron fires once a week; if that single firing is
+        missed (deploy, restart, or a transient failure in the 00:00 rollover
+        that leaves no week for the 01:00 open to act on), nothing else opens the
+        week — unlike lock/rotate/purge, which self-heal on every weeks-list load.
+        This closes that gap: whenever we are inside the configured weekly open
+        window and the target week is still closed, open it.
+
+        The open window is computed in ``SCHEDULER_TIMEZONE`` (not the server's
+        UTC date) so the boundary is correct across midnight. Idempotent — it
+        delegates to ``auto_open_relevant_week``, which no-ops when a week is
+        already OPEN or there is no never-opened candidate, so it opens (and
+        broadcasts) at most once per cycle. Errors are logged, never raised.
+        """
+        try:
+            from app.config import get_settings
+            from app.repositories.system_settings_repository import (
+                SystemSettingsRepository,
+            )
+            from app.services.settings_service import SettingsService
+
+            settings_service = SettingsService(
+                SystemSettingsRepository(self._week_repo.session)
+            )
+            auto_open = await settings_service.get_auto_open()
+            if not auto_open.get("enabled"):
+                return None
+            auto_lock = await settings_service.get_auto_lock()
+
+            now = datetime.now(ZoneInfo(get_settings().SCHEDULER_TIMEZONE))
+            if not self._is_in_open_phase(now, auto_open, auto_lock):
+                return None
+
+            return await self.auto_open_relevant_week()
+        except Exception as exc:
+            logger.warning("auto_open_if_due failed: %s", exc)
+            return None
+
     async def auto_lock_open_week(self) -> Optional[WeekResponse]:
         """Close the currently open week's submission window (cron entry point).
 
@@ -297,6 +384,7 @@ class WeekService:
         """
         await self.lock_expired_open_weeks()
         await self.auto_rotate_weeks()
+        await self.auto_open_if_due()
         await self.purge_old_weeks()
 
     async def lock_expired_open_weeks(self) -> None:
