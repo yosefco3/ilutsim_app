@@ -12,9 +12,7 @@ import {
   createGuardSubmission,
 } from '../api/adminApiClient';
 import { get as guardGet } from '../api/guardApiClient.js';
-import { SHIFT_DEFAULTS } from '../utils/guardMessages.js';
-
-const SHIFT_TYPES = ['morning', 'afternoon', 'night'];
+import { SHIFT_DEFAULTS, SHIFT_TYPES } from '../utils/guardMessages.js';
 
 /** Create a default shifts map (all off) using supplied default hours. */
 function makeShifts(defaults) {

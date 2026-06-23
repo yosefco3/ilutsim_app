@@ -12,9 +12,7 @@ import {
 import { useToast } from '../../components/Toast';
 import ConfirmDialog from '../../components/ConfirmDialog';
 import messages from '../../utils/messages';
-
-const DAY_NAMES = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'];
-const SHIFTS = ['morning', 'afternoon', 'night'];
+import { DAY_NAMES_SHORT as DAY_NAMES, SHIFT_TYPES } from '../../utils/guardMessages.js';
 
 // Build a blank editor form, optionally seeded from an existing position.
 function makeForm(position) {
@@ -241,7 +239,7 @@ export default function PositionsPage() {
       {!positions.length ? (
         <p className="empty-state">{m.empty}</p>
       ) : (
-        SHIFTS.map((shift) => {
+        SHIFT_TYPES.map((shift) => {
           const group = positions.filter((p) => p.shift === shift);
           if (!group.length) return null;
           return (
@@ -311,7 +309,7 @@ export default function PositionsPage() {
                   value={editor.shift}
                   onChange={(e) => setEditor({ ...editor, shift: e.target.value })}
                 >
-                  {SHIFTS.map((s) => (
+                  {SHIFT_TYPES.map((s) => (
                     <option key={s} value={s}>
                       {shiftLabel[s]}
                     </option>

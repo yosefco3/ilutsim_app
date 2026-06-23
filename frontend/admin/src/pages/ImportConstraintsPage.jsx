@@ -3,9 +3,9 @@ import { previewConstraintsImport, commitConstraintsImport } from '../api/adminA
 import { useWeeks } from '../hooks/useWeeks';
 import { useToast } from '../components/Toast';
 import messages from '../utils/messages';
+import { DAY_NAMES_SHORT as DAY_NAMES } from '../utils/guardMessages.js';
 
 const m = messages.importConstraints;
-const DAY_NAMES = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'];
 
 /**
  * Constraints import — upload an xlsx, see a clean merged preview (dry-run),

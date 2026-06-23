@@ -5,11 +5,10 @@
 import {
   messages,
   DAY_NAMES,
+  SHIFT_TYPES,
   SHIFT_LABELS,
   HALF_HOUR_OPTIONS,
 } from "../../utils/guardMessages.js";
-
-const SHIFT_TYPES = ["morning", "afternoon", "night"];
 
 /**
  * Build the <option> list for a time dropdown. If the current value isn't a

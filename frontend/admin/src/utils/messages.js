@@ -2,6 +2,21 @@
  * Hebrew UI strings for the Admin Dashboard.
  */
 
+/** Canonical guard-role options (value + Hebrew label), shared by table & form. */
+export const ROLE_OPTIONS = [
+  { value: 'AHMASH', label: 'אחמ"ש' },
+  { value: 'BASIC_GUARD', label: 'מאבטח בסיסי' },
+  { value: 'LEVEL_B', label: "מאבטח רמה ב'" },
+  { value: 'NINE_HOURS', label: 'מאבטח 9 שעות' },
+  { value: 'UNARMED', label: 'לא חמוש' },
+  { value: 'CHECKER', label: 'בודק' },
+];
+
+/** Map role enum → Hebrew label, derived from ROLE_OPTIONS. */
+export const ROLE_LABELS = Object.fromEntries(
+  ROLE_OPTIONS.map((r) => [r.value, r.label])
+);
+
 export default {
   app: {
     title: 'ניהול מערכת אילוצים',

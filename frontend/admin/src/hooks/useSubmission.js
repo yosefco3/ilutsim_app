@@ -7,9 +7,7 @@
  */
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { get, post } from "../api/guardApiClient.js";
-import { SHIFT_DEFAULTS, messages } from "../utils/guardMessages.js";
-
-const SHIFT_TYPES = ["morning", "afternoon", "night"];
+import { SHIFT_DEFAULTS, SHIFT_TYPES, messages } from "../utils/guardMessages.js";
 
 /** Longest run of consecutive day_index values that have any active shift. */
 function maxConsecutiveActiveDays(days) {

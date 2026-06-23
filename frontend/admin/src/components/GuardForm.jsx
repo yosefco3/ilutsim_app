@@ -1,14 +1,5 @@
 import { useState } from 'react';
-import messages from '../utils/messages';
-
-const ROLES = [
-  { value: 'AHMASH', label: 'אחמ"ש' },
-  { value: 'BASIC_GUARD', label: 'מאבטח בסיסי' },
-  { value: 'LEVEL_B', label: "מאבטח רמה ב'" },
-  { value: 'NINE_HOURS', label: 'מאבטח 9 שעות' },
-  { value: 'UNARMED', label: 'לא חמוש' },
-  { value: 'CHECKER', label: 'בודק' },
-];
+import messages, { ROLE_OPTIONS } from '../utils/messages';
 
 export default function GuardForm({ guard, onSave, onCancel }) {
   const [form, setForm] = useState({
@@ -46,7 +37,7 @@ export default function GuardForm({ guard, onSave, onCancel }) {
       <div className="form-group">
         <label>{messages.guards.role}</label>
         <select name="role" value={form.role} onChange={handleChange}>
-          {ROLES.map((r) => (
+          {ROLE_OPTIONS.map((r) => (
             <option key={r.value} value={r.value}>{r.label}</option>
           ))}
         </select>

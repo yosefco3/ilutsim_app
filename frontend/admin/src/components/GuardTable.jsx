@@ -1,13 +1,4 @@
-import messages from '../utils/messages';
-
-const ROLE_LABELS = {
-  AHMASH: 'אחמ"ש',
-  BASIC_GUARD: 'מאבטח בסיסי',
-  LEVEL_B: "מאבטח רמה ב'",
-  NINE_HOURS: 'מאבטח 9 שעות',
-  UNARMED: 'לא חמוש',
-  CHECKER: 'בודק',
-};
+import messages, { ROLE_LABELS } from '../utils/messages';
 
 export default function GuardTable({ guards, onEdit, onToggle, onDelete }) {
   if (!guards.length) {

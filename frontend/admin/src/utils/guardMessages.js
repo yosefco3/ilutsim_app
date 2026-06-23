@@ -59,6 +59,20 @@ export const DAY_NAMES = [
   messages.DAY_SATURDAY,
 ];
 
+/** Short day names (ראשון–שבת) for compact admin tables/headers. */
+export const DAY_NAMES_SHORT = [
+  "ראשון",
+  "שני",
+  "שלישי",
+  "רביעי",
+  "חמישי",
+  "שישי",
+  "שבת",
+];
+
+/** Shift type keys, in canonical daily order */
+export const SHIFT_TYPES = ["morning", "afternoon", "night"];
+
 /** Map shift_type key to Hebrew label */
 export const SHIFT_LABELS = {
   morning: messages.LABEL_MORNING,
