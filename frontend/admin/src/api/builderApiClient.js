@@ -8,8 +8,6 @@
 
 import { request } from './adminApiClient';
 
-export { request };
-
 const BASE = '/admin/builder/profiles';
 
 export function listProfiles() {

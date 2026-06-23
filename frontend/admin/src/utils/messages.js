@@ -131,7 +131,6 @@ export default {
     firstName: 'שם פרטי',
     lastName: 'שם משפחה',
     phone: 'טלפון',
-    telegramId: 'Telegram ID',
     isActive: 'פעיל',
     active: 'פעיל',
     activate: 'הפעל',

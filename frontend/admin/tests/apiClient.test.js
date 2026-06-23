@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import adminApi from '../src/api/adminApiClient';
+import * as adminApi from '../src/api/adminApiClient';
 
 describe('Admin API Client', () => {
   beforeEach(() => {

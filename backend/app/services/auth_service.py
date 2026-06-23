@@ -56,28 +56,6 @@ class AuthService:
         self._admin_repo = admin_repo
         self._settings = settings
 
-    async def authenticate_admin(self, email: str, password: str) -> dict:
-        """Verify admin credentials and return a JWT token dict."""
-        admin = await self._admin_repo.get_by_email(email)
-        if admin is None or not admin.is_active:
-            logger.warning(f"Admin login failed — email not found or inactive: {email}")
-            raise AuthenticationFailedException()
-
-        if not pwd_context.verify(password, admin.password_hash):
-            logger.warning(f"Admin login failed — bad password: {email}")
-            raise AuthenticationFailedException()
-
-        token = self._create_access_token(
-            data={"sub": str(admin.id), "role": admin.role.value}
-        )
-        logger.info(f"Admin authenticated: {email}")
-        return {
-            "access_token": token,
-            "token_type": "bearer",
-            "admin_id": admin.id,
-            "role": admin.role.value,
-        }
-
     async def login_admin(self, username: str, password: str) -> dict:
         """Authenticate admin by username (email or local part) and password.
 

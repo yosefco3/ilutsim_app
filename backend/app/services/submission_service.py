@@ -8,7 +8,6 @@ from typing import Optional
 
 from app.constants import WeekStatus
 from app.exceptions import UserNotFoundException, WeekLockedException
-from app.models.weekly_submission import WeeklySubmission
 from app.repositories.submission_repository import SubmissionRepository
 from app.repositories.user_repository import UserRepository
 from app.repositories.schedule_week_repository import ScheduleWeekRepository
@@ -100,6 +99,13 @@ class SubmissionService:
     ) -> list[SubmissionResponse]:
         """Return all submissions for a given week."""
         submissions = await self._submission_repo.get_submissions_for_week(week_id)
+        return [SubmissionResponse.model_validate(s) for s in submissions]
+
+    async def get_submissions_for_user(
+        self, user_id: uuid.UUID
+    ) -> list[SubmissionResponse]:
+        """Return all submissions made by a given user."""
+        submissions = await self._submission_repo.get_by_user(user_id)
         return [SubmissionResponse.model_validate(s) for s in submissions]
 
     async def get_submission(
@@ -212,24 +218,3 @@ class SubmissionService:
             "missing": missing,
             "week_label": week_label,
         }
-
-    async def mark_auto_absence(self, week_id: uuid.UUID) -> int:
-        """
-        Mark all active users who haven't submitted as auto-absence.
-        Returns count of marked users.
-        """
-        active_users = await self._user_repo.get_active_users()
-        marked = 0
-        for user in active_users:
-            existing = await self._submission_repo.get_submission(
-                user.id, week_id
-            )
-            if existing is None:
-                sub = WeeklySubmission(
-                    user_id=user.id,
-                    week_id=week_id,
-                )
-                await self._submission_repo.save(sub)
-                marked += 1
-        logger.info(f"Auto-absence marked: {marked} users for week {week_id}")
-        return marked

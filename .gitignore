@@ -43,6 +43,10 @@ node_modules/
 .DS_Store
 Thumbs.db
 
+# Local artifacts (sqlite test DBs, constraint export dumps)
+*.db
+constraints_*.xlsx
+
 
 # Claude Code local settings
 /.claude/settings.local.json

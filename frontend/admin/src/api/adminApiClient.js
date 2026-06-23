@@ -282,35 +282,3 @@ export function deleteAdmin(id) {
 export const exportExcel = exportWeekExcel;
 export const login = adminLogin;
 export const sendReminder = sendWeekReminders;
-
-export default {
-  adminLogin,
-  adminLogout,
-  changeAdminPassword,
-  getAdminProfile,
-  fetchGuards,
-  fetchGuard,
-  createGuard,
-  updateGuard,
-  deleteGuard,
-  fetchWeeks,
-  fetchWeek,
-  createWeek,
-  updateWeekStatus,
-  sendWeekReminders,
-  lockWeek,
-  unlockWeek,
-  deleteWeek,
-  fetchSubmissions,
-  fetchSubmissionsDetailed,
-  acknowledgeSubmissionViolation,
-  sendNotifications,
-  exportWeekExcel,
-  fetchSettings,
-  updateSettings,
-  fetchAdmins,
-  createAdmin,
-  deleteAdmin,
-  previewConstraintsImport,
-  commitConstraintsImport,
-};
