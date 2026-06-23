@@ -5,7 +5,6 @@ All values are read from .env file — zero hard coding.
 
 import logging
 from functools import lru_cache
-from typing import Optional
 
 from pydantic import model_validator
 from pydantic_settings import BaseSettings
@@ -16,7 +15,7 @@ class Settings(BaseSettings):
 
     # Database
     DATABASE_URL: str
-    DATABASE_URL_SYNC: Optional[str] = None
+    DATABASE_URL_SYNC: str | None = None
 
     # Telegram
     TELEGRAM_BOT_TOKEN: str
@@ -133,7 +132,7 @@ def production_secret_issues(settings: "Settings") -> list[str]:
 
 
 def validate_production_secrets(
-    settings: "Settings", logger: Optional[logging.Logger] = None
+    settings: "Settings", logger: logging.Logger | None = None
 ) -> None:
     """Fail-fast on weak secrets in production; warn (log) otherwise.
 

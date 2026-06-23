@@ -4,7 +4,7 @@ DailyStatus model — guard's availability for a specific day.
 
 import uuid
 from datetime import date
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING
 
 from sqlalchemy import Boolean, Date, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -27,6 +27,6 @@ class DailyStatus(BaseModel):
 
     # Relationships
     submission: Mapped["WeeklySubmission"] = relationship(back_populates="daily_statuses")
-    shift_windows: Mapped[List["ShiftWindow"]] = relationship(
+    shift_windows: Mapped[list["ShiftWindow"]] = relationship(
         back_populates="daily_status", cascade="all, delete-orphan",
     )

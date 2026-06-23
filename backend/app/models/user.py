@@ -3,7 +3,7 @@ User model — security guards.
 """
 
 import uuid
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING
 
 from sqlalchemy import Boolean, Enum, Index, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -21,7 +21,7 @@ class User(BaseModel):
     phone_number: Mapped[str] = mapped_column(
         String(20), unique=True, nullable=False,
     )
-    telegram_id: Mapped[Optional[str]] = mapped_column(
+    telegram_id: Mapped[str | None] = mapped_column(
         String(50), unique=True, nullable=True,
     )
     first_name: Mapped[str] = mapped_column(
@@ -41,7 +41,7 @@ class User(BaseModel):
     is_active: Mapped[bool] = mapped_column(
         Boolean, default=True,
     )
-    exemptions_notes: Mapped[Optional[str]] = mapped_column(
+    exemptions_notes: Mapped[str | None] = mapped_column(
         Text, nullable=True,
     )
     min_total_shifts: Mapped[int] = mapped_column(
@@ -55,7 +55,7 @@ class User(BaseModel):
     )
 
     # Relationships
-    weekly_submissions: Mapped[List["WeeklySubmission"]] = relationship(
+    weekly_submissions: Mapped[list["WeeklySubmission"]] = relationship(
         back_populates="user", cascade="all, delete-orphan",
     )
 

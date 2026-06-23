@@ -5,7 +5,6 @@ WeekService — business logic for schedule week management.
 import logging
 import uuid
 from datetime import date, datetime, timedelta, timezone
-from typing import Optional
 from zoneinfo import ZoneInfo
 
 from app.constants import WeekStatus
@@ -148,14 +147,14 @@ class WeekService:
         week = await self._get_week_or_raise(week_id)
         return WeekResponse.model_validate(week)
 
-    async def get_current_open_week(self) -> Optional[WeekResponse]:
+    async def get_current_open_week(self) -> WeekResponse | None:
         """Return the currently open week, if any."""
         week = await self._week_repo.get_current_open_week()
         if week is None:
             return None
         return WeekResponse.model_validate(week)
 
-    async def get_relevant_week_with_days(self) -> Optional[WeekWithDaysResponse]:
+    async def get_relevant_week_with_days(self) -> WeekWithDaysResponse | None:
         """Return the week guards should see, with its status.
 
         Resolution order (most relevant to the guard first):
@@ -184,7 +183,7 @@ class WeekService:
             days=days,
         )
 
-    async def get_latest_week(self) -> Optional[WeekResponse]:
+    async def get_latest_week(self) -> WeekResponse | None:
         """Return the most recent week (by start_date), regardless of status."""
         week = await self._week_repo.get_latest_week()
         if week is None:
@@ -214,7 +213,7 @@ class WeekService:
             raise UserNotFoundException()
         logger.info(f"Week {week_id} deleted (was {week.status})")
 
-    async def auto_open_relevant_week(self) -> Optional[WeekResponse]:
+    async def auto_open_relevant_week(self) -> WeekResponse | None:
         """Open the upcoming closed week for submissions (cron entry point).
 
         Broadcasts to guards (``notify=True``). Idempotent and crash-safe:
@@ -292,7 +291,7 @@ class WeekService:
             return open_moment > lock_moment
         return True
 
-    async def auto_open_if_due(self) -> Optional[WeekResponse]:
+    async def auto_open_if_due(self) -> WeekResponse | None:
         """Catch-up auto-open for the self-heal / startup path.
 
         The scheduled auto-open cron fires once a week; if that single firing is
@@ -332,7 +331,7 @@ class WeekService:
             logger.warning("auto_open_if_due failed: %s", exc)
             return None
 
-    async def auto_lock_open_week(self) -> Optional[WeekResponse]:
+    async def auto_lock_open_week(self) -> WeekResponse | None:
         """Close the currently open week's submission window (cron entry point).
 
         Transitions OPEN → CLOSED (reopenable) with ``notify=False`` — the

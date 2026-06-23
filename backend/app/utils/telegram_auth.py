@@ -10,7 +10,6 @@ import hmac
 import json
 import time
 import urllib.parse
-from typing import Optional
 
 # init_data older than this is rejected, even if the HMAC is valid. Limits the
 # window in which a leaked/captured init_data string can be replayed.
@@ -19,7 +18,7 @@ DEFAULT_MAX_AGE_SECONDS = 24 * 60 * 60  # 24 hours
 
 def validate_telegram_web_app_data(
     init_data: str, bot_token: str, max_age_seconds: int = DEFAULT_MAX_AGE_SECONDS
-) -> Optional[dict]:
+) -> dict | None:
     """
     Validate Telegram WebApp init_data and return parsed dict if valid.
 
@@ -45,7 +44,7 @@ def validate_telegram_web_app_data(
 
         # Compute secret key: HMAC-SHA256(bot_token, "WebAppData")
         secret_key = hmac.new(
-            "WebAppData".encode(), bot_token.encode(), hashlib.sha256
+            b"WebAppData", bot_token.encode(), hashlib.sha256
         ).digest()
 
         # Compute hash: HMAC-SHA256(secret_key, data_check_string)
@@ -77,7 +76,7 @@ def validate_telegram_web_app_data(
         return None
 
 
-def get_telegram_user_id(init_data: str, bot_token: str) -> Optional[str]:
+def get_telegram_user_id(init_data: str, bot_token: str) -> str | None:
     """
     Validate init_data and extract the Telegram user ID.
 

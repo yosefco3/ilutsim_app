@@ -3,7 +3,7 @@ ScheduleWeek model — represents a weekly scheduling period.
 """
 
 from datetime import date, datetime
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING
 
 from sqlalchemy import Date, DateTime, Enum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -28,10 +28,10 @@ class ScheduleWeek(BaseModel):
     # Set the first time the week enters OPEN. NULL = never opened, which is how
     # the auto-open cron distinguishes a fresh week from one whose submission
     # window already ran (now CLOSED again) — so it is never auto-reopened.
-    opened_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    opened_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
     # Relationships
-    weekly_submissions: Mapped[List["WeeklySubmission"]] = relationship(
+    weekly_submissions: Mapped[list["WeeklySubmission"]] = relationship(
         back_populates="week", cascade="all, delete-orphan",
         passive_deletes=True,
     )

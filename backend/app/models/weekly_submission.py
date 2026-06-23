@@ -4,7 +4,7 @@ WeeklySubmission model — guard's weekly availability submission.
 
 import uuid
 from datetime import datetime
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING
 
 from sqlalchemy import Boolean, DateTime, ForeignKey, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -26,7 +26,7 @@ class WeeklySubmission(BaseModel):
     week_id: Mapped[uuid.UUID] = mapped_column(
         ForeignKey("schedule_weeks.id", ondelete="CASCADE"), nullable=False,
     )
-    general_notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    general_notes: Mapped[str | None] = mapped_column(Text, nullable=True)
     has_deviation: Mapped[bool] = mapped_column(Boolean, default=False)
     # Admin acknowledged the guard's rule violations for this submission, so the
     # UI hides the violation marker. Computed warnings still exist; this just
@@ -41,7 +41,7 @@ class WeeklySubmission(BaseModel):
     # Relationships
     user: Mapped["User"] = relationship(back_populates="weekly_submissions")
     week: Mapped["ScheduleWeek"] = relationship(back_populates="weekly_submissions")
-    daily_statuses: Mapped[List["DailyStatus"]] = relationship(
+    daily_statuses: Mapped[list["DailyStatus"]] = relationship(
         back_populates="submission", cascade="all, delete-orphan",
     )
 

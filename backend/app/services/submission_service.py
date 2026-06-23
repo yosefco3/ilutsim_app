@@ -4,7 +4,6 @@ SubmissionService — business logic for weekly constraint submissions.
 
 import logging
 import uuid
-from typing import Optional
 
 from app.constants import WeekStatus
 from app.exceptions import UserNotFoundException, WeekLockedException
@@ -110,7 +109,7 @@ class SubmissionService:
 
     async def get_submission(
         self, user_id: uuid.UUID, week_id: uuid.UUID
-    ) -> Optional[SubmissionResponse]:
+    ) -> SubmissionResponse | None:
         """Return a single submission by user + week."""
         sub = await self._submission_repo.get_submission(user_id, week_id)
         if sub is None:
@@ -119,7 +118,7 @@ class SubmissionService:
 
     async def set_violation_acknowledged(
         self, submission_id: uuid.UUID, acknowledged: bool
-    ) -> Optional[SubmissionResponse]:
+    ) -> SubmissionResponse | None:
         """Acknowledge (or un-acknowledge) a submission's rule violations.
 
         Returns the updated submission, or ``None`` if it doesn't exist.

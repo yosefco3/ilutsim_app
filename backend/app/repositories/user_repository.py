@@ -3,7 +3,6 @@ User repository — data access for security guard users.
 """
 
 import uuid
-from typing import List
 
 from sqlalchemy import select, update as sa_update
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -30,7 +29,7 @@ class UserRepository(BaseRepository[User]):
         result = await self.session.execute(stmt)
         return result.scalar_one_or_none()
 
-    async def get_active_users(self) -> List[User]:
+    async def get_active_users(self) -> list[User]:
         """Return only active users, in a deterministic order."""
         stmt = (
             select(self.model_class)
@@ -40,7 +39,7 @@ class UserRepository(BaseRepository[User]):
         result = await self.session.execute(stmt)
         return list(result.scalars().all())
 
-    async def get_all_users(self) -> List[User]:
+    async def get_all_users(self) -> list[User]:
         """Return all users (active and inactive)."""
         stmt = select(self.model_class).order_by(User.is_active.desc(), User.last_name, User.first_name)
         result = await self.session.execute(stmt)

@@ -2,7 +2,6 @@
 
 import uuid
 from datetime import date, datetime, time
-from typing import Optional
 
 from pydantic import AliasChoices, BaseModel, ConfigDict, Field, model_validator
 
