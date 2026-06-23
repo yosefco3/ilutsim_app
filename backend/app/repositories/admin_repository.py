@@ -7,21 +7,22 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.constants import AdminRole
 from app.models.admin import Admin
+from app.repositories.base_repository import BaseRepository
 from app.logging_config import get_logger
 
 logger = get_logger(__name__)
 
 
-class AdminRepository:
-    """Data-access operations for Admin entities (integer PK, not UUID-based)."""
+class AdminRepository(BaseRepository[Admin]):
+    """Data-access for Admin entities (integer PK).
+
+    Inherits the generic CRUD (``get_by_id``/``get_all``/``create``/``update``/
+    ``delete``/``save``); the methods below are admin-specific lookups and
+    write helpers that the generic layer doesn't cover.
+    """
 
     def __init__(self, session: AsyncSession) -> None:
-        self.session = session
-
-    async def get_by_id(self, admin_id: int) -> Admin | None:
-        """Retrieve an admin by integer primary key."""
-        result = await self.session.get(Admin, admin_id)
-        return result
+        super().__init__(session, Admin)
 
     async def get_by_email(self, email: str) -> Admin | None:
         """Find an admin by email address."""
