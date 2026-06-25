@@ -6,7 +6,6 @@ import uuid
 
 import pytest
 
-from app.constants import ShiftType
 from app.exceptions import PositionNotFoundException
 from app.schedule_builder.models.activation_profile import ActivationProfile
 from app.schedule_builder.repositories.position_repository import PositionRepository
@@ -28,8 +27,8 @@ async def _make_profile(db_session, name="שגרה"):
 class TestCrud:
     async def test_create_then_list_ordered(self, service, db_session):
         profile = await _make_profile(db_session)
-        await service.create_position(profile.id, "ארנונה", ShiftType.MORNING)
-        await service.create_position(profile.id, "קומה 6", ShiftType.MORNING)
+        await service.create_position(profile.id, "ארנונה")
+        await service.create_position(profile.id, "קומה 6")
         positions = await service.list_positions(profile.id)
 
         assert [p.name for p in positions] == ["ארנונה", "קומה 6"]
@@ -38,8 +37,8 @@ class TestCrud:
     async def test_display_order_is_per_profile(self, service, db_session):
         a = await _make_profile(db_session, "שגרה")
         b = await _make_profile(db_session, "חג")
-        await service.create_position(a.id, "א1", ShiftType.MORNING)
-        first_b = await service.create_position(b.id, "ב1", ShiftType.NIGHT)
+        await service.create_position(a.id, "א1")
+        first_b = await service.create_position(b.id, "ב1")
         # Profile b starts its own ordering at 1.
         assert first_b.display_order == 1
 
@@ -47,7 +46,7 @@ class TestCrud:
         profile = await _make_profile(db_session)
         sched = {"0": {"start": "07:30", "end": "15:00"}}
         pos = await service.create_position(
-            profile.id, "ארנונה", ShiftType.MORNING,
+            profile.id, "ארנונה",
             day_schedules=sched, required_attributes=["armed"],
         )
         assert pos.day_schedules == sched
@@ -56,7 +55,7 @@ class TestCrud:
     async def test_update_only_provided_fields(self, service, db_session):
         profile = await _make_profile(db_session)
         pos = await service.create_position(
-            profile.id, "ארנונה", ShiftType.MORNING,
+            profile.id, "ארנונה",
             day_schedules={"0": {"start": "07:00", "end": "15:00"}},
             required_attributes=["armed"],
         )
@@ -69,7 +68,7 @@ class TestCrud:
 
     async def test_delete(self, service, db_session):
         profile = await _make_profile(db_session)
-        pos = await service.create_position(profile.id, "ארנונה", ShiftType.MORNING)
+        pos = await service.create_position(profile.id, "ארנונה")
         await service.delete_position(pos.id)
         assert await service.list_positions(profile.id) == []
 

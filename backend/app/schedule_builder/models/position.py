@@ -5,13 +5,14 @@ A *position* (עמדה) is one row in the schedule = a requirement for **one** g
 Two guards at the same physical spot = two positions. A position belongs to an
 ``ActivationProfile`` and carries:
 
-- ``shift``               — MORNING / AFTERNOON (=ערב) / NIGHT
 - ``day_schedules``       — per-day hours AND active-days in one JSON map:
                             ``{"0": {"start": "07:30", "end": "15:00"}, ...}``.
                             A day index present = that day is active; missing =
-                            inactive. Day index 0=ראשון … 6=שבת. A night window
-                            where ``end <= start`` wraps past midnight (the part-A
-                            convention).
+                            inactive. Day index 0=ראשון … 6=שבת. There is no
+                            separate "shift" concept — a position is defined purely
+                            by its hours. The security day runs 07:00 → 07:00 the
+                            next morning, so ``end <= start`` wraps past midnight
+                            (e.g. a night window 23:00→07:00).
 - ``required_attributes`` — list of attribute *keys* (e.g. ``["armed", "roni"]``)
                             referencing the configurable RequirementAttribute
                             vocabulary. The link is **soft** (no hard FK), so the
@@ -21,11 +22,10 @@ Two guards at the same physical spot = two positions. A position belongs to an
 import uuid
 from typing import TYPE_CHECKING
 
-from sqlalchemy import JSON, Enum, ForeignKey, Integer, String
+from sqlalchemy import JSON, ForeignKey, Integer, String
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.constants import ShiftType
 from app.models.base import BaseModel
 
 if TYPE_CHECKING:
@@ -49,11 +49,6 @@ class Position(BaseModel):
 
     # Display name (e.g. "ארנונה", "קומה 6", "סייר 1").
     name: Mapped[str] = mapped_column(String(255), nullable=False)
-
-    # Which shift this position belongs to. Reuses the part-A ``shift_type`` enum.
-    shift: Mapped[ShiftType] = mapped_column(
-        Enum(ShiftType, name="shift_type"), nullable=False,
-    )
 
     # Per-day hours + active days in one map: day index ("0".."6") -> {start,end}.
     # Presence of a key = active that day; missing = inactive.

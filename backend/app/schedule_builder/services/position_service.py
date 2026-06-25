@@ -9,7 +9,6 @@ Request-path methods only flush (the ``get_pool`` request dependency commits).
 import logging
 import uuid
 
-from app.constants import ShiftType
 from app.exceptions import PositionNotFoundException
 from app.schedule_builder.models.position import Position
 from app.schedule_builder.repositories.position_repository import PositionRepository
@@ -35,7 +34,6 @@ class PositionService:
         self,
         profile_id: uuid.UUID,
         name: str,
-        shift: ShiftType,
         day_schedules: dict | None = None,
         required_attributes: list | None = None,
     ) -> Position:
@@ -44,7 +42,6 @@ class PositionService:
         position = Position(
             profile_id=profile_id,
             name=name,
-            shift=shift,
             day_schedules=day_schedules or {},
             required_attributes=required_attributes or [],
             display_order=order,
@@ -57,7 +54,6 @@ class PositionService:
         self,
         position_id: uuid.UUID,
         name: str | None = None,
-        shift: ShiftType | None = None,
         day_schedules: dict | None = None,
         required_attributes: list | None = None,
     ) -> Position:
@@ -66,8 +62,6 @@ class PositionService:
         fields: dict = {}
         if name is not None:
             fields["name"] = name
-        if shift is not None:
-            fields["shift"] = shift
         if day_schedules is not None:
             fields["day_schedules"] = day_schedules
         if required_attributes is not None:

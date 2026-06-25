@@ -54,7 +54,6 @@ class TestDuplicate:
         assert dup.name == "חג שני"
 
     async def test_duplicate_deep_copies_positions(self, service, db_session):
-        from app.constants import ShiftType
         from app.schedule_builder.repositories.position_repository import (
             PositionRepository,
         )
@@ -63,11 +62,11 @@ class TestDuplicate:
         positions = PositionService(PositionRepository(db_session))
         src = await service.create_profile("שגרה")
         await positions.create_position(
-            src.id, "ארנונה", ShiftType.MORNING,
+            src.id, "ארנונה",
             day_schedules={"0": {"start": "07:30", "end": "15:00"}},
             required_attributes=["armed"],
         )
-        await positions.create_position(src.id, "קומה 6", ShiftType.NIGHT)
+        await positions.create_position(src.id, "קומה 6")
 
         dup = await service.duplicate_profile(src.id)
         copied = await positions.list_positions(dup.id)

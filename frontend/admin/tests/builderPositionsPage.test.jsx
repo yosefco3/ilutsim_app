@@ -30,7 +30,6 @@ const POSITION = {
   id: 'pos1',
   profile_id: 'p1',
   name: 'ארנונה',
-  shift: 'morning',
   day_schedules: { 0: { start: '07:30', end: '15:00' } },
   required_attributes: ['armed'],
   display_order: 1,
@@ -52,10 +51,9 @@ beforeEach(() => {
 });
 
 describe('PositionsPage', () => {
-  it('loads the profile selector and lists positions grouped by shift', async () => {
+  it('loads the profile selector and lists positions', async () => {
     renderPage();
     expect(await screen.findByText('ארנונה')).toBeInTheDocument();
-    expect(screen.getByText('בוקר')).toBeInTheDocument(); // shift group title
     expect(screen.getByText('חמוש')).toBeInTheDocument(); // requirement tag
   });
 

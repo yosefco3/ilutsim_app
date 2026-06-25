@@ -12,7 +12,10 @@ import {
 import { useToast } from '../../components/Toast';
 import ConfirmDialog from '../../components/ConfirmDialog';
 import messages from '../../utils/messages';
-import { DAY_NAMES_SHORT as DAY_NAMES, SHIFT_TYPES } from '../../utils/guardMessages.js';
+import {
+  DAY_NAMES_SHORT as DAY_NAMES,
+  DAY_HALF_HOUR_OPTIONS,
+} from '../../utils/guardMessages.js';
 
 // Build a blank editor form, optionally seeded from an existing position.
 function makeForm(position) {
@@ -29,7 +32,6 @@ function makeForm(position) {
   return {
     id: position?.id || null,
     name: position?.name || '',
-    shift: position?.shift || 'morning',
     days,
     required: new Set(position?.required_attributes || []),
   };
@@ -55,11 +57,6 @@ function daySummary(daySchedules) {
 export default function PositionsPage() {
   const toast = useToast();
   const m = messages.positions;
-  const shiftLabel = {
-    morning: m.shiftMorning,
-    afternoon: m.shiftAfternoon,
-    night: m.shiftNight,
-  };
 
   const [profiles, setProfiles] = useState([]);
   const [profileId, setProfileId] = useState('');
@@ -124,7 +121,6 @@ export default function PositionsPage() {
     e.preventDefault();
     const body = {
       name: editor.name.trim(),
-      shift: editor.shift,
       day_schedules: toDaySchedules(editor.days),
       required_attributes: Array.from(editor.required),
     };
@@ -239,48 +235,39 @@ export default function PositionsPage() {
       {!positions.length ? (
         <p className="empty-state">{m.empty}</p>
       ) : (
-        SHIFT_TYPES.map((shift) => {
-          const group = positions.filter((p) => p.shift === shift);
-          if (!group.length) return null;
-          return (
-            <div key={shift} className="positions-shift-group">
-              <h3 className="positions-shift-title">{shiftLabel[shift]}</h3>
-              <div className="position-cards">
-                {group.map((p) => (
-                  <div key={p.id} className="position-card">
-                    <div className="position-card-header">
-                      <span className="position-card-name">{p.name}</span>
-                    </div>
-                    <p className="position-card-days">{daySummary(p.day_schedules)}</p>
-                    {p.required_attributes?.length > 0 && (
-                      <div className="position-card-tags">
-                        {p.required_attributes.map((key) => (
-                          <span key={key} className="position-tag">
-                            {attrLabel(key)}
-                          </span>
-                        ))}
-                      </div>
-                    )}
-                    <div className="position-card-actions">
-                      <button
-                        className="btn btn-secondary btn-sm"
-                        onClick={() => setEditor(makeForm(p))}
-                      >
-                        {m.edit}
-                      </button>
-                      <button
-                        className="btn btn-danger btn-sm"
-                        onClick={() => setConfirmDelete(p)}
-                      >
-                        {m.delete}
-                      </button>
-                    </div>
-                  </div>
-                ))}
+        <div className="position-cards">
+          {positions.map((p) => (
+            <div key={p.id} className="position-card">
+              <div className="position-card-header">
+                <span className="position-card-name">{p.name}</span>
+              </div>
+              <p className="position-card-days">{daySummary(p.day_schedules)}</p>
+              {p.required_attributes?.length > 0 && (
+                <div className="position-card-tags">
+                  {p.required_attributes.map((key) => (
+                    <span key={key} className="position-tag">
+                      {attrLabel(key)}
+                    </span>
+                  ))}
+                </div>
+              )}
+              <div className="position-card-actions">
+                <button
+                  className="btn btn-secondary btn-sm"
+                  onClick={() => setEditor(makeForm(p))}
+                >
+                  {m.edit}
+                </button>
+                <button
+                  className="btn btn-danger btn-sm"
+                  onClick={() => setConfirmDelete(p)}
+                >
+                  {m.delete}
+                </button>
               </div>
             </div>
-          );
-        })
+          ))}
+        </div>
       )}
 
       {editor && (
@@ -302,23 +289,8 @@ export default function PositionsPage() {
               </div>
 
               <div className="form-group">
-                <label htmlFor="pos-shift">{m.shift}</label>
-                <select
-                  id="pos-shift"
-                  aria-label={m.shift}
-                  value={editor.shift}
-                  onChange={(e) => setEditor({ ...editor, shift: e.target.value })}
-                >
-                  {SHIFT_TYPES.map((s) => (
-                    <option key={s} value={s}>
-                      {shiftLabel[s]}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="form-group">
                 <label>{m.days}</label>
+                <p className="form-hint">{m.hoursHint}</p>
                 <div className="day-grid">
                   {DAY_NAMES.map((dayName, i) => (
                     <div key={i} className="day-row">
@@ -331,20 +303,30 @@ export default function PositionsPage() {
                         />
                         {dayName}
                       </label>
-                      <input
-                        type="time"
+                      <select
                         aria-label={`${dayName}-${m.start}`}
                         disabled={!editor.days[i].active}
                         value={editor.days[i].start}
                         onChange={(e) => setDay(i, { start: e.target.value })}
-                      />
-                      <input
-                        type="time"
+                      >
+                        {DAY_HALF_HOUR_OPTIONS.map((t) => (
+                          <option key={t} value={t}>
+                            {t}
+                          </option>
+                        ))}
+                      </select>
+                      <select
                         aria-label={`${dayName}-${m.end}`}
                         disabled={!editor.days[i].active}
                         value={editor.days[i].end}
                         onChange={(e) => setDay(i, { end: e.target.value })}
-                      />
+                      >
+                        {DAY_HALF_HOUR_OPTIONS.map((t) => (
+                          <option key={t} value={t}>
+                            {t}
+                          </option>
+                        ))}
+                      </select>
                     </div>
                   ))}
                 </div>

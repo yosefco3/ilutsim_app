@@ -12,8 +12,6 @@ from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
-from app.constants import ShiftType
-
 _TIME_RE = re.compile(r"^([01]\d|2[0-3]):[0-5]\d$")
 _DAY_KEYS = {str(i) for i in range(7)}  # "0".."6", 0=ראשון … 6=שבת
 
@@ -52,7 +50,6 @@ def _validate_required_attributes(value: list) -> list:
 class PositionCreate(BaseModel):
     """Schema for creating a position (profile_id comes from the path)."""
     name: str = Field(min_length=1, max_length=255)
-    shift: ShiftType
     day_schedules: dict = Field(default_factory=dict)
     required_attributes: list[str] = Field(default_factory=list)
 
@@ -70,7 +67,6 @@ class PositionCreate(BaseModel):
 class PositionUpdate(BaseModel):
     """Schema for updating a position. At least one field required."""
     name: str | None = Field(default=None, min_length=1, max_length=255)
-    shift: ShiftType | None = None
     day_schedules: dict | None = None
     required_attributes: list[str] | None = None
 
@@ -88,7 +84,6 @@ class PositionUpdate(BaseModel):
     def _at_least_one_field(self) -> "PositionUpdate":
         if (
             self.name is None
-            and self.shift is None
             and self.day_schedules is None
             and self.required_attributes is None
         ):
@@ -103,7 +98,6 @@ class PositionResponse(BaseModel):
     id: uuid.UUID
     profile_id: uuid.UUID
     name: str
-    shift: ShiftType
     day_schedules: dict
     required_attributes: list[str]
     display_order: int

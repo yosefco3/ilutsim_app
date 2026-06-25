@@ -19,12 +19,13 @@ from app.schedule_builder.repositories.attribute_repository import AttributeRepo
 
 logger = logging.getLogger("ilutzim")
 
-# Default vocabulary, mirrored from the schedule-builder concept (data.js ATTRS).
+# Default guard-characterization vocabulary (אפיון המאבטחים). Still configurable
+# from the UI — these are only the seed defaults for a fresh install.
 DEFAULT_ATTRIBUTES: list[tuple[str, str]] = [
+    ("ahmash", 'אחמ"ש'),
     ("armed", "חמוש"),
-    ("roni", "רוני"),
-    ("vehicle", "רכב עירייה"),
-    ("walking", "הליכה מרובה"),
+    ("unarmed", "לא חמוש"),
+    ("patrol_vehicle", "רכב סיור"),
 ]
 
 

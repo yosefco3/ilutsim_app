@@ -7,7 +7,6 @@ import uuid
 from sqlalchemy import func, select
 from sqlalchemy.orm import selectinload
 
-from app.constants import ShiftType
 from app.schedule_builder.models.activation_profile import ActivationProfile
 from app.schedule_builder.models.position import Position
 
@@ -23,14 +22,13 @@ class TestPositionModel:
     async def test_create_with_defaults(self, db_session):
         """A position with only the required fields gets empty JSON defaults."""
         profile = await _make_profile(db_session)
-        pos = Position(profile_id=profile.id, name="ארנונה", shift=ShiftType.MORNING)
+        pos = Position(profile_id=profile.id, name="ארנונה")
         db_session.add(pos)
         await db_session.flush()
         await db_session.refresh(pos)
 
         assert isinstance(pos.id, uuid.UUID)
         assert pos.name == "ארנונה"
-        assert pos.shift is ShiftType.MORNING
         assert pos.day_schedules == {}
         assert pos.required_attributes == []
         assert pos.display_order == 0
@@ -45,9 +43,8 @@ class TestPositionModel:
         pos = Position(
             profile_id=profile.id,
             name="קומה 6",
-            shift=ShiftType.AFTERNOON,
             day_schedules=schedules,
-            required_attributes=["armed", "roni"],
+            required_attributes=["armed", "ahmash"],
             display_order=2,
         )
         db_session.add(pos)
@@ -55,8 +52,7 @@ class TestPositionModel:
 
         fetched = await db_session.get(Position, pos.id)
         assert fetched.day_schedules == schedules
-        assert fetched.required_attributes == ["armed", "roni"]
-        assert fetched.shift is ShiftType.AFTERNOON
+        assert fetched.required_attributes == ["armed", "ahmash"]
         assert fetched.display_order == 2
 
     async def test_cascade_delete_with_profile(self, db_session):
@@ -64,7 +60,7 @@ class TestPositionModel:
         profile = await _make_profile(db_session)
         for i in range(2):
             db_session.add(
-                Position(profile_id=profile.id, name=f"עמדה {i}", shift=ShiftType.NIGHT)
+                Position(profile_id=profile.id, name=f"עמדה {i}")
             )
         await db_session.flush()
 
@@ -80,8 +76,8 @@ class TestPositionModel:
     async def test_positions_ordered_by_display_order(self, db_session):
         """profile.positions comes back ordered by display_order."""
         profile = await _make_profile(db_session)
-        db_session.add(Position(profile_id=profile.id, name="ב", shift=ShiftType.MORNING, display_order=2))
-        db_session.add(Position(profile_id=profile.id, name="א", shift=ShiftType.MORNING, display_order=1))
+        db_session.add(Position(profile_id=profile.id, name="ב", display_order=2))
+        db_session.add(Position(profile_id=profile.id, name="א", display_order=1))
         await db_session.flush()
 
         loaded = await db_session.scalar(

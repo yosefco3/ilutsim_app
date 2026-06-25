@@ -11,7 +11,6 @@ from datetime import datetime
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
-from app.constants import ShiftType
 from app.dependencies import require_admin_role
 from app.exceptions import PositionNotFoundException
 from app.schedule_builder.controllers.position_controller import router as position_router
@@ -25,9 +24,9 @@ class FakePositionService:
     def __init__(self):
         self._positions: list[Position] = []
 
-    def _make(self, profile_id, name, shift, day_schedules, required_attributes):
+    def _make(self, profile_id, name, day_schedules, required_attributes):
         p = Position(
-            profile_id=profile_id, name=name, shift=shift,
+            profile_id=profile_id, name=name,
             day_schedules=day_schedules or {},
             required_attributes=required_attributes or [],
             display_order=len(self._positions),
@@ -39,8 +38,8 @@ class FakePositionService:
     async def list_positions(self, profile_id):
         return [p for p in self._positions if p.profile_id == profile_id]
 
-    async def create_position(self, profile_id, name, shift, day_schedules=None, required_attributes=None):
-        p = self._make(profile_id, name, shift, day_schedules, required_attributes)
+    async def create_position(self, profile_id, name, day_schedules=None, required_attributes=None):
+        p = self._make(profile_id, name, day_schedules, required_attributes)
         self._positions.append(p)
         return p
 
@@ -53,12 +52,10 @@ class FakePositionService:
     async def get_position(self, pid):
         return self._find(pid)
 
-    async def update_position(self, pid, name=None, shift=None, day_schedules=None, required_attributes=None):
+    async def update_position(self, pid, name=None, day_schedules=None, required_attributes=None):
         p = self._find(pid)
         if name is not None:
             p.name = name
-        if shift is not None:
-            p.shift = shift
         if day_schedules is not None:
             p.day_schedules = day_schedules
         if required_attributes is not None:
@@ -85,13 +82,12 @@ class TestPositionAPI:
 
         resp = client.post(
             f"/admin/builder/profiles/{profile_id}/positions",
-            json={"name": "ארנונה", "shift": "morning",
+            json={"name": "ארנונה",
                   "day_schedules": VALID_SCHEDULE, "required_attributes": ["armed"]},
         )
         assert resp.status_code == 201
         body = resp.json()
         assert body["name"] == "ארנונה"
-        assert body["shift"] == "morning"
         assert body["day_schedules"] == VALID_SCHEDULE
         assert body["required_attributes"] == ["armed"]
 
@@ -102,7 +98,7 @@ class TestPositionAPI:
         client = _make_client(FakePositionService())
         resp = client.post(
             f"/admin/builder/profiles/{uuid.uuid4()}/positions",
-            json={"name": "x", "shift": "morning",
+            json={"name": "x",
                   "day_schedules": {"9": {"start": "07:00", "end": "15:00"}}},
         )
         assert resp.status_code == 422
@@ -111,7 +107,7 @@ class TestPositionAPI:
         client = _make_client(FakePositionService())
         resp = client.post(
             f"/admin/builder/profiles/{uuid.uuid4()}/positions",
-            json={"name": "x", "shift": "morning",
+            json={"name": "x",
                   "day_schedules": {"0": {"start": "25:00", "end": "15:00"}}},
         )
         assert resp.status_code == 422
@@ -120,7 +116,7 @@ class TestPositionAPI:
         client = _make_client(FakePositionService())
         resp = client.post(
             f"/admin/builder/profiles/{uuid.uuid4()}/positions",
-            json={"name": "x", "shift": "morning", "day_schedules": {}},
+            json={"name": "x", "day_schedules": {}},
         )
         assert resp.status_code == 422
 
@@ -128,14 +124,14 @@ class TestPositionAPI:
         client = _make_client(FakePositionService())
         resp = client.post(
             f"/admin/builder/profiles/{uuid.uuid4()}/positions",
-            json={"name": "רכב סיור", "shift": "night",
+            json={"name": "רכב סיור",
                   "day_schedules": {"0": {"start": "23:00", "end": "07:00"}}},
         )
         assert resp.status_code == 201
 
     def test_patch_updates(self):
         svc = FakePositionService()
-        p = svc._make(uuid.uuid4(), "ארנונה", ShiftType.MORNING, VALID_SCHEDULE, [])
+        p = svc._make(uuid.uuid4(), "ארנונה", VALID_SCHEDULE, [])
         svc._positions.append(p)
         client = _make_client(svc)
         resp = client.patch(f"/admin/builder/positions/{p.id}", json={"name": "ארנונה ב"})
@@ -144,7 +140,7 @@ class TestPositionAPI:
 
     def test_patch_empty_422(self):
         svc = FakePositionService()
-        p = svc._make(uuid.uuid4(), "ארנונה", ShiftType.MORNING, VALID_SCHEDULE, [])
+        p = svc._make(uuid.uuid4(), "ארנונה", VALID_SCHEDULE, [])
         svc._positions.append(p)
         client = _make_client(svc)
         resp = client.patch(f"/admin/builder/positions/{p.id}", json={})
@@ -157,7 +153,7 @@ class TestPositionAPI:
 
     def test_delete_ok(self):
         svc = FakePositionService()
-        p = svc._make(uuid.uuid4(), "ארנונה", ShiftType.MORNING, VALID_SCHEDULE, [])
+        p = svc._make(uuid.uuid4(), "ארנונה", VALID_SCHEDULE, [])
         svc._positions.append(p)
         client = _make_client(svc)
         resp = client.delete(f"/admin/builder/positions/{p.id}")

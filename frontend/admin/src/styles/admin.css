@@ -828,13 +828,10 @@ body {
   margin-bottom: 1.25rem;
 }
 .positions-toolbar select { min-width: 180px; }
-.positions-shift-group { margin-bottom: 1.5rem; }
-.positions-shift-title {
-  font-size: 1rem;
-  color: var(--text-dim);
+.form-hint {
+  font-size: 0.8rem;
+  color: var(--text-muted);
   margin: 0 0 0.6rem;
-  border-bottom: 1px solid var(--border);
-  padding-bottom: 0.3rem;
 }
 .position-cards {
   display: grid;

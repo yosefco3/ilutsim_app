@@ -101,3 +101,14 @@ export const HALF_HOUR_OPTIONS = Array.from({ length: 48 }, (_, i) => {
   const m = i % 2 === 0 ? "00" : "30";
   return `${h}:${m}`;
 });
+
+/**
+ * Half-hour slots ordered along the *security day*, which runs 07:00 → 07:00 the
+ * next morning: 07:00, 07:30, … 23:30, 00:00, … 06:30. Used by the positions
+ * editor so the dropdowns read in the order an admin thinks about a shift.
+ * Index of "07:00" in HALF_HOUR_OPTIONS is 14 (7 * 2).
+ */
+export const DAY_HALF_HOUR_OPTIONS = [
+  ...HALF_HOUR_OPTIONS.slice(14),
+  ...HALF_HOUR_OPTIONS.slice(0, 14),
+];

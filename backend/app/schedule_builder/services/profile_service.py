@@ -162,7 +162,6 @@ class ProfileService:
                 Position(
                     profile_id=dst.id,
                     name=pos.name,
-                    shift=pos.shift,
                     day_schedules=dict(pos.day_schedules or {}),
                     required_attributes=list(pos.required_attributes or []),
                     display_order=pos.display_order,

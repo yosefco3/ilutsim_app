@@ -53,7 +53,6 @@ async def create_position(
     return await service.create_position(
         profile_id=profile_id,
         name=data.name,
-        shift=data.shift,
         day_schedules=data.day_schedules,
         required_attributes=data.required_attributes,
     )
@@ -77,12 +76,11 @@ async def update_position(
     data: PositionUpdate,
     service: PositionService = Depends(get_position_service),
 ):
-    """Update a position (name / shift / hours / requirements)."""
+    """Update a position (name / hours / requirements)."""
     try:
         return await service.update_position(
             position_id,
             name=data.name,
-            shift=data.shift,
             day_schedules=data.day_schedules,
             required_attributes=data.required_attributes,
         )
