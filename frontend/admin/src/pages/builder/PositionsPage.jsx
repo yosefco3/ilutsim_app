@@ -37,6 +37,20 @@ function makeForm(position) {
   };
 }
 
+// Duration of a shift in hours, treating the end as always *after* the start:
+// the security day runs 07:00 → 07:00, so an end at/<= start wraps to the next
+// day (07:00→17:00 = 10h; 23:00→07:00 = 8h; 07:00→07:00 = a full 24h).
+function shiftHours(start, end) {
+  const toMin = (t) => {
+    const [h, m] = t.split(':').map(Number);
+    return h * 60 + m;
+  };
+  let diff = (toMin(end) - toMin(start) + 1440) % 1440;
+  if (diff === 0) diff = 1440;
+  const h = diff / 60;
+  return Number.isInteger(h) ? h : h.toFixed(1);
+}
+
 // Collapse the editor's day grid into the API's day_schedules map.
 function toDaySchedules(days) {
   const out = {};
@@ -327,6 +341,11 @@ export default function PositionsPage() {
                           </option>
                         ))}
                       </select>
+                      <span className="day-duration">
+                        {editor.days[i].active
+                          ? `${shiftHours(editor.days[i].start, editor.days[i].end)} ${m.hours}`
+                          : ''}
+                      </span>
                     </div>
                   ))}
                 </div>

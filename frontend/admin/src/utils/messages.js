@@ -69,6 +69,7 @@ export default {
     active: 'פעיל',
     start: 'התחלה',
     end: 'סיום',
+    hours: 'שעות',
     hoursHint: 'היממה מתחילה ב-07:00 ומסתיימת ב-07:00 למחרת (קפיצות של חצי שעה)',
     requirements: 'דרישות',
     noRequirements: 'אין דרישות מוגדרות',

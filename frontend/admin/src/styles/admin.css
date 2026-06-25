@@ -870,12 +870,26 @@ body {
 .day-grid { display: flex; flex-direction: column; gap: 0.4rem; }
 .day-row {
   display: grid;
-  grid-template-columns: 1fr auto auto;
+  grid-template-columns: 5.5rem auto auto auto;
   align-items: center;
   gap: 0.5rem;
 }
-.day-toggle { display: flex; align-items: center; gap: 0.4rem; font-size: 0.9rem; }
-.day-row input[type="time"]:disabled { opacity: 0.4; }
+.day-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.9rem;
+  line-height: 1;
+}
+.day-toggle input[type="checkbox"] { margin: 0; flex: none; }
+.day-row select:disabled { opacity: 0.4; }
+.day-duration {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+  min-width: 4rem;
+  padding-inline-start: 0.4rem;
+}
 .requirement-checks { display: flex; flex-wrap: wrap; gap: 0.6rem 1rem; }
 .requirement-check { display: flex; align-items: center; gap: 0.35rem; font-size: 0.9rem; }
 .attr-create-form { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1rem; }
