@@ -37,6 +37,15 @@ function makeForm(position) {
   };
 }
 
+// Valid end-times for a given start: every half-hour slot *after* the start,
+// continuing along the 07:00→07:00 security day and ending at 07:00 the next
+// morning (inclusive). DAY_HALF_HOUR_OPTIONS[0] is "07:00" (day start), so the
+// terminal "07:00" we append represents the *next-day* boundary.
+function endOptionsFor(start) {
+  const i = DAY_HALF_HOUR_OPTIONS.indexOf(start);
+  return [...DAY_HALF_HOUR_OPTIONS.slice(i + 1), '07:00'];
+}
+
 // Duration of a shift in hours, treating the end as always *after* the start:
 // the security day runs 07:00 → 07:00, so an end at/<= start wraps to the next
 // day (07:00→17:00 = 10h; 23:00→07:00 = 8h; 07:00→07:00 = a full 24h).
@@ -205,10 +214,16 @@ export default function PositionsPage() {
   };
 
   const setDay = (i, patch) => {
-    setEditor((prev) => ({
-      ...prev,
-      days: { ...prev.days, [i]: { ...prev.days[i], ...patch } },
-    }));
+    setEditor((prev) => {
+      const day = { ...prev.days[i], ...patch };
+      // When the start moves, keep the end valid: it must stay *after* start
+      // (within the 07:00→07:00 day). Snap to the earliest valid slot if not.
+      if (patch.start !== undefined) {
+        const opts = endOptionsFor(day.start);
+        if (!opts.includes(day.end)) day.end = opts[0];
+      }
+      return { ...prev, days: { ...prev.days, [i]: day } };
+    });
   };
 
   if (loading) return <div className="loading">{messages.common.loading}</div>;
@@ -335,7 +350,7 @@ export default function PositionsPage() {
                         value={editor.days[i].end}
                         onChange={(e) => setDay(i, { end: e.target.value })}
                       >
-                        {DAY_HALF_HOUR_OPTIONS.map((t) => (
+                        {endOptionsFor(editor.days[i].start).map((t) => (
                           <option key={t} value={t}>
                             {t}
                           </option>

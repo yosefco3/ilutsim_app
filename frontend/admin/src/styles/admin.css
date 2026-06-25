@@ -881,7 +881,12 @@ body {
   font-size: 0.9rem;
   line-height: 1;
 }
-.day-toggle input[type="checkbox"] { margin: 0; flex: none; }
+.day-toggle input[type="checkbox"] {
+  width: auto;
+  margin: 0;
+  padding: 0;
+  flex: none;
+}
 .day-row select:disabled { opacity: 0.4; }
 .day-duration {
   font-size: 0.85rem;
