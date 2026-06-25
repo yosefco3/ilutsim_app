@@ -36,6 +36,21 @@ class TestCreateAndList:
         with pytest.raises(ProfileNotFoundException):
             await service.get_profile(uuid.uuid4())
 
+    async def test_list_reports_position_count(self, service, db_session):
+        from app.schedule_builder.models.position import Position
+
+        empty = await service.create_profile("ריק")
+        filled = await service.create_profile("מאויש")
+        db_session.add_all([
+            Position(profile_id=filled.id, name="בניין 1", display_order=1),
+            Position(profile_id=filled.id, name="בניין 2", display_order=2),
+        ])
+        await db_session.flush()
+
+        by_id = {p.id: p for p in await service.list_profiles()}
+        assert by_id[empty.id].position_count == 0
+        assert by_id[filled.id].position_count == 2
+
 
 class TestDuplicate:
     async def test_duplicate_copies_meta_not_default(self, service):

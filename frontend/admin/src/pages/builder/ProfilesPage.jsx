@@ -119,7 +119,9 @@ export default function ProfilesPage() {
                   <span className="profile-card-default">{m.default}</span>
                 )}
               </div>
-              <p className="profile-card-positions">{m.noPositionsYet}</p>
+              <p className="profile-card-positions">
+                {p.position_count > 0 ? m.positionsCount(p.position_count) : m.noPositionsYet}
+              </p>
               <div className="profile-card-actions">
                 <button className="btn btn-secondary btn-sm" onClick={() => handleDuplicate(p)}>
                   {m.duplicate}

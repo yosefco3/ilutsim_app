@@ -44,3 +44,6 @@ class ProfileResponse(BaseModel):
     is_default: bool
     display_order: int
     created_at: datetime
+    # Number of positions owned by this profile. Populated by the repository on
+    # list queries; defaults to 0 on paths that don't compute it.
+    position_count: int = 0
