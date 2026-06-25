@@ -874,10 +874,14 @@ body {
   align-items: center;
   gap: 0.5rem;
 }
-.day-toggle {
+/* Higher specificity than `.form-group label { display:block }`, otherwise the
+   toggle never becomes a flex row and gap/align-items are ignored. */
+.day-row .day-toggle {
   display: flex;
   align-items: center;
-  gap: 0.45rem;
+  justify-content: flex-end;
+  gap: 0.55rem;
+  margin: 0;
   font-size: 0.9rem;
   line-height: 1;
 }
