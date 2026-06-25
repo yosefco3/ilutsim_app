@@ -870,7 +870,7 @@ body {
 .day-grid { display: flex; flex-direction: column; gap: 0.4rem; }
 .day-row {
   display: grid;
-  grid-template-columns: 5.5rem auto auto auto;
+  grid-template-columns: 6rem auto auto auto;
   align-items: center;
   gap: 0.5rem;
 }
@@ -879,11 +879,14 @@ body {
 .day-row .day-toggle {
   display: flex;
   align-items: center;
-  justify-content: flex-end;
+  /* flex-start pins the checkbox to the row's right edge (RTL main-start) so the
+     checkboxes line up in a column; the day name flows to its left. */
+  justify-content: flex-start;
   gap: 0.55rem;
   margin: 0;
   font-size: 0.9rem;
   line-height: 1;
+  white-space: nowrap;
 }
 .day-toggle input[type="checkbox"] {
   width: auto;
